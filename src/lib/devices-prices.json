@@ -1,0 +1,43 @@
+{
+  "hifiman-ananda-nano": {
+    "lastFetched": "2026-05-05",
+    "snapshots": [
+      {
+        "date": "2026-05-05",
+        "listings": [
+          {
+            "title": "Hifiman Ananda Nano offener High End Kopfhörer",
+            "price": 339,
+            "condition": "Gebraucht",
+            "url": "https://www.kleinanzeigen.de/s-anzeige/hifiman-ananda-nano-offener-high-end-kopfhoerer/3281652229-172-6432",
+            "source": "Kleinanzeigen",
+            "isNew": false
+          },
+          {
+            "title": "HIFIMAN ANANDA NANO Hi-Fi Planar Kopfhörer - Schwarz/Silber",
+            "price": 449,
+            "condition": "Neu",
+            "url": "https://www.ebay.de/itm/405216389748",
+            "source": "eBay",
+            "isNew": true
+          },
+          {
+            "title": "Hifiman Ananda Nano - HiFi Kopfhörer",
+            "price": 449,
+            "condition": "Neu",
+            "url": "https://www.ebay.de/itm/405911924095",
+            "source": "eBay",
+            "isNew": true
+          }
+        ],
+        "stats": {
+          "min": 339,
+          "max": 339,
+          "avg": 339,
+          "median": 339,
+          "count": 1
+        }
+      }
+    ]
+  }
+}

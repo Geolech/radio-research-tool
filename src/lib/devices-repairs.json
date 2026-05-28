@@ -1,0 +1,167 @@
+{
+  "hifiman-ananda-nano": [
+    {
+      "name": "Sieveking Sound GmbH & Co. KG",
+      "priority": 1,
+      "priorityLabel": "Offizieller Vertrieb",
+      "city": "Frankfurt am Main",
+      "address": "Hanauer Landstraße 338, 60314 Frankfurt am Main",
+      "phone": "+49 69 40566140",
+      "website": "https://www.sieveking-sound.de",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "Offizieller deutscher Distributor für HiFiMAN. Reparatur- und Garantieanfragen bitte direkt an Sieveking Sound richten."
+    },
+    {
+      "name": "HIFIMAN EU Official Store",
+      "priority": 1,
+      "priorityLabel": "Offizieller Vertrieb",
+      "city": "Online (EU-Lager)",
+      "address": "",
+      "phone": "",
+      "website": "https://eu.hifiman.com",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "Offizieller europäischer Online-Store mit Versand aus lokalem EU-Lager, 30-Tage-Rückgabe, direkter Hersteller-Support: customerservice@hifiman.com"
+    },
+    {
+      "name": "HiFi-Studio H. Helmig GmbH",
+      "priority": 2,
+      "priorityLabel": "Fachhändler in der Nähe",
+      "city": "Detmold",
+      "address": "Kissinger Str. 1, 32756 Detmold",
+      "phone": "+49 5231 23561",
+      "website": "https://www.hifi-studio-helmig.de",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "Seit 1976 etablierter HiFi-Fachhändler in Detmold. Bitte direkt anfragen, ob HiFiMAN-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Hört sich gut an",
+      "priority": 2,
+      "priorityLabel": "Fachhändler in der Nähe",
+      "city": "Bielefeld",
+      "address": "Zimmerstraße 8, 33602 Bielefeld",
+      "phone": "+49 521 130226",
+      "website": "https://www.hoert-sich-gut-an.de",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "Bielefelder HiFi-Fachhändler, ca. 25 km von Detmold. Bitte direkt anfragen, ob HiFiMAN-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Klangtreu Audiotechnik e.K.",
+      "priority": 3,
+      "priorityLabel": "Weitere Fachhändler",
+      "city": "Essen",
+      "address": "Eleonorastraße 32, 45136 Essen",
+      "phone": "+49 201 43626919",
+      "website": "https://www.klangtreu.de",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "Bekannter HiFi-Spezialist im Ruhrgebiet, ca. 120 km von Detmold. Bitte direkt anfragen, ob HiFiMAN-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Audio 2000",
+      "priority": 3,
+      "priorityLabel": "Weitere Fachhändler",
+      "city": "Wuppertal",
+      "address": "Bundesallee 243, 42103 Wuppertal",
+      "phone": "+49 202 454019",
+      "website": "https://www.audio2000.de",
+      "brands": [
+        "HiFiMAN"
+      ],
+      "note": "HiFi-Fachhändler in Wuppertal, ca. 130 km von Detmold. Bitte direkt anfragen, ob HiFiMAN-Geräte zur Reparatur angenommen werden."
+    }
+  ],
+  "luxman-sqn150": [
+    {
+      "name": "IAD GmbH (Luxman Deutschland)",
+      "priority": 1,
+      "priorityLabel": "Offizieller Vertrieb",
+      "city": "Korschenbroich",
+      "address": "Am Brambusch 22, 41352 Korschenbroich",
+      "phone": "+49 2161 617830",
+      "website": "https://www.luxman-deutschland.de",
+      "brands": [
+        "Luxman"
+      ],
+      "note": "Offizieller Luxman-Vertrieb für Deutschland und Österreich. Kann autorisierten Service-Partner in Ihrer Nähe benennen."
+    },
+    {
+      "name": "HiFi-Studio H. Helmig GmbH",
+      "priority": 2,
+      "priorityLabel": "Fachhändler in der Nähe",
+      "city": "Detmold",
+      "address": "Kissinger Str. 1, 32756 Detmold",
+      "phone": "+49 5231 23561",
+      "website": "https://www.hifi-studio-helmig.de",
+      "brands": [
+        "McIntosh",
+        "u.v.m."
+      ],
+      "note": "Etabliertes HiFi-Studio seit 1976 mit eigener Werkstatt im Haus. Bitte direkt anfragen, ob Luxman-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Hört sich gut an",
+      "priority": 2,
+      "priorityLabel": "Fachhändler in der Nähe",
+      "city": "Bielefeld",
+      "address": "Zimmerstraße 8, 33602 Bielefeld",
+      "phone": "+49 521 130226",
+      "website": "https://www.hoert-sich-gut-an.de",
+      "brands": [
+        "diverse HiFi-Marken"
+      ],
+      "note": "Bielefelder HiFi-Fachhändler, ca. 25 km von Detmold. Bitte direkt anfragen, ob Luxman-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Klangtreu Audiotechnik e.K.",
+      "priority": 3,
+      "priorityLabel": "Weitere Fachhändler",
+      "city": "Essen",
+      "address": "Eleonorastr. 32, 45136 Essen",
+      "phone": "+49 201 43626919",
+      "website": "https://www.klangtreu-audiotechnik.de",
+      "brands": [
+        "Luxman",
+        "diverse High-End-Marken"
+      ],
+      "note": "Auf audio-markt.de als Luxman-Händler gelistet. Bitte direkt anfragen, ob Luxman-Geräte zur Reparatur angenommen werden."
+    },
+    {
+      "name": "Audio 2000",
+      "priority": 3,
+      "priorityLabel": "Weitere Fachhändler",
+      "city": "Wuppertal",
+      "address": "Bundesallee 243, 42103 Wuppertal",
+      "phone": "+49 202 454019",
+      "website": "https://www.audio2000.de",
+      "brands": [
+        "Luxman",
+        "diverse High-End-Marken"
+      ],
+      "note": "Auf audio-markt.de als Luxman-Händler gelistet. Bitte direkt anfragen, ob Luxman-Geräte zur Reparatur angenommen werden."
+    }
+  ],
+  "lehmann-drachenfels": [
+    {
+      "name": "Lehmann Audio",
+      "priority": 1,
+      "priorityLabel": "Offizieller Vertrieb",
+      "city": "Köln",
+      "address": "Subbelrather Str. 15a, 50823 Köln",
+      "phone": "+49 221 5509567",
+      "website": "https://www.lehmannaudio.com",
+      "brands": [
+        "Lehmann Audio"
+      ],
+      "note": "Deutscher Hersteller – direkter Ansprechpartner für Service und Support des Drachenfels"
+    }
+  ]
+}

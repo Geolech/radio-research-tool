@@ -1,0 +1,135 @@
+{
+  "luxman-sqn150": {
+    "description": "## Luxman SQ-N150\n\nDer Luxman SQ-N150 ist ein Röhren-Vollverstärker aus der NeoClassico-II-Serie mit einer Bestückung aus zwei JJ-Electronic-ECC83-Doppeltrioden (Eingangsstufe) und vier JJ-Electronic-EL84-Pentoden (Gegentakt-Endstufe), die nominell 2 × 10 W an 6 Ohm liefern. Im Stereo-Messtest erreichte das Gerät an 8 Ohm 11,2 W Dauerleistung, einen Klirrfaktor von 0,006 % bei 50 mW sowie Rauschabstände von 74 dB(A) (Phono MM) und 72 dB(A) (Phono MC); der Dämpfungsfaktor liegt röhrentypisch bei 4–5. Das Gehäuse aus 5 mm starkem Aluminium hat einen A4-Grundriss (297 × 251 mm) bei einer Höhe von 188 mm und einem Gewicht von 12,4 kg; die Ausstattung umfasst drei Hochpegeleingänge (Cinch, vergoldet), einen Phono-Eingang für MM und MC, Klangregler mit Line-Direct-Bypass, analoge VU-Meter, Kopfhörerausgang (6,35 mm) sowie Fernbedienung.\n\n> „Der kompakte Röhrenverstärker in blitzsauberer Luxman-Qualität wendet sich an den audiophilen Liebhaber des Besonderen. Wer den auch im Labor überzeugenden SQ-N150 mit den passenden Lautsprechern kombiniert, erlebt Klangbilder, die durch ausgeprägte Lebendigkeit, hervorragende Auffächerung und weiträumige Gelöstheit bestechen.\" — [stereo.de, 2019](https://www.stereo.de/testergebnis/luxman-sq-n150-1748/)",
+    "specs": {
+      "Ausgangsleistung": "10 W pro Kanal",
+      "Röhren": "4× EL84, 4× 12AX7",
+      "Eingänge": "4x Cinch (Line)",
+      "Herkunft": "Japan",
+      "Ausgangsröhren": "4x EL84 (Ultralinear-Betrieb)",
+      "Treiberröhren": "2x 12AX7, 2x 12AU7",
+      "Frequenzgang": "10 Hz – 80 kHz",
+      "Klirrfaktor": "0,5 % (bei 1 W, 1 kHz)",
+      "Ausgangsimpedanz": "4 Ω / 8 Ω",
+      "Abmessungen (B x H x T)": "340 x 195 x 340 mm"
+    },
+    "officialImageUrl": "https://www.luxman.co.jp/asset/product/SQ-N150/img/main.jpg",
+    "officialImageAttribution": "© Luxman",
+    "officialImagePageUrl": "https://www.luxman.co.jp/product/sq-n150",
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "luxman-dn150": {
+    "description": "## Luxman D-N150\n\nDer Luxman D-N150 ist ein kompakter CD-Player aus der „Neo Classico\"-Serie mit den Abmessungen 30 × 10 × 23 cm und einem Gewicht von 5 kg. Er unterstützt PCM-Wiedergabe bis zu 32 Bit/192 kHz und verfügt über einen analogen Cinch-Ausgang (2,0 V, 300 Ohm), einen optischen Digitalausgang sowie drei Digitaleingänge (optisch, koaxial, USB). Der Rauschabstand beträgt 111 dB (Digital Null), der Klirrfaktor liegt bei 0,004 % bei −9 dBFS/400 Hz, und die Wandlerlinearität weicht bis −90 dB lediglich um 0,2 dB ab.\n\n> Der D-N150 bestand die Messreihen mit durchgehend sehr guten bis hervorragenden Werten, wobei auch die Wandlersektion überzeugend abschnitt; das Laufwerk las selbst leicht beschädigte Discs fehlerfrei aus. Klanglich wurde der Player als sehr sauber mit einer leichten Tendenz zur Sonorität beschrieben. — [stereo.de, 2019](https://www.stereo.de/testergebnis/luxman-d-n150-1747/)",
+    "specs": {
+      "D/A-Wandler": "Burr-Brown PCM1795",
+      "Frequenzgang": "2 Hz – 20 kHz (±0,5 dB)",
+      "Dynamikbereich": "110 dB",
+      "Klirrfaktor (THD)": "0,002 %",
+      "Ausgangsspannung": "2,0 V (RMS)",
+      "Signal-Rausch-Abstand": "112 dB",
+      "Ausgänge": "1x Cinch (analog), 1x optisch (digital), 1x koaxial (digital)",
+      "Abmessungen (B x H x T)": "297 x 98 x 222 mm",
+      "Laufwerk": "Schublade",
+      "Digital-Ausgänge": "Koaxial, Optisch",
+      "Herkunft": "Japan",
+      "Gewicht": "5,0 kg"
+    },
+    "inventoryStatus": "aktueller_bestand",
+    "anlageLocation": "anlage_1",
+    "purchasePrice": 3190,
+    "currentValue": null,
+    "priceNote": null
+  },
+  "lehmann-drachenfels": {
+    "description": "## Lehmann Audio Drachenfels\n\nDer Drachenfels ist ein kompakter Kopfhörerverstärker des rheinländischen Herstellers Lehmannaudio, der in der Basisversion für rund 499 Euro erhältlich ist und als Vorverstärker mit Cinch-Pre-Out genutzt werden kann. Das Gerät verfügt über zwei parallel geschaltete 6,3-mm-Klinkenbuchsen (Neutrik, vergoldet), ein ALPS-Blue-Velvet-Lautstärkepotentiometer, einen Ausgangswiderstand von 5 Ohm sowie eine maximale Verstärkung von 12 dB. Dank modularem Aufbau lassen sich Rückwand und Platinen austauschen, um optional Bluetooth, WLAN, Ethernet oder einen USB-DAC nachzurüsten; die DAC-Variante verarbeitet PCM bis 32 Bit/384 kHz und DSD über DoP bis DSD128 (5,6 MHz). Im Signalweg kommen SMD-Bauteile, Glimmer- und MKP-Kondensatoren sowie gegenkopplungsfreie Ausgangsstufen mit drei parallel geschalteten Transistorpärchen zum Einsatz; die Stromversorgung erfolgt über ein externes TDK-Schaltnetzteil mit 12 V Betriebsspannung.\n\n> Das Gerät ordnet Klangereignisse zuverlässig und gibt Klangfarben neutral wieder, ohne Über- oder Untertreibungen – ein souveräner Langstreckenläufer, der mit Beyerdynamic- und AudioQuest-Kopfhörern überzeugte. — [FIDELITY online, 2018](https://www.fidelity-online.de/spotlight-lehmann-audio-drachenfels/)\n\n> Die 2019er-Version mit neuem Platinenmaterial zeigt gegenüber der Vorgängergeneration klanglich hörbare Fortschritte; tonal war die Lehmannaudio-Linie schon zuvor mustergültig, und Besitzer älterer Modelle müssen nicht zwingend aufrüsten. — [hifitest.de, 2019](https://www.hifitest.de/test/kopfhoererverstaerker/lehmannaudio-drachenfels-2019-mit-usb-dac-17630)\n\n> Das Gerät überzeugt durch seine Modularität, die den schrittweisen Aufbau einer minimalistischen All-in-one-Lösung ermöglicht, und spielt klanglich neutral, dynamisch und mit exaktem Timing – auch der Bass ist konturiert, wenn bei sehr hohen Pegeln in tiefsten Lagen etwas Zurückhaltung spürbar wird. — [musicalhead.de, 2017](https://musicalhead.de/2017/07/21/kurztest-lehmann-audio-drachenfels/)",
+    "specs": {
+      "Ausgänge": "2× 6,3 mm Klinke (A + B)",
+      "Herkunft": "Deutschland",
+      "Betriebsklasse": "Class A",
+      "Ausgangsleistung": "ca. 500 mW an 50 Ohm",
+      "Frequenzgang": "10 Hz – 100 kHz",
+      "Klirrfaktor (THD)": "< 0,005 %",
+      "Eingangsimpedanz": "10 kΩ",
+      "Kopfhörerausgang": "6,3 mm Klinke (unsymmetrisch) + 4-pol XLR (symmetrisch)",
+      "Eingänge": "1x RCA (unsymmetrisch), 1x XLR (symmetrisch)",
+      "Abmessungen (B x H x T)": "220 x 70 x 280 mm"
+    },
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "hifiman-ananda-nano": {
+    "description": "## HiFiMAN Ananda Nano\n\nDer HiFiMAN Ananda Nano ist ein offener, ohrumschließender Planarmagnetik-Kopfhörer mit Nanometer-dünner Membran (NEO Supernano Diaphragm) und asymmetrisch angeordneten Stealth-Magneten. Die Impedanz beträgt 14 Ohm bei einer Empfindlichkeit von 94 dB/mW (1 kHz), der Frequenzgang ist mit 5 Hz bis 55 kHz spezifiziert; das Gewicht liegt bei ca. 419 g. Der Anschluss erfolgt beidseitig über 3,5-mm-Stecker; im Lieferumfang enthalten sind ein ca. 3 m langes Kabel, ein 6,35-mm-Adapter sowie ein Transportcase.\n\n\n> „Der Ananda Nano spielt souverän und der tendenziell überpräsente Hochtonbereich der Vorgängerserien ist nunmehr Vergangenheit. Stimmen profitieren von dieser Detailarbeit an den Diaphragmen.\" — [testberichte.de, 2024](https://www.testberichte.de/p/hifiman-tests/ananda-nano-testbericht.html)\n\n> „Etwas verändert hat sich in diesem Zuge übrigens auch die Impedanz: Sie ist von 25 auf 14 Ohm abgesunken. Deshalb sollte der verwendete Kopfhörerverstärker mindestens ein halbes Watt an dieser Impedanz leisten können.\" — [fairaudio.de, 2023](https://www.fairaudio.de/news/hifiman-ananda-nano-hifiman-aria-organic-kopfhoerer/)\n\n> „The Ananda Nano supplies a high-grade level of tonal balance along with a speedy transient response. The drivers are fast acting and promote a true toned character.\" — [headfonics.com, 2023](https://headfonics.com/hifiman-ananda-nano-review/)\n\n> „Die Präsentation ist klar und dynamisch, mit einer insgesamt neutralen Klangcharakteristik. Die tonale Balance ist sehr gut, und das Timbre der Instrumente wirkt äußerst lebensecht.\" — [headfonia.com, 2023](https://www.headfonia.com/hifiman-ananda-nano-review/)\n\n> „Der Kopfhörer verbindet eine hohe subjektive Signalauflösung und einen breiten Stereoeindruck mit einer Dynamik, die auch bei geringerer Wiedergabelautstärke differenziert ist.\" — [kopfhoerer.de, 2025](https://www.kopfhoerer.de/test/hifiman-ananda-nano/)",
+    "specs": {
+      "Bauform": "Ohrumschließend, offen",
+      "Wandlerprinzip": "Planardynamisch",
+      "Impedanz": "16 Ω",
+      "Schalldruckpegel": "103 dB"
+    },
+    "purchasePrice": 340,
+    "currentValue": null,
+    "priceNote": null,
+    "inventoryStatus": "aktueller_bestand",
+    "anlageLocation": null
+  },
+  "graham-slee-proprius": {
+    "description": "Die Graham Slee Proprius ist eine britische Stereo-Endstufe aus dem Hause Graham Slee Projects, die auf eine klare und unverfärbte Musikwiedergabe ausgelegt ist. Das Gerät arbeitet im Class-A-Betrieb und zeichnet sich durch einen aufwändigen, rauscharmen Schaltungsaufbau aus, der besonders für den Betrieb mit hochwertigen Passiv-Vorverstärkern oder direkt mit Quellgeräten konzipiert wurde. Die Endstufe richtet sich an audiophile Anwender, die eine kompakte, handwerklich sorgfältig gefertigte Verstärkerlösung suchen.\n\nGraham Slee bietet kompakte Mono-Endstufen. Klanglich folgen die Endstufen der professionellen Idee von Graham Slee: bester Klang in kleinsten Gehäusen zu möglichst günstigem Preis.\n\nDie Endstufen Proprius bieten einen symmetrischen Eingang, der im Studiobereich als Standard gilt. Da die Proprius-Endstufen direkt auf der Rückseite von Lautsprechern montiert werden können, spielen hierbei längere NF-Kabel eine Rolle. Kein Problem bei symmetrischen Kabeln!\n\nDie Proprius-Endstufen können auch unsymmetrisch (Cinch) angesteuert werden mittels entsprechendem Adapter.\n\nDie Leistung von 25 Watt (4Ohm) mag Datenblatt-Gläubige nicht begeistern, aber diese Geräte sollen vor allem gut klingen. 25 Watt reichen in der Praxis auch fürs Party-Feiern. Aber dafür sind die Proprius eigentlich fast zu schade…\n\nDas Gehäuse ist – wie immer bei Graham Slee – praxisgerecht ausgelegt, jedoch möglichst preiswert. Das stabile Aluminium-Gehäuse ist gut verarbeitet, jedoch keine Augenweide. Aber auch hier gilt: Dieser Verstärker soll exzellent klingen und möglichst wenig kosten. Daher investiert Graham Slee in die inneren Werte.\n\nEin spannendes Konzept, das sicherlich viele Musik-Liebhaber begeistern wird!\n\nTechnische Daten\n\n25 Watt Leistung je Kanal\nJe Kanal eigenes Gehäuse mit eigenem Netzteil\nSehr kompakter Aufbau\nClass-AB-Betrieb für besonders feine Detail-Auflösung\nLautstärke-Einstellung am Gerät möglich\nModernes Schaltnetzteil mit sehr geringem Stromverbrauch\nVerwendbar bei Netzspannungen zwischen 100V und 240V und 47Hz bis 63Hz – automatische Anpassung\nSymmetrischer Eingang, auch unsymmetrischer Betrieb möglich\nLieferung inkl. Montage-Seiten – die Endstufen können daher direkt auf die Rückseite von Lautsprechern montiert werden\nPreis versteht sich für 2 Endstufen inkl. Netzteilen\nAbmessungen: 10,5 cm Breite; 5,5 cm Höhe; 20,5 cm Tiefe",
+    "specs": {
+      "Betriebsklasse": "Class A",
+      "Ausgangsleistung": "ca. 10 W pro Kanal an 8 Ohm",
+      "Kanalzahl": "2 (Stereo)",
+      "Eingangsimpedanz": "ca. 47 kΩ",
+      "Frequenzgang": "20 Hz – 20 kHz",
+      "Klirrfaktor (THD)": "< 0,1 %",
+      "Versorgung": "Externes Netzteil (Proprius PSU)",
+      "Abmessungen": "Kompaktbauweise (ca. 170 x 50 x 170 mm)"
+    },
+    "inventoryStatus": "aktueller_bestand",
+    "purchasePrice": 1498,
+    "currentValue": null,
+    "priceNote": null,
+    "userNotes": "Graham Slee bietet kompakte Mono-Endstufen. Klanglich folgen die Endstufen der professionellen Idee von Graham Slee: bester Klang in kleinsten Gehäusen zu möglichst günstigem Preis.\n\nDie Endstufen Proprius bieten einen symmetrischen Eingang, der im Studiobereich als Standard gilt. Da die Proprius-Endstufen direkt auf der Rückseite von Lautsprechern montiert werden können, spielen hierbei längere NF-Kabel eine Rolle. Kein Problem bei symmetrischen Kabeln!\n\nDie Proprius-Endstufen können auch unsymmetrisch (Cinch) angesteuert werden mittels entsprechendem Adapter.\n\nDie Leistung von 25 Watt (4Ohm) mag Datenblatt-Gläubige nicht begeistern, aber diese Geräte sollen vor allem gut klingen. 25 Watt reichen in der Praxis auch fürs Party-Feiern. Aber dafür sind die Proprius eigentlich fast zu schade…\n\nDas Gehäuse ist – wie immer bei Graham Slee – praxisgerecht ausgelegt, jedoch möglichst preiswert. Das stabile Aluminium-Gehäuse ist gut verarbeitet, jedoch keine Augenweide. Aber auch hier gilt: Dieser Verstärker soll exzellent klingen und möglichst wenig kosten. Daher investiert Graham Slee in die inneren Werte.\n\nEin spannendes Konzept, das sicherlich viele Musik-Liebhaber begeistern wird!\n\nTechnische Daten\n\n25 Watt Leistung je Kanal\nJe Kanal eigenes Gehäuse mit eigenem Netzteil\nSehr kompakter Aufbau\nClass-AB-Betrieb für besonders feine Detail-Auflösung\nLautstärke-Einstellung am Gerät möglich\nModernes Schaltnetzteil mit sehr geringem Stromverbrauch\nVerwendbar bei Netzspannungen zwischen 100V und 240V und 47Hz bis 63Hz – automatische Anpassung\nSymmetrischer Eingang, auch unsymmetrischer Betrieb möglich\nLieferung inkl. Montage-Seiten – die Endstufen können daher direkt auf die Rückseite von Lautsprechern montiert werden\nPreis versteht sich für 2 Endstufen inkl. Netzteilen\nAbmessungen: 10,5 cm Breite; 5,5 cm Höhe; 20,5 cm Tiefe"
+  },
+  "klipsch-heresy": {
+    "description": "Der Klipsch Heresy IV ist ein Standlautsprecher mit Drei-Wege-Bassreflex-Konstruktion, der auf der klassischen Heresy-Linie aus den 1950er-Jahren basiert und mit modernen Komponenten aktualisiert wurde. Das Modell verwendet Klipsch-typische Horn-Technologie für Hoch- und Mittelton sowie einen 12-Zoll-Tieftöner und zeichnet sich durch einen sehr hohen Wirkungsgrad aus, was ihn ideal für den Betrieb an Röhrenverstärkern macht. Das Gehäuse ist aus Holz gefertigt und in verschiedenen Ausführungen erhältlich.",
+    "specs": {
+      "Bauform": "3-Wege Standlautsprecher (Bassreflex)",
+      "Impedanz": "8 Ohm",
+      "Wirkungsgrad": "99 dB (2,83V/1m)",
+      "Frequenzgang": "48 Hz – 20.000 Hz",
+      "Belastbarkeit": "100 Watt RMS",
+      "Hochtöner": "1-Zoll-Titanmembran-Kompressionstreiber mit Horn",
+      "Mitteltöner": "Kompressionstreiber mit Tractrix-Horn",
+      "Tieftöner": "12-Zoll-Cellulose-Papiermembran"
+    },
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "nakamichi-bx125e": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "linn-majik": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "luxman-k250": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "harman-kardon-hd7400": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "tascam-da20": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "rega-p3": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "restek-mtun": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "wharfedale-vintage": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "clearaudio-jubilee": {
+    "inventoryStatus": "aktueller_bestand"
+  },
+  "elac-miracord": {
+    "inventoryStatus": "aktueller_bestand"
+  }
+}

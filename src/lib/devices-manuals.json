@@ -1,0 +1,34 @@
+{
+  "luxman-dn150": [
+    {
+      "title": "Luxman D-N150 Bedienungsanleitung (Deutsch)",
+      "url": "https://www.luxman-deutschland.de/fileadmin/luxman/pdf/bda/luxman_D-N150_Anleitung.pdf",
+      "source": "luxman-deutschland.de",
+      "type": "Bedienungsanleitung",
+      "language": "Deutsch"
+    },
+    {
+      "title": "Luxman D-N150 Owner's Manual (Englisch) – Luxman America",
+      "url": "https://www.luxmanamerica.com/wp-content/uploads/2019/06/D-N150_En_5_190110.pdf",
+      "source": "luxmanamerica.com",
+      "type": "Owner's Manual",
+      "language": "Englisch"
+    }
+  ],
+  "luxman-sqn150": [
+    {
+      "title": "Luxman SQ-N150 Bedienungsanleitung (Deutsch)",
+      "url": "https://www.luxman-deutschland.de/fileadmin/luxman/pdf/bda/luxman_SQ-N150_Anleitung.pdf",
+      "source": "luxman-deutschland.de",
+      "type": "Bedienungsanleitung",
+      "language": "Deutsch"
+    },
+    {
+      "title": "Luxman SQ-N150 Owner's Manual (English) – Luxman America Direct PDF",
+      "url": "https://luxmanamerica.com/wp-content/uploads/2019/06/SQ-N150_En_5_190110.pdf",
+      "source": "luxmanamerica.com",
+      "type": "Owner's Manual",
+      "language": "Englisch"
+    }
+  ]
+}
