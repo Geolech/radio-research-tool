@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
-import path from "path";
+import { getSupabaseClient } from "@/lib/supabase";
 
-// ─── Pfad zur Stil-Datei im Obsidian Vault ─────────────────────────────────────
+// ─── Lokaler Fallback-Pfad (nur auf dem Entwicklungsrechner vorhanden) ──────────
 const STYLE_GUIDE_PATH =
   "/Users/franklechtenberg/Obsidian Vault/Franks KI Speicher/HiFi App Schreibstil.md";
 
@@ -102,11 +102,28 @@ export async function POST(req: NextRequest) {
       ? `${existing.trim()}\n\n${notes.trim()}`
       : notes.trim();
 
-    // Stil-Guide laden (optional — fehlt die Datei, wird nur gemergt)
+    // Stil-Guide laden: Supabase zuerst, dann lokale Datei als Fallback
     let rules: StyleRules = { remove: [], replace: [] };
     try {
-      const md = fs.readFileSync(STYLE_GUIDE_PATH, "utf-8");
-      rules = parseStyleGuide(md);
+      let md: string | null = null;
+
+      // 1. Supabase (funktioniert lokal + auf Vercel)
+      const sb = getSupabaseClient();
+      if (sb) {
+        const { data } = await sb
+          .from("app_settings")
+          .select("value")
+          .eq("key", "style_guide")
+          .maybeSingle();
+        if (data?.value) md = data.value;
+      }
+
+      // 2. Lokale Obsidian-Datei (Fallback ohne Supabase)
+      if (!md) {
+        try { md = fs.readFileSync(STYLE_GUIDE_PATH, "utf-8"); } catch { /* nicht vorhanden */ }
+      }
+
+      if (md) rules = parseStyleGuide(md);
     } catch {
       // Stil-Guide nicht verfügbar — trotzdem fortfahren
     }
