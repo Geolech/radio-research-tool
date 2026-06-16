@@ -1,9 +1,9 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
-import type { RSSItem } from "@/app/api/fetch-rss/route";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 const MODEL = "claude-sonnet-4-6";
+const AI_TIMEOUT_MS = 30_000;
 
 // ── Retry helper ─────────────────────────────────────────────────────────────
 async function withRetry<T>(
@@ -15,16 +15,11 @@ async function withRetry<T>(
     try {
       return await fn();
     } catch (err) {
-      const isOverloaded =
-        err instanceof Anthropic.APIError && err.status === 529;
-      const isRateLimit =
-        err instanceof Anthropic.APIError && err.status === 429;
-
+      const isOverloaded = err instanceof Anthropic.APIError && err.status === 529;
+      const isRateLimit  = err instanceof Anthropic.APIError && err.status === 429;
       if ((isOverloaded || isRateLimit) && attempt < maxAttempts) {
-        const delay = baseDelayMs * attempt; // 15s, 30s, 45s
-        console.warn(
-          `[radio-research] API ${err.status} – Versuch ${attempt}/${maxAttempts}. Warte ${delay / 1000}s…`
-        );
+        const delay = baseDelayMs * attempt;
+        console.warn(`[radio-research] API ${(err as InstanceType<typeof Anthropic.APIError>).status} – Versuch ${attempt}/${maxAttempts}. Warte ${delay / 1000}s…`);
         await new Promise((r) => setTimeout(r, delay));
         continue;
       }
@@ -33,47 +28,8 @@ async function withRetry<T>(
   }
   throw new Error("Max retries exceeded");
 }
-const TOOLS = [{ type: "web_search_20250305" as const, name: "web_search" as const }];
 
-const SYSTEM = `Du bist ein erfahrener Radiojournalist und Nachrichtenredakteur für eine deutsche Lokalredaktion in Ostwestfalen-Lippe (OWL).
-
-AUFTRAG: Wähle die jeweils 3 wichtigsten Nachrichten pro Kategorie aus und formuliere sie als fertigen Radio-Sprechtext.
-
-KATEGORIEN:
-- "Welt": Internationale Meldungen
-- "National": Deutschland-weite Meldungen
-- "Regional": Meldungen aus OWL / Kreis Lippe / Kreis Höxter / NRW
-
-QUELLENVALIDIERUNG: Für jede Meldung müssen MINDESTENS 2 unabhängige Quellen vorliegen.
-- Prüfe ob dieselbe Nachricht in mehreren Quellen erscheint
-- "validated": true nur bei ≥ 2 unabhängigen Quellen
-- Gib exakte Quellennamen an (z.B. "tagesschau.de", "spiegel.de", "Stadt Lemgo")
-
-RADIO-SPRECHTEXT-REGELN:
-- Gesprochene Sprache, keine Abkürzungen
-- Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
-- Maximal 3 Sätze pro Meldung
-- Präsens oder Perfekt, nie Futur für Vergangenes
-- Neutral und sachlich
-- Am Ende jede Meldung mit Quellenhinweis: "Das meldet [Quelle]."
-
-Antworte NUR mit validem JSON – kein Markdown, keine Codeblöcke.`;
-
-const JSON_FORMAT = `{
-  "welt": [
-    {
-      "rank": 1,
-      "headline": "Kurze Überschrift",
-      "radio_text": "Vollständiger Sprechtext mit Quellenhinweis am Ende.",
-      "sources": ["tagesschau.de", "spiegel.de"],
-      "source_count": 2,
-      "validated": true
-    }
-  ],
-  "national": [ /* same structure, exactly 3 items */ ],
-  "regional": [ /* same structure, exactly 3 items */ ]
-}`;
-
+// ── Shared types ─────────────────────────────────────────────────────────────
 export type NewsItem = {
   rank: number;
   headline: string;
@@ -81,6 +37,8 @@ export type NewsItem = {
   sources: string[];
   source_count: number;
   validated: boolean;
+  source_type: "rss" | "web" | "verified";
+  url?: string;
 };
 
 export type RadioResearchResult = {
@@ -89,189 +47,108 @@ export type RadioResearchResult = {
   regional: NewsItem[];
   searched_at: string;
   region: string;
+  mode: "rss" | "web";
 };
 
-function parseResult(text: string): Omit<RadioResearchResult, "searched_at" | "region"> | null {
-  // Strip markdown code fences if present
-  const stripped = text
-    .replace(/^```(?:json)?\s*/im, "")
-    .replace(/\s*```\s*$/im, "")
-    .trim();
+// ── Sprechtext-Regeln ─────────────────────────────────────────────────────────
+const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
+- Gesprochene Sprache, keine Abkürzungen
+- Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
+- Genau 3 Sätze: Satz 1 nennt das Wichtigste. Satz 2 liefert Kontext oder Hintergrund. Satz 3 gibt ein weiteres Detail oder eine Einordnung — KEIN Quellenhinweis, die Quelle wird separat angezeigt.
+- Präsens oder Perfekt, nie Futur für Vergangenes
+- Neutral und sachlich`;
 
-  // Try the stripped version first, then fall back to the first {...} block
-  const blockMatch = text.match(/\{[\s\S]*\}/);
-  const candidates: string[] = [stripped, ...(blockMatch ? [blockMatch[0]] : [])].filter(Boolean);
 
-  for (const candidate of candidates) {
-    try {
-      const data = JSON.parse(candidate);
-      if (data && (data.welt || data.national || data.regional)) {
-        return {
-          welt: data.welt ?? [],
-          national: data.national ?? [],
-          regional: data.regional ?? [],
-        };
-      }
-    } catch {
-      // try next candidate
-    }
+// ════════════════════════════════════════════════════════════════════════════
+// MODE A: RSS-only
+//   Ranking & Kategorisierung: algorithmisch im Client (kein API-Call)
+//   Dieser Schritt: Sprechtext nur für übergebene Top-Items
+// ════════════════════════════════════════════════════════════════════════════
+
+// Sprechtexte für übergebene Items generieren
+async function rssStep2GenerateTexts(
+  client: Anthropic,
+  items: Array<{ category: string; rank: number; headline: string; sources: string[] }>
+): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
+
+  const system = `Du bist Radiosprecher-Texter.
+${SPEECH_RULES}
+Antworte NUR mit validem JSON-Array.`;
+
+  const itemList = items.map((it, i) =>
+    `${i + 1}. [${it.category}] Rang ${it.rank}: "${it.headline}" (Quelle: ${it.sources.join(", ")})`
+  ).join("\n");
+
+  const prompt = `Schreibe für jede der folgenden Meldungen einen fertigen Radio-Sprechtext.
+
+${itemList}
+
+Format:
+[
+  {"category":"Welt","rank":1,"radio_text":"Was ist passiert. Kontext oder Hintergrund. Weiteres Detail oder Einordnung."},
+  ...
+]`;
+
+  const messages: Anthropic.Messages.MessageParam[] = [{ role: "user", content: prompt }];
+
+  const response = await withRetry(() =>
+    client.messages.create({ model: MODEL, max_tokens: 2000, system, messages })
+  );
+
+  const block = response.content.find((b) => b.type === "text");
+  if (!block || block.type !== "text") return [];
+
+  // Robustes Parsing: JSON-Array aus dem Text extrahieren
+  const text = block.text;
+  const stripped = text.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
+  const arrMatch = (stripped.match(/\[[\s\S]*\]/) ?? text.match(/\[[\s\S]*\]/));
+  if (!arrMatch) return [];
+  try {
+    return JSON.parse(arrMatch[0]);
+  } catch {
+    return [];
   }
-  return null;
 }
 
-function formatRSSContext(items: RSSItem[]): string {
-  if (items.length === 0) return "";
-  const lines = items.map((item) => {
-    const date = item.pubDateIso ? new Date(item.pubDateIso).toLocaleString("de-DE") : "unbekannt";
-    return `[${item.feedName}] ${item.title} (${date})\n${item.description}`;
-  });
-  return `\n\n=== BEREITS VORLIEGENDE MELDUNGEN AUS RSS-FEEDS ===\n${lines.join("\n\n---\n")}`;
-}
-
+// ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const {
-      webSources,
-      region,
-      rssItems = [],
-    }: { webSources: string[]; region: string; rssItems?: RSSItem[] } = await req.json();
+      step = "texts",
+      itemsForText = [],
+    }: {
+      step?: string;
+      itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[] }>;
+    } = await req.json();
 
-    const client = new Anthropic({ apiKey: getAnthropicApiKey() });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
 
-    const rssContext = formatRSSContext(rssItems);
-    const regionClause = region?.trim()
-      ? `Die Region für "Regional"-Meldungen ist: "${region}".`
-      : 'Die Region für "Regional"-Meldungen ist: OWL / Ostwestfalen-Lippe.';
-
-    const webSourceList =
-      webSources.length > 0
-        ? `Zu durchsuchende Web-Quellen: ${webSources.join(", ")}`
-        : "Durchsuche allgemeine deutschsprachige Nachrichtenquellen.";
-
-    const userPrompt = `Recherchiere aktuelle Nachrichten und erstelle ein Nachrichtenbulletin.
-
-${regionClause}
-${webSourceList}${rssContext}
-
-AUFGABE:
-1. Nutze die Web-Suche für Welt- und National-Nachrichten sowie zur Ergänzung regionaler Meldungen
-2. Die RSS-Feed-Meldungen (falls vorhanden) sind wertvoller Input für die Regional-Kategorie
-3. Wähle die 3 WICHTIGSTEN Meldungen pro Kategorie aus
-4. Validiere jede Meldung mit mindestens 2 unabhängigen Quellen
-5. Formuliere fertigen Radio-Sprechtext
-
-WICHTIG: Das Ergebnis muss EXAKT 3 Meldungen pro Kategorie enthalten.
-
-Antworte ausschließlich in diesem JSON-Format:
-${JSON_FORMAT}`;
-
-    const messages: Anthropic.Messages.MessageParam[] = [
-      { role: "user", content: userPrompt },
-    ];
-
-    // ── Phase 1: Web-Suche (Tool-Loop) ──────────────────────────────────────
-    let response = await withRetry(() =>
-      client.messages.create({
-        model: MODEL,
-        max_tokens: 3000,
-        system: SYSTEM,
-        tools: TOOLS,
-        messages,
-      })
+    const timeoutPromise = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("TIMEOUT")), AI_TIMEOUT_MS)
     );
 
-    let rounds = 0;
-    while (response.stop_reason === "tool_use" && rounds < 6) {
-      rounds++;
-      const ac = response.content;
-      const toolResults = ac
-        .filter((b) => b.type === "tool_use")
-        .map((b) => ({
-          type: "tool_result" as const,
-          tool_use_id: (b as Anthropic.ToolUseBlock).id,
-          content: "",
-        }));
-      messages.push({ role: "assistant", content: ac });
-      messages.push({
-        role: "user",
-        content: [
-          ...toolResults,
-          {
-            type: "text" as const,
-            text:
-              rounds >= 5
-                ? "Recherche abgeschlossen. Gib jetzt nur das JSON aus."
-                : "Weitersuchen bis du genug Quellen hast, dann JSON ausgeben.",
-          },
-        ],
-      });
-      response = await withRetry(() =>
-        client.messages.create({
-          model: MODEL,
-          max_tokens: 3000,
-          system: SYSTEM,
-          tools: TOOLS,
-          messages,
-        })
-      );
-    }
-
-    // ── Phase 2: JSON-Extraktion (Prefill, ohne Tools) ───────────────────────
-    // Check if the model already returned valid JSON
-    const inlineText = response.content.find((b) => b.type === "text");
-    let parsed = inlineText?.type === "text" ? parseResult(inlineText.text) : null;
-
-    if (!parsed) {
-      // Force JSON via assistant prefill – the model MUST continue from "{"
-      messages.push({ role: "assistant", content: response.content });
-      messages.push({
-        role: "user",
-        content:
-          "Recherche ist fertig. Antworte jetzt AUSSCHLIESSLICH mit dem JSON-Objekt. Kein Text davor oder danach.",
-      });
-      // Prefill: model continues from "{"
-      messages.push({ role: "assistant", content: "{" });
-
-      const jsonResponse = await withRetry(() =>
-        client.messages.create({
-          model: MODEL,
-          max_tokens: 3000,
-          system: SYSTEM,
-          // No tools – pure JSON extraction
-          messages,
-        })
-      );
-
-      const jsonBlock = jsonResponse.content.find((b) => b.type === "text");
-      if (jsonBlock?.type === "text") {
-        // Prepend the prefilled "{" that the model continued from
-        parsed = parseResult("{" + jsonBlock.text);
+    const researchPromise = (async () => {
+      if (step === "texts") {
+        const texts = await rssStep2GenerateTexts(client, itemsForText);
+        return NextResponse.json({ texts, step: "texts" });
       }
-    }
+      return NextResponse.json({ error: "Unbekannter step" }, { status: 400 });
+    })();
 
-    if (!parsed) {
-      const rawText = inlineText?.type === "text" ? inlineText.text.slice(0, 600) : "(kein Text)";
-      console.error("[radio-research] Parse failed. Raw:", rawText);
-      return NextResponse.json(
-        { error: "Antwort konnte nicht geparst werden", rawPreview: rawText },
-        { status: 500 }
-      );
-    }
+    return await Promise.race([researchPromise, timeoutPromise]);
 
-    const result: RadioResearchResult = {
-      ...parsed,
-      searched_at: new Date().toISOString(),
-      region: region?.trim() || "OWL",
-    };
-
-    return NextResponse.json(result);
   } catch (err) {
+    const isTimeout    = err instanceof Error && err.message === "TIMEOUT";
     const isOverloaded = err instanceof Anthropic.APIError && err.status === 529;
-    const message = isOverloaded
-      ? "Die KI-API ist momentan überlastet (529). Bitte in 1–2 Minuten erneut versuchen."
-      : err instanceof Error
-      ? err.message
-      : "Fehler bei der Recherche";
-    return NextResponse.json({ error: message }, { status: isOverloaded ? 503 : 500 });
+    const rawPreview   = (err as { rawPreview?: string }).rawPreview;
+    const message = isTimeout
+      ? `Zeitüberschreitung nach ${AI_TIMEOUT_MS / 1000}s. Bitte erneut versuchen.`
+      : isOverloaded
+      ? "Die KI-API ist überlastet (529). Bitte in 1–2 Minuten erneut versuchen."
+      : err instanceof Error ? err.message : "Fehler bei der Recherche";
+    return NextResponse.json(
+      { error: message, ...(rawPreview ? { rawPreview } : {}) },
+      { status: isTimeout ? 504 : isOverloaded ? 503 : 500 }
+    );
   }
 }

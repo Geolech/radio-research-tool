@@ -186,7 +186,7 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
 
         {/* Gerät hinzufügen — nur bei "Alle" oder "Aktueller Bestand" anzeigen */}
         {(statusFilter === "all" || statusFilter === "aktueller_bestand") && (
-          <Link href="/devices/new" className="group block">
+          <Link href="/hifi/devices/new" className="group block">
             <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-800 transition-all duration-300 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10">
               <div className="flex flex-col items-center justify-center gap-3 p-8 text-zinc-700 group-hover:text-zinc-400 transition-colors min-h-[200px]">
                 <span className="text-4xl">+</span>

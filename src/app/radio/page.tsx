@@ -1,22 +1,25 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import type { RadioResearchResult, NewsItem } from "@/app/api/radio-research/route";
 import type { RSSItem, FeedResult } from "@/app/api/fetch-rss/route";
-
-// ── Web-Quellen ──────────────────────────────────────────────────────────────
-
-const WEB_SOURCES = [
-  { id: "tagesschau.de", label: "Tagesschau" },
-  { id: "spiegel.de", label: "Spiegel" },
-  { id: "faz.net", label: "FAZ" },
-  { id: "zeit.de", label: "ZEIT" },
-  { id: "dw.com", label: "DW" },
-  { id: "reuters.com", label: "Reuters" },
-  { id: "bbc.com", label: "BBC" },
-  { id: "apnews.com", label: "AP" },
-];
+import { rankRSSItems, rssToNewsItems } from "@/lib/rank-rss";
+import RadioHamburgerMenu from "@/components/RadioHamburgerMenu";
+import {
+  type RadioFeed,
+  type FeedCategory,
+  DEFAULT_REGION,
+  loadRegion,
+  saveRegion,
+  loadFeeds,
+  saveFeeds,
+  makeFeed,
+  loadApiKey,
+  saveApiKey,
+  apiKeyHeader,
+} from "@/lib/radio-config";
+import type { DiscoveredFeed } from "@/app/api/discover-feeds/route";
 
 const STORAGE_KEY = "radio-research-db-v2";
 
@@ -30,19 +33,35 @@ function Spinner() {
   );
 }
 
-function ValidationBadge({ validated, count }: { validated: boolean; count: number }) {
-  if (validated) {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-        {count} Quellen · verifiziert
-      </span>
-    );
-  }
+function SourceBadge({ sourceType, validated, count }: { sourceType: string; validated: boolean; count: number }) {
+  if (sourceType === "verified") return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      {count} Quellen · web-verifiziert
+    </span>
+  );
+  if (sourceType === "rss" && validated) return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+      RSS · offizielle Quelle
+    </span>
+  );
+  if (sourceType === "rss") return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-zinc-600/50 bg-zinc-800 px-2 py-0.5 text-xs text-zinc-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-zinc-500" />
+      RSS · Medienquelle
+    </span>
+  );
+  if (validated) return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+      {count} Quellen · verifiziert
+    </span>
+  );
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-      1 Quelle · nicht verifiziert
+      1 Quelle
     </span>
   );
 }
@@ -55,7 +74,128 @@ function FeedStatusDot({ status }: { status: FeedResult["status"] }) {
   return <span className="inline-block h-2 w-2 rounded-full bg-red-500" title="Fehler" />;
 }
 
-function NewsCard({ item, rank }: { item: NewsItem; rank: number }) {
+// ── Progress Stepper ─────────────────────────────────────────────────────────
+
+type StepStatus = "pending" | "active" | "done" | "error";
+
+function getSteps() {
+  return [
+    { id: "rss",   label: "RSS-Feeds laden",     detail: "Lemgo, TH OWL, LZ Kreis Lippe …" },
+    { id: "texts", label: "Sprechtexte (Top 5)", detail: "KI formuliert Radio-Sprechtext für die 5 wichtigsten Meldungen …" },
+    { id: "done",  label: "Bulletin fertig",      detail: "" },
+  ];
+}
+
+function StepIcon({ status }: { status: StepStatus }) {
+  if (status === "done")
+    return (
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-sm">
+        ✓
+      </span>
+    );
+  if (status === "active")
+    return (
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/20 border border-amber-500/50">
+        <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-amber-400 border-t-transparent" />
+      </span>
+    );
+  if (status === "error")
+    return (
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-red-500/20 border border-red-500/40 text-red-400 text-sm">
+        ✕
+      </span>
+    );
+  return (
+    <span className="flex h-7 w-7 items-center justify-center rounded-full border border-zinc-700 bg-zinc-800">
+      <span className="h-2 w-2 rounded-full bg-zinc-600" />
+    </span>
+  );
+}
+
+function ProgressStepper({
+  phase,
+  rssItemCount,
+  elapsedMs,
+}: {
+  phase: string;
+  rssItemCount: number;
+  elapsedMs: number;
+}) {
+  const STEPS = getSteps();
+  const stepStatuses: Record<string, StepStatus> = {
+    rss:   phase === "rss"   ? "active" : ["texts","done","error"].includes(phase) ? "done" : "pending",
+    texts: phase === "texts" ? "active" : ["done","error"].includes(phase)         ? "done" : "pending",
+    done:  phase === "done"  ? "done"   : phase === "error" ? "error" : "pending",
+  };
+
+  const progressPct = phase === "rss" ? 20 : phase === "texts" ? 60 : phase === "done" ? 100 : 0;
+  const elapsed = elapsedMs > 0 ? `${Math.floor(elapsedMs / 1000)}s` : null;
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 mb-4">
+      <div className="mb-5 h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-amber-500 transition-all duration-700 ease-out"
+          style={{ width: `${progressPct}%` }}
+        />
+      </div>
+      <div className="space-y-3">
+        {STEPS.map((step, i) => {
+          const status = stepStatuses[step.id];
+          const isActive = status === "active";
+          return (
+            <div key={step.id} className="flex items-start gap-3">
+              <StepIcon status={status} />
+              <div className="flex-1 min-w-0 pt-0.5">
+                <p className={`text-sm font-medium leading-none ${
+                  isActive ? "text-amber-400" :
+                  status === "done" ? "text-zinc-300" : "text-zinc-600"
+                }`}>
+                  {step.label}
+                  {isActive && elapsed && (
+                    <span className="ml-2 text-xs font-normal text-zinc-500">{elapsed}</span>
+                  )}
+                </p>
+                {isActive && (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {i === 0 ? step.detail :
+                     i === 1 && rssItemCount > 0
+                       ? `${rssItemCount} Meldungen geladen · ` + step.detail
+                       : step.detail}
+                  </p>
+                )}
+                {status === "done" && i === 0 && rssItemCount > 0 && (
+                  <p className="mt-0.5 text-xs text-zinc-600">{rssItemCount} Meldungen geladen</p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-4 text-xs text-center text-zinc-600">
+        {phase === "texts" ? "Sprechtexte für Top 5 werden geschrieben …"
+          : phase === "rss" ? "Feeds werden parallel geladen …"
+          : ""}
+      </p>
+    </div>
+  );
+}
+
+function NewsCard({
+  item,
+  rank,
+  generating = false,
+  onGenerate,
+  onSendToEditor,
+  onOpenSource,
+}: {
+  item: NewsItem;
+  rank: number;
+  generating?: boolean;
+  onGenerate?: () => void;
+  onSendToEditor?: (text: string) => void;
+  onOpenSource?: (url: string) => void;
+}) {
   const [copied, setCopied] = useState(false);
   function copy() {
     navigator.clipboard.writeText(item.radio_text);
@@ -63,28 +203,115 @@ function NewsCard({ item, rank }: { item: NewsItem; rank: number }) {
     setTimeout(() => setCopied(false), 2000);
   }
   return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-5 flex flex-col gap-3">
+    <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 flex flex-col gap-3">
       <div className="flex items-start gap-3">
         <span className="flex-shrink-0 flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-400 border border-amber-500/20">
           {rank}
         </span>
         <div className="flex flex-col gap-1.5 flex-1 min-w-0">
-          <p className="font-semibold text-zinc-100 leading-snug">{item.headline}</p>
+          <p className="font-semibold text-zinc-100 leading-snug text-sm">{item.headline}</p>
           <div className="flex flex-wrap items-center gap-2">
-            <ValidationBadge validated={item.validated} count={item.source_count} />
-            <span className="text-xs text-zinc-600">{item.sources.join(" · ")}</span>
+            <SourceBadge sourceType={item.source_type ?? "web"} validated={item.validated} count={item.source_count} />
+            {item.url && onOpenSource ? (
+              <button
+                onClick={() => onOpenSource(item.url!)}
+                className="text-xs text-zinc-500 hover:text-amber-400 transition-colors underline underline-offset-2"
+              >
+                {item.sources.join(" · ")}
+              </button>
+            ) : (
+              <span className="text-xs text-zinc-600">{item.sources.join(" · ")}</span>
+            )}
           </div>
         </div>
       </div>
-      <blockquote className="border-l-2 border-amber-500/30 pl-4 text-sm text-zinc-300 leading-relaxed">
-        {item.radio_text}
-      </blockquote>
-      <button
-        onClick={copy}
-        className="self-end text-xs text-zinc-600 hover:text-amber-400 transition-colors"
-      >
-        {copied ? "✓ Kopiert" : "Sprechtext kopieren"}
-      </button>
+
+      {item.radio_text ? (
+        <>
+          <blockquote className="border-l-2 border-amber-500/30 pl-4 text-sm text-zinc-300 leading-relaxed">
+            {item.radio_text}
+          </blockquote>
+          <div className="flex items-center justify-between">
+            <button
+              onClick={() => onSendToEditor?.(item.radio_text)}
+              className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+            >
+              ✎ In Editor bearbeiten
+            </button>
+            <button onClick={copy} className="text-xs text-zinc-600 hover:text-amber-400 transition-colors">
+              {copied ? "✓ Kopiert" : "Sprechtext kopieren"}
+            </button>
+          </div>
+        </>
+      ) : generating ? (
+        <p className="text-xs text-zinc-600 italic pl-4 border-l-2 border-zinc-800 flex items-center gap-2">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent flex-shrink-0" />
+          Sprechtext wird generiert …
+        </p>
+      ) : onGenerate ? (
+        <button
+          onClick={onGenerate}
+          className="self-start ml-4 mt-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-amber-500/50 hover:text-amber-400 transition-colors flex items-center gap-1.5"
+        >
+          <span>✦</span> Sprechtext generieren
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Quellen-Overlay ──────────────────────────────────────────────────────────
+
+function SourceOverlay({ url, onClose }: { url: string; onClose: () => void }) {
+  const [blocked, setBlocked] = useState(false);
+
+  return (
+    <div className="fixed bottom-0 right-0 w-1/2 h-1/2 z-50 flex flex-col shadow-2xl border-2 border-amber-500/60 rounded-tl-xl overflow-hidden">
+      {/* Titelleiste */}
+      <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-amber-500/40 flex-shrink-0">
+        <span className="text-xs text-zinc-400 truncate max-w-[70%]">{url}</span>
+        <div className="flex items-center gap-3">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-zinc-500 hover:text-amber-400 transition-colors"
+          >
+            ↗ Im Browser öffnen
+          </a>
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-amber-500 px-4 py-1.5 text-xs font-bold text-zinc-950 hover:bg-amber-400 transition-colors"
+          >
+            ✕ Schliessen
+          </button>
+        </div>
+      </div>
+
+      {/* Inhalt */}
+      {blocked ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-zinc-950 px-8 text-center">
+          <p className="text-sm text-zinc-400">
+            Diese Seite erlaubt keine Einbettung (X-Frame-Options).
+          </p>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-xl bg-amber-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
+          >
+            ↗ Quelle im Browser öffnen
+          </a>
+        </div>
+      ) : (
+        <iframe
+          src={url}
+          className="flex-1 w-full bg-white"
+          onError={() => setBlocked(true)}
+          sandbox="allow-scripts allow-same-origin allow-popups"
+          title="Quelle"
+        />
+      )}
     </div>
   );
 }
@@ -93,22 +320,42 @@ function CategorySection({
   title,
   items,
   color,
+  generatingRanks,
+  onGenerate,
+  onSendToEditor,
+  onOpenSource,
 }: {
   title: string;
   items: NewsItem[];
   color: string;
+  generatingRanks?: Set<number>;
+  onGenerate?: (item: NewsItem, category: string) => void;
+  onSendToEditor?: (text: string) => void;
+  onOpenSource?: (url: string) => void;
 }) {
   if (items.length === 0) return null;
   return (
     <div>
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 mb-3">
         <div className={`h-px flex-1 ${color}`} />
         <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-400">{title}</h3>
         <div className={`h-px flex-1 ${color}`} />
       </div>
       <div className="space-y-3">
         {items.map((item) => (
-          <NewsCard key={item.rank} item={item} rank={item.rank} />
+          <NewsCard
+            key={item.rank}
+            item={item}
+            rank={item.rank}
+            generating={generatingRanks?.has(item.rank)}
+            onGenerate={
+              !item.radio_text && !generatingRanks?.has(item.rank) && onGenerate
+                ? () => onGenerate(item, title)
+                : undefined
+            }
+            onSendToEditor={item.radio_text ? onSendToEditor : undefined}
+            onOpenSource={onOpenSource}
+          />
         ))}
       </div>
     </div>
@@ -125,21 +372,521 @@ function formatDate(iso: string) {
   });
 }
 
+// ── Editor Panel ─────────────────────────────────────────────────────────────
+
+function EditorPanel({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  function handlePrint() {
+    const win = window.open("", "_blank", "width=800,height=700");
+    if (!win) return;
+    win.document.write(`<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Radio Bulletin</title>
+<style>
+  body {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 14pt;
+    line-height: 2;
+    margin: 2.5cm 3cm;
+    color: #000;
+  }
+  pre {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0;
+  }
+</style>
+</head>
+<body><pre>${value.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</pre></body>
+</html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  }
+
+  function handleClear() {
+    onChange("");
+  }
+
+  return (
+    <div className="flex flex-col h-full bg-white rounded-xl border border-zinc-300 overflow-hidden">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 bg-zinc-50 flex-shrink-0">
+        <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+          Editor
+        </span>
+        <div className="flex items-center gap-3">
+          {value && (
+            <button
+              onClick={handleClear}
+              className="text-xs text-zinc-400 hover:text-red-500 transition-colors"
+            >
+              Leeren
+            </button>
+          )}
+          <button
+            onClick={handlePrint}
+            disabled={!value.trim()}
+            className="rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+          >
+            🖨 Drucken
+          </button>
+        </div>
+      </div>
+
+      {/* Textbereich */}
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={"Wähle in einer Meldung „In Editor bearbeiten“ — der Sprechtext erscheint hier und kann bearbeitet werden."}
+        className="flex-1 resize-none px-5 py-4 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none bg-white leading-relaxed font-serif"
+        spellCheck
+        lang="de"
+      />
+    </div>
+  );
+}
+
+// ── Modal-Hülle ────────────────────────────────────────────────────────────────
+
+function Modal({
+  title,
+  subtitle,
+  onClose,
+  children,
+  footer,
+  wide = false,
+}: {
+  title: string;
+  subtitle?: string;
+  onClose: () => void;
+  children: React.ReactNode;
+  footer?: React.ReactNode;
+  wide?: boolean;
+}) {
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
+      <div
+        className={`relative z-10 flex max-h-[85vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} flex-col overflow-hidden rounded-2xl border-2 border-amber-500/60 bg-zinc-950 shadow-2xl`}
+      >
+        <div className="flex items-start justify-between border-b border-zinc-800 px-5 py-4 flex-shrink-0">
+          <div>
+            <h2 className="text-base font-bold text-zinc-100">{title}</h2>
+            {subtitle && <p className="mt-0.5 text-xs text-zinc-500">{subtitle}</p>}
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Schliessen"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+          >
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <line x1="1" y1="1" x2="11" y2="11" /><line x1="11" y1="1" x2="1" y2="11" />
+            </svg>
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
+        {footer && <div className="flex-shrink-0 border-t border-zinc-800 px-5 py-3">{footer}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Region ändern ──────────────────────────────────────────────────────────────
+
+function RegionModal({ region, onSave, onClose }: { region: string; onSave: (r: string) => void; onClose: () => void }) {
+  const [value, setValue] = useState(region);
+  return (
+    <Modal
+      title="Region ändern"
+      subtitle="Bestimmt das Sendegebiet für Bulletins und die Feed-Suche."
+      onClose={onClose}
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
+          <button
+            onClick={() => onSave(value)}
+            disabled={!value.trim()}
+            className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-40 transition-colors"
+          >
+            Speichern
+          </button>
+        </div>
+      }
+    >
+      <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Sendegebiet</label>
+      <input
+        type="text"
+        value={value}
+        autoFocus
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && value.trim()) onSave(value); }}
+        placeholder="z. B. Münster, NRW"
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+      />
+      <p className="mt-2 text-xs text-zinc-600">
+        Tipp: Eine Stadt oder Region möglichst eindeutig angeben (z. B. mit Bundesland), damit die Feed-Suche das Zentrum korrekt bestimmt.
+      </p>
+    </Modal>
+  );
+}
+
+// ── KI-Zugang (API-Key) ──────────────────────────────────────────────────────
+
+function ApiKeyModal({ onClose, onSaved }: { onClose: () => void; onSaved: (hasKey: boolean) => void }) {
+  const [value, setValue] = useState(() => loadApiKey());
+  const [reveal, setReveal] = useState(false);
+  return (
+    <Modal
+      title="KI-Zugang (Anthropic-API-Key)"
+      subtitle="Wird nur lokal auf diesem Gerät gespeichert."
+      onClose={onClose}
+      footer={
+        <div className="flex justify-between gap-2">
+          <button
+            onClick={() => { saveApiKey(""); onSaved(false); onClose(); }}
+            className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:text-red-400 transition-colors"
+          >
+            Key löschen
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
+            <button
+              onClick={() => { saveApiKey(value); onSaved(!!value.trim()); onClose(); }}
+              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">API-Key</label>
+      <div className="flex gap-2">
+        <input
+          type={reveal ? "text" : "password"}
+          value={value}
+          autoFocus
+          onChange={(e) => setValue(e.target.value)}
+          placeholder="sk-ant-…"
+          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+        />
+        <button
+          onClick={() => setReveal((v) => !v)}
+          className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
+        >
+          {reveal ? "verbergen" : "zeigen"}
+        </button>
+      </div>
+      <p className="mt-3 text-xs text-zinc-500 leading-relaxed">
+        Der Key wird für KI-Sprechtexte und die RSS-Quellen-Suche benötigt. Du erhältst ihn unter{" "}
+        <span className="text-amber-400">console.anthropic.com</span>. Es entstehen Kosten gemäß deinem Anthropic-Tarif.
+      </p>
+    </Modal>
+  );
+}
+
+// ── RSS-Quellen editieren ────────────────────────────────────────────────────
+
+function FeedEditorModal({ feeds, onSave, onClose }: { feeds: RadioFeed[]; onSave: (f: RadioFeed[]) => void; onClose: () => void }) {
+  const [list, setList] = useState<RadioFeed[]>(() => feeds.map((f) => ({ ...f })));
+  const [newUrl, setNewUrl] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newOfficial, setNewOfficial] = useState(true);
+
+  function update(id: string, patch: Partial<RadioFeed>) {
+    setList((prev) => prev.map((f) => (f.id === id ? { ...f, ...patch } : f)));
+  }
+  function remove(id: string) {
+    setList((prev) => prev.filter((f) => f.id !== id));
+  }
+  function add() {
+    const url = newUrl.trim();
+    if (!url) return;
+    const cat: FeedCategory = newOfficial ? "regional-official" : "regional-media";
+    setList((prev) => [...prev, makeFeed(url, newName, cat)]);
+    setNewUrl(""); setNewName(""); setNewOfficial(true);
+  }
+
+  return (
+    <Modal
+      title="RSS-Quellen editieren"
+      subtitle={`${list.filter((f) => f.enabled).length} aktiv · ${list.length} gesamt`}
+      onClose={onClose}
+      wide
+      footer={
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
+          <button onClick={() => onSave(list)} className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors">Speichern</button>
+        </div>
+      }
+    >
+      <div className="space-y-2">
+        {list.map((f) => (
+          <div key={f.id} className="flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2">
+            <button
+              onClick={() => update(f.id, { enabled: !f.enabled })}
+              title={f.enabled ? "Aktiv" : "Inaktiv"}
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors ${
+                f.enabled ? "border-amber-500/50 bg-amber-500/20" : "border-zinc-700 bg-zinc-800"
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full transition-transform ${f.enabled ? "translate-x-4 bg-amber-400" : "translate-x-0 bg-zinc-600"}`} />
+            </button>
+            <div className="flex-1 min-w-0 space-y-1">
+              <input
+                value={f.name}
+                onChange={(e) => update(f.id, { name: e.target.value })}
+                className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-sm text-zinc-100 hover:border-zinc-700 focus:border-amber-500/50 focus:bg-zinc-800 focus:outline-none"
+              />
+              <input
+                value={f.url}
+                onChange={(e) => update(f.id, { url: e.target.value })}
+                className="w-full rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-zinc-500 hover:border-zinc-700 focus:border-amber-500/50 focus:bg-zinc-800 focus:outline-none"
+              />
+            </div>
+            <label className="flex flex-shrink-0 items-center gap-1 text-xs text-zinc-500" title="Offizielle Quelle (Stadt/Hochschule) — wird beim Ranking bevorzugt">
+              <input
+                type="checkbox"
+                checked={f.category === "regional-official" || f.category === "education"}
+                onChange={(e) => update(f.id, { category: e.target.checked ? "regional-official" : "regional-media" })}
+                className="accent-amber-500"
+              />
+              offiziell
+            </label>
+            <button onClick={() => remove(f.id)} title="Entfernen" className="flex-shrink-0 text-zinc-600 hover:text-red-400 transition-colors px-1">✕</button>
+          </div>
+        ))}
+        {list.length === 0 && <p className="text-sm text-zinc-600 py-4 text-center">Keine Quellen. Füge unten welche hinzu oder nutze „RSS-Quellen suchen".</p>}
+      </div>
+
+      {/* Neu hinzufügen */}
+      <div className="mt-4 rounded-lg border border-dashed border-zinc-700 p-3">
+        <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Quelle hinzufügen</p>
+        <div className="space-y-2">
+          <input
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+            placeholder="Feed-URL (https://…/rss)"
+            className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+          />
+          <div className="flex gap-2">
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && add()}
+              placeholder="Anzeigename (optional)"
+              className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+            />
+            <label className="flex items-center gap-1.5 text-xs text-zinc-400">
+              <input type="checkbox" checked={newOfficial} onChange={(e) => setNewOfficial(e.target.checked)} className="accent-amber-500" />
+              offiziell
+            </label>
+            <button
+              onClick={add}
+              disabled={!newUrl.trim()}
+              className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-amber-500/50 hover:text-amber-400 disabled:opacity-40 transition-colors"
+            >
+              + Hinzufügen
+            </button>
+          </div>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+// ── RSS-Quellen in der Region suchen ──────────────────────────────────────────
+
+function FeedDiscoveryModal({ region, onAdd, onClose }: { region: string; onAdd: (sel: DiscoveredFeed[]) => void; onClose: () => void }) {
+  const [phase, setPhase] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [results, setResults] = useState<DiscoveredFeed[]>([]);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [elapsed, setElapsed] = useState(0);
+
+  async function search() {
+    setPhase("running");
+    setError(null);
+    setResults([]);
+    setSelected(new Set());
+    setElapsed(0);
+    const t0 = Date.now();
+    const timer = setInterval(() => setElapsed(Math.floor((Date.now() - t0) / 1000)), 1000);
+    try {
+      const r = await fetch("/api/discover-feeds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+        body: JSON.stringify({ region }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? "Fehler");
+      const feeds: DiscoveredFeed[] = data.feeds ?? [];
+      setResults(feeds);
+      // Verifizierte standardmäßig vorauswählen
+      setSelected(new Set(feeds.filter((f) => f.verified).map((f) => f.url)));
+      setPhase("done");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Fehler");
+      setPhase("error");
+    } finally {
+      clearInterval(timer);
+    }
+  }
+
+  function toggle(url: string) {
+    setSelected((prev) => {
+      const n = new Set(prev);
+      if (n.has(url)) n.delete(url); else n.add(url);
+      return n;
+    });
+  }
+
+  const chosen = results.filter((f) => selected.has(f.url));
+
+  return (
+    <Modal
+      title="RSS-Quellen suchen"
+      subtitle={`Umkreis ~30 km um: ${region}`}
+      onClose={onClose}
+      wide
+      footer={
+        phase === "done" ? (
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-zinc-500">{chosen.length} ausgewählt</span>
+            <div className="flex gap-2">
+              <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
+              <button
+                onClick={() => onAdd(chosen)}
+                disabled={chosen.length === 0}
+                className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-40 transition-colors"
+              >
+                Auswahl übernehmen
+              </button>
+            </div>
+          </div>
+        ) : undefined
+      }
+    >
+      {phase === "idle" && (
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-zinc-400">
+            Es wird das Zentrum der Region bestimmt und nach offiziellen RSS-Feeds von Städten und öffentlichen
+            Institutionen im Umkreis von etwa 30 km gesucht. Gefundene Feeds werden direkt auf Funktion geprüft.
+          </p>
+          <p className="text-xs text-amber-600/80 flex items-start gap-1.5">
+            <span className="flex-shrink-0 mt-0.5">⚠</span>
+            <span>Diese Suche nutzt die KI-Websuche und erzeugt API-Kosten. Sie dauert typischerweise ~30–90 Sekunden.</span>
+          </p>
+          <button onClick={search} className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-sm text-zinc-950 hover:bg-amber-400 transition-colors">
+            🔍 Suche starten
+          </button>
+        </div>
+      )}
+
+      {phase === "running" && (
+        <div className="flex flex-col items-center justify-center gap-3 py-10">
+          <Spinner />
+          <p className="text-sm text-zinc-400">Suche läuft … {elapsed}s</p>
+          <p className="text-xs text-zinc-600">KI durchsucht das Web und prüft gefundene Feeds.</p>
+        </div>
+      )}
+
+      {phase === "error" && (
+        <div className="space-y-4 py-4">
+          <p className="text-sm text-red-400">{error}</p>
+          <button onClick={search} className="rounded-lg border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm text-zinc-300 hover:border-amber-500/50 hover:text-amber-400 transition-colors">
+            Erneut versuchen
+          </button>
+        </div>
+      )}
+
+      {phase === "done" && (
+        <div className="space-y-2">
+          {results.length === 0 && <p className="text-sm text-zinc-500 py-4 text-center">Keine Feeds gefunden. Versuche eine präzisere Region.</p>}
+          {results.map((f) => {
+            const isSel = selected.has(f.url);
+            return (
+              <button
+                key={f.url}
+                onClick={() => toggle(f.url)}
+                className={`flex w-full items-start gap-3 rounded-lg border px-3 py-2 text-left transition-colors ${
+                  isSel ? "border-amber-500/50 bg-amber-500/10" : "border-zinc-800 bg-zinc-900 hover:border-zinc-700"
+                }`}
+              >
+                <span className={`mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border text-[10px] ${
+                  isSel ? "border-amber-400 bg-amber-400 text-zinc-950" : "border-zinc-600"
+                }`}>
+                  {isSel ? "✓" : ""}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-zinc-100 truncate">{f.name}</span>
+                    {f.verified ? (
+                      <span className="flex-shrink-0 text-xs text-emerald-400">✓ {f.itemCount}</span>
+                    ) : (
+                      <span className="flex-shrink-0 text-xs text-red-400/70">✕ tot</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-zinc-500 truncate">{f.url}</p>
+                  {f.location && <p className="text-xs text-zinc-600">{f.location}</p>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </Modal>
+  );
+}
+
 // ── Hauptkomponente ──────────────────────────────────────────────────────────
 
 export default function RadioResearchPage() {
-  // Konfiguration
-  const [webSources, setWebSources] = useState<string[]>(WEB_SOURCES.map((s) => s.id));
-  const [region, setRegion] = useState("OWL, Kreis Lippe, Detmold");
-  const [deepSearch, setDeepSearch] = useState(false);
+  // Konfiguration (nutzerverwaltet, localStorage)
+  const [region, setRegion] = useState(DEFAULT_REGION);
+  const [feeds, setFeeds] = useState<RadioFeed[]>([]);
+
+  // Einstellungs-Modals
+  const [modal, setModal] = useState<null | "region" | "feeds" | "discover" | "apikey">(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
 
   // Zustand
-  const [phase, setPhase] = useState<"idle" | "rss" | "ai" | "done" | "error">("idle");
+  const [phase, setPhase] = useState<"idle" | "rss" | "texts" | "done" | "error">("idle");
   const [rssItems, setRssItems] = useState<RSSItem[]>([]);
   const [feedResults, setFeedResults] = useState<FeedResult[]>([]);
   const [result, setResult] = useState<RadioResearchResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [rawPreview, setRawPreview] = useState<string | null>(null);
+  const [elapsedMs, setElapsedMs] = useState(0);
+  const startTimeRef = useRef<number | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Einzel-Sprechtext-Generierung
+  const [generatingRanks, setGeneratingRanks] = useState<Set<number>>(new Set());
+
+  // Editor
+  const [editorText, setEditorText] = useState("");
+
+  // Quellen-Overlay
+  const [overlayUrl, setOverlayUrl] = useState<string | null>(null);
 
   // Datenbank
   const [db, setDb] = useState<StoredResult[]>([]);
@@ -150,7 +897,31 @@ export default function RadioResearchPage() {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setDb(JSON.parse(raw));
     } catch { /* ignore */ }
+    setRegion(loadRegion());
+    setFeeds(loadFeeds());
+    setHasApiKey(!!loadApiKey());
   }, []);
+
+  // ── Config-Handler ─────────────────────────────────────────────────────────
+  function handleSaveRegion(next: string) {
+    const clean = next.trim() || DEFAULT_REGION;
+    setRegion(clean);
+    saveRegion(clean);
+  }
+
+  function handleSaveFeeds(next: RadioFeed[]) {
+    setFeeds(next);
+    saveFeeds(next);
+  }
+
+  function handleAddDiscovered(selected: DiscoveredFeed[]) {
+    const existing = new Set(feeds.map((f) => f.url.replace(/\/$/, "").toLowerCase()));
+    const additions = selected
+      .filter((d) => !existing.has(d.url.replace(/\/$/, "").toLowerCase()))
+      .map((d) => makeFeed(d.url, d.name, d.category));
+    if (additions.length === 0) return;
+    handleSaveFeeds([...feeds, ...additions]);
+  }
 
   const saveToDb = useCallback((r: RadioResearchResult) => {
     const entry: StoredResult = { ...r, id: crypto.randomUUID() };
@@ -161,10 +932,8 @@ export default function RadioResearchPage() {
     });
   }, []);
 
-  function toggleWebSource(id: string) {
-    setWebSources((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id]
-    );
+  function handleSendToEditor(text: string) {
+    setEditorText((prev) => prev ? prev + "\n\n" + text : text);
   }
 
   async function handleResearch() {
@@ -174,48 +943,117 @@ export default function RadioResearchPage() {
     setResult(null);
     setRssItems([]);
     setFeedResults([]);
+    setElapsedMs(0);
+    startTimeRef.current = Date.now();
+    timerRef.current = setInterval(() => {
+      setElapsedMs(Date.now() - (startTimeRef.current ?? Date.now()));
+    }, 1000);
 
-    // Phase 1: RSS-Feeds laden
+    const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
+    const fail = (e: unknown) => {
+      setErrorMsg(e instanceof Error ? e.message : "Fehler");
+      setPhase("error");
+      stopTimer();
+    };
+
+    // ── Schritt 1: RSS-Feeds laden ─────────────────────────────────────────
     let fetchedItems: RSSItem[] = [];
     try {
-      const priorities = deepSearch
-        ? ["primary", "secondary", "deep"]
-        : ["primary", "secondary"];
+      const activeFeeds = feeds
+        .filter((f) => f.enabled)
+        .map((f) => ({ id: f.id, name: f.name, url: f.url, category: f.category }));
       const rssRes = await fetch("/api/fetch-rss", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priorities }),
+        body: JSON.stringify({ feeds: activeFeeds }),
       });
       const rssData: { items: RSSItem[]; feedResults: FeedResult[] } = await rssRes.json();
       fetchedItems = rssData.items ?? [];
       setRssItems(fetchedItems);
       setFeedResults(rssData.feedResults ?? []);
-    } catch {
-      // RSS-Fehler nicht fatal — Recherche trotzdem fortsetzen
-      setFeedResults([]);
+    } catch { setFeedResults([]); }
+
+    // ── RSS-Modus ──────────────────────────────────────────────────────────
+    {
+      const ranked    = rankRSSItems(fetchedItems);
+      const newsItems = rssToNewsItems(ranked);
+      const top5      = newsItems.slice(0, 5);
+
+      const initialResult: RadioResearchResult = {
+        welt:        [],
+        national:    [],
+        regional:    newsItems,
+        searched_at: new Date().toISOString(),
+        region:      region?.trim() || "OWL",
+        mode:        "rss",
+      };
+      setResult(initialResult);
+
+      setPhase("texts");
+      try {
+        const itemsForText = top5.map(i => ({
+          category: "Regional", rank: i.rank, headline: i.headline, sources: i.sources,
+        }));
+        const r = await fetch("/api/radio-research", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+          body: JSON.stringify({ mode: "rss", step: "texts", itemsForText }),
+        });
+        const data = await r.json();
+        if (!r.ok) throw new Error(data.error ?? "Fehler");
+
+        const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
+        setResult(prev => {
+          if (!prev) return prev;
+          const updated: RadioResearchResult = {
+            ...prev,
+            regional: prev.regional.map(item => {
+              const found = texts.find(t => t.rank === item.rank);
+              return found ? { ...item, radio_text: found.radio_text } : item;
+            }),
+          };
+          saveToDb(updated);
+          return updated;
+        });
+        setPhase("done");
+        stopTimer();
+      } catch (e) { return fail(e); }
+      return;
     }
 
-    // Phase 2: KI-Recherche
-    setPhase("ai");
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
+
+  async function generateSingleText(item: NewsItem, category: string) {
+    setGeneratingRanks(prev => new Set(prev).add(item.rank));
     try {
-      const aiRes = await fetch("/api/radio-research", {
+      const r = await fetch("/api/radio-research", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ webSources, region, rssItems: fetchedItems }),
+        headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+        body: JSON.stringify({
+          mode: "rss",
+          step: "texts",
+          itemsForText: [{ category, rank: item.rank, headline: item.headline, sources: item.sources }],
+        }),
       });
-      const data = await aiRes.json();
-      if (!aiRes.ok) {
-        if (data.rawPreview) setRawPreview(data.rawPreview);
-        throw new Error(data.error ?? "Unbekannter Fehler");
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? "Fehler");
+      const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
+      if (texts.length > 0) {
+        setResult(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            regional: prev.regional.map(i =>
+              i.rank === item.rank ? { ...i, radio_text: texts[0].radio_text } : i
+            ),
+          };
+        });
       }
-      setResult(data);
-      saveToDb(data);
-      setPhase("done");
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : "Fehler";
-      setErrorMsg(msg);
-      // rawPreview is set from the API response body if available
-      setPhase("error");
+    } catch { /* ignore */ }
+    finally {
+      setGeneratingRanks(prev => { const n = new Set(prev); n.delete(item.rank); return n; });
     }
   }
 
@@ -251,235 +1089,315 @@ export default function RadioResearchPage() {
     URL.revokeObjectURL(url);
   }
 
-  const isRunning = phase === "rss" || phase === "ai";
+  const isRunning = phase === "rss" || phase === "texts";
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12">
-      <div className="mx-auto max-w-4xl">
+    <div className="h-screen flex flex-col bg-zinc-950 overflow-hidden">
 
-        {/* Header */}
-        <div className="mb-10 border-b border-zinc-800 pb-8">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-6">
-            ← Zurück zur Sammlung
+      {/* Scrollbar-Styling */}
+      <style>{`
+        .panel-scroll::-webkit-scrollbar { width: 8px; }
+        .panel-scroll::-webkit-scrollbar-track { background: #18181b; }
+        .panel-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
+        .panel-scroll::-webkit-scrollbar-thumb:hover { background: #52525b; }
+        .panel-scroll { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
+      `}</style>
+
+      {/* Header */}
+      <header className="flex-shrink-0 px-6 py-4 border-b-2 border-amber-500/60">
+        <div className="flex items-center gap-6">
+          <Link href="/hifi" className="text-sm text-zinc-500 hover:text-amber-400 transition-colors">
+            ← Sammlung
           </Link>
-          <p className="text-xs font-medium uppercase tracking-widest text-amber-500 mb-2">Radioredaktion OWL</p>
-          <h1 className="text-4xl font-bold text-zinc-100 tracking-tight">Radio Research Tool</h1>
-          <p className="mt-2 text-zinc-500 text-sm">
-            News-Gathering mit Quellenvalidierung — Top 3 Welt · National · Regional
-          </p>
-        </div>
-
-        {/* Konfiguration */}
-        <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-6 mb-6">
-          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-4">Web-Quellen</h2>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {WEB_SOURCES.map((s) => {
-              const active = webSources.includes(s.id);
-              return (
-                <button
-                  key={s.id}
-                  onClick={() => toggleWebSource(s.id)}
-                  disabled={isRunning}
-                  className={`rounded-full border px-3 py-1.5 text-sm font-medium transition-colors disabled:opacity-40 ${
-                    active
-                      ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                      : "border-zinc-700 bg-zinc-800 text-zinc-500 hover:text-zinc-300"
-                  }`}
-                >
-                  {s.label}
-                </button>
-              );
-            })}
-          </div>
-
-          <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">Region</h2>
-          <input
-            type="text"
-            value={region}
-            onChange={(e) => setRegion(e.target.value)}
-            disabled={isRunning}
-            placeholder="z. B. OWL, Kreis Lippe, Detmold"
-            className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none focus:ring-1 focus:ring-amber-500/20 mb-6 disabled:opacity-40"
-          />
-
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-1">RSS-Feeds</h2>
-              <p className="text-xs text-zinc-600">
-                Lemgo · TH OWL · LZ Kreis Lippe (primär/sekundär)
-              </p>
-            </div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <span className="text-xs text-zinc-500">Lokal Deep Search</span>
-              <button
-                role="switch"
-                aria-checked={deepSearch}
-                onClick={() => setDeepSearch((v) => !v)}
-                disabled={isRunning}
-                className={`relative inline-flex h-5 w-9 flex-shrink-0 rounded-full border transition-colors disabled:opacity-40 ${
-                  deepSearch ? "border-amber-500/50 bg-amber-500/20" : "border-zinc-700 bg-zinc-800"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 left-0.5 h-3.5 w-3.5 rounded-full transition-transform ${
-                    deepSearch ? "translate-x-4 bg-amber-400" : "translate-x-0 bg-zinc-600"
-                  }`}
-                />
-              </button>
-            </label>
-          </div>
-          {deepSearch && (
-            <p className="text-xs text-zinc-600 -mt-4 mb-6 pl-1">
-              Erweitert auf alle Lippe-Gemeinden via LZ-Feeds + TYPO3-Muster. Dauert länger.
+          <div>
+            <p className="text-xs font-medium uppercase tracking-widest text-amber-500 leading-none mb-0.5">
+              Radioredaktion OWL
             </p>
-          )}
-
-          <button
-            onClick={handleResearch}
-            disabled={isRunning || webSources.length === 0}
-            className="w-full rounded-xl bg-amber-500 px-6 py-3.5 font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-          >
-            {isRunning && <Spinner />}
-            {phase === "rss" && "Schritt 1/2: RSS-Feeds werden geladen…"}
-            {phase === "ai" && "Schritt 2/2: KI recherchiert und verfasst Sprechtext…"}
-            {(phase === "idle" || phase === "done" || phase === "error") && "Recherche starten"}
-          </button>
+            <h1 className="text-xl font-bold text-zinc-100 tracking-tight leading-none">
+              Radio Research Tool
+            </h1>
+          </div>
         </div>
+      </header>
 
-        {/* RSS-Status */}
-        {feedResults.length > 0 && (
-          <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 mb-6">
-            <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-3">RSS-Feed-Status</p>
-            <div className="flex flex-wrap gap-3">
-              {feedResults.map((f) => (
-                <div key={f.feedId} className="flex items-center gap-1.5">
-                  <FeedStatusDot status={f.status} />
-                  <span className="text-xs text-zinc-400">{f.feedName}</span>
-                  {f.status === "ok" && (
-                    <span className="text-xs text-zinc-600">({f.itemCount})</span>
-                  )}
-                  {f.error && (
-                    <span className="text-xs text-zinc-600">({f.error})</span>
-                  )}
+      {/* Hauptbereich: obere Hälfte 2-spaltig + untere Hälfte Editor */}
+      <div className="flex-1 flex flex-col min-h-0">
+
+        {/* Obere Hälfte */}
+        <div className="flex-1 min-h-0 flex border-b-2 border-amber-500/60 overflow-hidden">
+
+          {/* Linkes Panel: Steuerung */}
+          <div className="panel-scroll w-1/2 overflow-y-scroll border-r-2 border-amber-500/60 p-4">
+
+            {/* Konfiguration */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 mb-4">
+
+              <div className="flex items-start justify-between mb-3">
+                <div className="min-w-0">
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-0.5">Region</h2>
+                  <p className="text-sm text-zinc-200 truncate">{region}</p>
                 </div>
-              ))}
-            </div>
-            {rssItems.length > 0 && (
-              <p className="text-xs text-zinc-600 mt-2">
-                {rssItems.length} Meldungen aus RSS-Feeds als Kontext an KI übergeben.
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Fehler */}
-        {phase === "error" && errorMsg && (
-          <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 mb-6 space-y-2">
-            <p className="text-sm font-medium text-red-400">{errorMsg}</p>
-            {rawPreview && (
-              <details className="text-xs">
-                <summary className="text-zinc-500 cursor-pointer hover:text-zinc-300">KI-Antwort anzeigen (Debug)</summary>
-                <pre className="mt-2 overflow-x-auto rounded bg-zinc-900 p-3 text-zinc-400 whitespace-pre-wrap">{rawPreview}</pre>
-              </details>
-            )}
-          </div>
-        )}
-
-        {/* Ergebnisse */}
-        {result && (
-          <div className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-zinc-100">Nachrichtenbulletin</h2>
-              <span className="text-xs text-zinc-600">
-                {formatDate(result.searched_at)} · {result.region}
-              </span>
-            </div>
-            <div className="space-y-10">
-              <CategorySection
-                title="Weltgeschehen"
-                items={result.welt}
-                color="bg-blue-500/20"
-              />
-              <CategorySection
-                title="National"
-                items={result.national}
-                color="bg-purple-500/20"
-              />
-              <CategorySection
-                title="Regional"
-                items={result.regional}
-                color="bg-green-500/20"
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Datenbank */}
-        <div className="border-t border-zinc-800 pt-8">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => setShowDb((v) => !v)}
-              className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
-            >
-              {showDb ? "▼" : "▶"} Archiv ({db.length} Bulletins)
-            </button>
-            {db.length > 0 && (
-              <div className="flex gap-4">
-                <button onClick={exportCsv} className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">
-                  CSV exportieren
-                </button>
                 <button
-                  onClick={() => {
-                    setDb([]);
-                    try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
-                  }}
-                  className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+                  onClick={() => setModal("region")}
+                  disabled={isRunning}
+                  className="flex-shrink-0 text-xs text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-40"
                 >
-                  Archiv leeren
+                  ändern
                 </button>
+              </div>
+
+              <div className="flex items-start justify-between border-t border-zinc-800 pt-3">
+                <div>
+                  <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-0.5">RSS-Quellen</h2>
+                  <p className="text-xs text-zinc-600">
+                    {feeds.filter((f) => f.enabled).length} aktiv · {feeds.length} gesamt
+                  </p>
+                </div>
+                <div className="flex flex-col items-end gap-1">
+                  <button
+                    onClick={() => setModal("feeds")}
+                    disabled={isRunning}
+                    className="text-xs text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-40"
+                  >
+                    editieren
+                  </button>
+                  <button
+                    onClick={() => setModal("discover")}
+                    disabled={isRunning}
+                    className="text-xs text-zinc-500 hover:text-amber-400 transition-colors disabled:opacity-40"
+                  >
+                    suchen
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Aktions-Button */}
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 mb-4">
+              <button
+                onClick={() => handleResearch()}
+                disabled={isRunning}
+                className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-sm text-zinc-950 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                {isRunning && <Spinner />}
+                {isRunning ? "Läuft …" : "📋 RSS-Bulletin erstellen"}
+              </button>
+              <p className="mt-2 text-xs text-zinc-600 text-center">~5–10 s</p>
+            </div>
+
+            {/* Fortschritt */}
+            {phase !== "idle" && (
+              <ProgressStepper
+                phase={phase}
+                rssItemCount={rssItems.length}
+                elapsedMs={elapsedMs}
+              />
+            )}
+
+            {/* Feed-Status */}
+            {feedResults.length > 0 && (
+              <div className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 mb-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">Feed-Status</p>
+                <div className="flex flex-wrap gap-2">
+                  {feedResults.map((f) => (
+                    <div key={f.feedId} className="flex items-center gap-1.5">
+                      <FeedStatusDot status={f.status} />
+                      <span className="text-xs text-zinc-400">{f.feedName}</span>
+                      {f.status === "ok" && (
+                        <span className="text-xs text-zinc-600">({f.itemCount})</span>
+                      )}
+                      {f.resolvedUrl && (
+                        <span className="text-xs text-amber-500/70" title={`Fallback aktiv: ${f.resolvedUrl}`}>
+                          ↩ Fallback
+                        </span>
+                      )}
+                      {f.error && (
+                        <span className="text-xs text-zinc-600">({f.error})</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Fehler */}
+            {phase === "error" && errorMsg && (
+              <div className="rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 mb-4 space-y-2">
+                <p className="text-sm font-medium text-red-400">{errorMsg}</p>
+                {rawPreview && (
+                  <details className="text-xs">
+                    <summary className="text-zinc-500 cursor-pointer hover:text-zinc-300">KI-Antwort (Debug)</summary>
+                    <pre className="mt-2 overflow-x-auto rounded bg-zinc-900 p-3 text-zinc-400 whitespace-pre-wrap">{rawPreview}</pre>
+                  </details>
+                )}
+              </div>
+            )}
+
+            {/* Archiv */}
+            <div className="border-t border-zinc-800 pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <button
+                  onClick={() => setShowDb((v) => !v)}
+                  className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors"
+                >
+                  {showDb ? "▼" : "▶"} Archiv ({db.length})
+                </button>
+                {db.length > 0 && (
+                  <div className="flex gap-3">
+                    <button onClick={exportCsv} className="text-xs text-zinc-500 hover:text-amber-400 transition-colors">
+                      CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDb([]);
+                        try { localStorage.removeItem(STORAGE_KEY); } catch { /* ignore */ }
+                      }}
+                      className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+                    >
+                      Leeren
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {showDb && db.length === 0 && (
+                <p className="text-sm text-zinc-600">Keine gespeicherten Bulletins.</p>
+              )}
+
+              {showDb && db.length > 0 && (
+                <div className="space-y-3">
+                  {db.map((r) => (
+                    <div key={r.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <p className="text-xs font-medium text-zinc-400">{formatDate(r.searched_at)}</p>
+                        <span className="text-zinc-700">·</span>
+                        <p className="text-xs text-zinc-500">{r.region}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {[
+                          { label: "Welt", items: r.welt, color: "text-blue-400" },
+                          { label: "National", items: r.national, color: "text-purple-400" },
+                          { label: "Regional", items: r.regional, color: "text-green-400" },
+                        ].map(({ label, items, color }) => (
+                          <div key={label}>
+                            <p className={`text-xs font-medium mb-1 ${color}`}>{label}</p>
+                            <div className="space-y-0.5">
+                              {items.map((item) => (
+                                <p key={item.rank} className="text-xs text-zinc-500 truncate">{item.rank}. {item.headline}</p>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Rechtes Panel: Bulletin */}
+          <div className="panel-scroll w-1/2 overflow-y-scroll p-4">
+            {!result && phase === "idle" && (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-zinc-600 text-center">
+                  Starte eine Recherche,<br />um das Bulletin zu sehen.
+                </p>
+              </div>
+            )}
+            {result && (
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base font-semibold text-zinc-100">Nachrichtenbulletin</h2>
+                  <span className="text-xs text-zinc-600">
+                    {formatDate(result.searched_at)} · {result.region}
+                  </span>
+                </div>
+                <div className="space-y-8">
+                  <CategorySection
+                    title="Weltgeschehen"
+                    items={result.welt}
+                    color="bg-blue-500/20"
+                    generatingRanks={generatingRanks}
+                    onGenerate={generateSingleText}
+                    onSendToEditor={handleSendToEditor}
+                    onOpenSource={setOverlayUrl}
+                  />
+                  <CategorySection
+                    title="National"
+                    items={result.national}
+                    color="bg-purple-500/20"
+                    generatingRanks={generatingRanks}
+                    onGenerate={generateSingleText}
+                    onSendToEditor={handleSendToEditor}
+                    onOpenSource={setOverlayUrl}
+                  />
+                  <CategorySection
+                    title="Regional"
+                    items={result.regional}
+                    color="bg-green-500/20"
+                    generatingRanks={generatingRanks}
+                    onGenerate={generateSingleText}
+                    onSendToEditor={handleSendToEditor}
+                    onOpenSource={setOverlayUrl}
+                  />
+                </div>
               </div>
             )}
           </div>
+        </div>
 
-          {showDb && db.length === 0 && (
-            <p className="text-sm text-zinc-600">Noch keine gespeicherten Bulletins.</p>
-          )}
-
-          {showDb && db.length > 0 && (
-            <div className="space-y-4">
-              {db.map((r) => (
-                <div key={r.id} className="rounded-xl border border-zinc-800 bg-zinc-900/50 p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <p className="text-xs font-medium text-zinc-400">{formatDate(r.searched_at)}</p>
-                    <span className="text-zinc-700">·</span>
-                    <p className="text-xs text-zinc-500">{r.region}</p>
-                    <span className="text-zinc-700">·</span>
-                    <p className="text-xs text-zinc-600">
-                      {r.welt.length + r.national.length + r.regional.length} Meldungen
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: "Welt", items: r.welt, color: "text-blue-400" },
-                      { label: "National", items: r.national, color: "text-purple-400" },
-                      { label: "Regional", items: r.regional, color: "text-green-400" },
-                    ].map(({ label, items, color }) => (
-                      <div key={label}>
-                        <p className={`text-xs font-medium mb-1 ${color}`}>{label}</p>
-                        <div className="space-y-1">
-                          {items.map((item) => (
-                            <p key={item.rank} className="text-xs text-zinc-500 truncate">{item.rank}. {item.headline}</p>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+        {/* Untere Hälfte: Editor */}
+        <div className="flex-1 min-h-0 p-4">
+          <EditorPanel value={editorText} onChange={setEditorText} />
         </div>
       </div>
-    </main>
+
+      {/* Quellen-Overlay */}
+      {overlayUrl && (
+        <SourceOverlay url={overlayUrl} onClose={() => setOverlayUrl(null)} />
+      )}
+
+      {/* Radio-Hamburger-Menü */}
+      <RadioHamburgerMenu
+        region={region}
+        feeds={feeds}
+        hasApiKey={hasApiKey}
+        onChangeRegion={() => setModal("region")}
+        onEditFeeds={() => setModal("feeds")}
+        onDiscoverFeeds={() => setModal("discover")}
+        onApiKey={() => setModal("apikey")}
+      />
+
+      {/* Einstellungs-Modals */}
+      {modal === "region" && (
+        <RegionModal
+          region={region}
+          onSave={(r) => { handleSaveRegion(r); setModal(null); }}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === "feeds" && (
+        <FeedEditorModal
+          feeds={feeds}
+          onSave={(f) => { handleSaveFeeds(f); setModal(null); }}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === "discover" && (
+        <FeedDiscoveryModal
+          region={region}
+          onAdd={(sel) => { handleAddDiscovered(sel); setModal(null); }}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === "apikey" && (
+        <ApiKeyModal
+          onClose={() => setModal(null)}
+          onSaved={(has) => setHasApiKey(has)}
+        />
+      )}
+    </div>
   );
 }

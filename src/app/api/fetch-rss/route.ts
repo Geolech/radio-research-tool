@@ -21,6 +21,7 @@ export type FeedResult = {
   status: "ok" | "error" | "timeout";
   itemCount: number;
   error?: string;
+  resolvedUrl?: string;   // gesetzt wenn eine Fallback-URL die konfigurierte ersetzt hat
 };
 
 export type FetchRSSResponse = {
@@ -110,21 +111,36 @@ function parseAtom(xml: string, feedId: string, feedName: string, feedCategory: 
   return items;
 }
 
-function parseFeed(xml: string, feedId: string, feedName: string, feedCategory: string): RSSItem[] {
+export function parseFeed(xml: string, feedId: string, feedName: string, feedCategory: string): RSSItem[] {
   const isAtom = /<feed[\s>]/i.test(xml);
   return isAtom
     ? parseAtom(xml, feedId, feedName, feedCategory)
     : parseRSS2(xml, feedId, feedName, feedCategory);
 }
 
-// ── Fetch with timeout ───────────────────────────────────────────────────────
+// ── Fallback-URL-Kandidaten ──────────────────────────────────────────────────
 
-async function fetchFeed(
-  feedId: string,
-  feedName: string,
-  feedCategory: string,
-  url: string
-): Promise<{ items: RSSItem[]; result: FeedResult }> {
+function fallbackUrls(url: string): string[] {
+  const candidates: string[] = [];
+
+  // TYPO3-Pattern: ?type=9818 oder rss?type=9818 → /rss, /feed, /aktuelles/rss
+  if (url.includes("type=9818")) {
+    const base = url.replace(/\/?(rss)?\?type=9818.*$/, "");
+    candidates.push(`${base}/rss`, `${base}/feed`, `${base}/aktuelles/rss`);
+  }
+
+  // LZ-Pattern: Bindestriche im letzten Pfadsegment → ohne Bindestrich
+  const lzHyphen = url.match(/^(https?:\/\/www\.lz\.de\/.+\/)([^/]+)(\/index\.rss)$/);
+  if (lzHyphen && lzHyphen[2].includes("-")) {
+    candidates.push(`${lzHyphen[1]}${lzHyphen[2].replace(/-/g, "")}${lzHyphen[3]}`);
+  }
+
+  return candidates;
+}
+
+// ── Einzelner Fetch-Versuch ──────────────────────────────────────────────────
+
+export async function tryFetch(url: string): Promise<{ ok: boolean; xml?: string; status: number }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
@@ -134,41 +150,77 @@ async function fetchFeed(
       next: { revalidate: 0 },
     });
     clearTimeout(timer);
-    if (!res.ok) {
-      return {
-        items: [],
-        result: { feedId, feedName, status: "error", itemCount: 0, error: `HTTP ${res.status}` },
-      };
-    }
+    if (!res.ok) return { ok: false, status: res.status };
     const xml = await res.text();
-    const items = parseFeed(xml, feedId, feedName, feedCategory);
-    return {
-      items,
-      result: { feedId, feedName, status: "ok", itemCount: items.length },
-    };
+    return { ok: true, xml, status: res.status };
   } catch (e) {
     clearTimeout(timer);
     const isTimeout = e instanceof Error && e.name === "AbortError";
-    return {
-      items: [],
-      result: {
-        feedId,
-        feedName,
-        status: isTimeout ? "timeout" : "error",
-        itemCount: 0,
-        error: isTimeout ? "Timeout" : (e instanceof Error ? e.message : "Fehler"),
-      },
-    };
+    return { ok: false, status: isTimeout ? 408 : 0 };
   }
+}
+
+// ── Fetch with timeout + automatic fallback ──────────────────────────────────
+
+async function fetchFeed(
+  feedId: string,
+  feedName: string,
+  feedCategory: string,
+  url: string
+): Promise<{ items: RSSItem[]; result: FeedResult }> {
+
+  // Primärer Versuch
+  const primary = await tryFetch(url);
+  if (primary.ok && primary.xml) {
+    const items = parseFeed(primary.xml, feedId, feedName, feedCategory);
+    return { items, result: { feedId, feedName, status: "ok", itemCount: items.length } };
+  }
+
+  // Fallback-Versuche bei HTTP-Fehler (nicht bei Timeout)
+  if (primary.status !== 408) {
+    for (const candidate of fallbackUrls(url)) {
+      const fb = await tryFetch(candidate);
+      if (fb.ok && fb.xml) {
+        const items = parseFeed(fb.xml, feedId, feedName, feedCategory);
+        return {
+          items,
+          result: {
+            feedId, feedName, status: "ok", itemCount: items.length,
+            resolvedUrl: candidate,
+          },
+        };
+      }
+    }
+  }
+
+  // Alles fehlgeschlagen
+  const isTimeout = primary.status === 408;
+  return {
+    items: [],
+    result: {
+      feedId, feedName,
+      status: isTimeout ? "timeout" : "error",
+      itemCount: 0,
+      error: isTimeout ? "Timeout" : `HTTP ${primary.status}`,
+    },
+  };
 }
 
 // ── Route handler ────────────────────────────────────────────────────────────
 
+type FeedInput = { id: string; name: string; url: string; category: string };
+
 export async function POST(req: NextRequest) {
-  const { priorities = ["primary", "secondary"] }: { priorities?: FeedPriority[] } =
+  const body: { feeds?: FeedInput[]; priorities?: FeedPriority[] } =
     await req.json().catch(() => ({}));
 
-  const feeds = RSS_FEEDS.filter((f) => priorities.includes(f.priority));
+  // Bevorzugt: kuratierte Feed-Liste vom Client. Fallback: statische Defaults.
+  const feeds: FeedInput[] =
+    Array.isArray(body.feeds) && body.feeds.length > 0
+      ? body.feeds
+      : RSS_FEEDS
+          .filter((f) => (body.priorities ?? ["primary", "secondary"]).includes(f.priority))
+          .map((f) => ({ id: f.id, name: f.name, url: f.url, category: f.category }));
 
   const results = await Promise.all(
     feeds.map((f) => fetchFeed(f.id, f.name, f.category, f.url))

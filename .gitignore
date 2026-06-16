@@ -20,6 +20,9 @@
 # production
 /build
 
+# electron-builder output (Windows .exe etc.)
+/dist/
+
 # misc
 .DS_Store
 *.pem

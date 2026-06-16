@@ -20,7 +20,7 @@ export const RSS_FEEDS: FeedConfig[] = [
   {
     id: "lemgo",
     name: "Stadt Lemgo",
-    url: "https://www.lemgo.de/rss?type=9818",
+    url: "https://www.lemgo.de/rss",
     category: "regional-official",
     priority: "primary",
   },
@@ -64,7 +64,7 @@ export const RSS_FEEDS: FeedConfig[] = [
   {
     id: "lz-bad-salzuflen",
     name: "LZ – Bad Salzuflen",
-    url: "https://www.lz.de/_lz_daten/_export/rss/bad-salzuflen/index.rss",
+    url: "https://www.lz.de/_lz_daten/_export/rss/badsalzuflen/index.rss",
     category: "regional-media",
     priority: "secondary",
   },

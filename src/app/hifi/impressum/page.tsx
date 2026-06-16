@@ -7,7 +7,7 @@ export default function ImpressumPage() {
 
         {/* Back link */}
         <Link
-          href="/"
+          href="/hifi"
           className="inline-flex items-center gap-2 text-xs text-zinc-600 hover:text-amber-400 transition-colors mb-10"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none"

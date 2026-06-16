@@ -8,7 +8,7 @@ export default function EinstellungenPage() {
     <main className="min-h-screen bg-zinc-950 px-6 py-12">
       <div className="mx-auto max-w-3xl">
         <Link
-          href="/"
+          href="/hifi"
           className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-8"
         >
           ← Zurück zur Sammlung

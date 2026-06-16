@@ -17,3 +17,13 @@ export function getAnthropicApiKey(): string {
 
   throw new Error("ANTHROPIC_API_KEY nicht gefunden");
 }
+
+// In der Desktop-/Standalone-App gibt es keine Server-Umgebungsvariable: Der
+// Nutzer trägt seinen Key in der App ein, der dann per Request-Header
+// (x-anthropic-key) an den lokalen Server gereicht wird. Reihenfolge:
+// 1) Header (eigener Key der Redaktion), 2) Server-Env / .env.local (Dev).
+export function getAnthropicApiKeyFromRequest(req: Request): string {
+  const headerKey = req.headers.get("x-anthropic-key")?.trim();
+  if (headerKey) return headerKey;
+  return getAnthropicApiKey();
+}
