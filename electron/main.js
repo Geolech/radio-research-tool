@@ -86,6 +86,13 @@ async function createWindow() {
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
 
+  // Fenstertitel fest halten — sonst übernimmt Electron den Dokument-Titel
+  // der geladenen Seite (z. B. „HiFi-Bibliothek" aus dem Root-Layout).
+  mainWindow.on("page-title-updated", (e) => {
+    e.preventDefault();
+    mainWindow.setTitle("Radio Research Tool");
+  });
+
   // Externe Links (Quellseiten, „Im Browser öffnen") im Standardbrowser öffnen
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
