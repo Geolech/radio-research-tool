@@ -1,0 +1,44 @@
+name: Build Windows EXE
+
+# Baut die autarke Windows-.exe (Radio Research Tool) auf einem echten
+# Windows-Runner — manuell auslösbar oder bei einem Versions-Tag (v*).
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build Next.js (standalone)
+        run: npm run build
+
+      - name: Prepare standalone (static + public)
+        run: npm run prepare:standalone
+
+      - name: Package Windows app
+        run: npx electron-builder --win --publish never
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer & portable
+        uses: actions/upload-artifact@v4
+        with:
+          name: RadioResearchTool-Windows
+          path: |
+            dist/*.exe
+          if-no-files-found: error
