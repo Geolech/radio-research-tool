@@ -105,7 +105,7 @@ function CategoryGroup({
             return (
               <Link
                 key={d.id}
-                href={`/devices/${d.id}`}
+                href={`/hifi/devices/${d.id}`}
                 onClick={onNavigate}
                 className={`flex flex-col rounded-lg px-3 py-2 text-xs transition-colors ${
                   isActive
@@ -137,8 +137,8 @@ export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
 
   // Derive the active device id and its category from the current path
   const activeDeviceId =
-    pathname.startsWith("/devices/") && !pathname.startsWith("/devices/new")
-      ? pathname.split("/devices/")[1]
+    pathname.startsWith("/hifi/devices/") && !pathname.startsWith("/hifi/devices/new")
+      ? pathname.split("/hifi/devices/")[1]
       : null;
   const activeDevice = activeDeviceId ? devices.find((d) => d.id === activeDeviceId) : null;
   const activeCategory = activeDevice?.category ?? null;
@@ -168,6 +168,9 @@ export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
 
   // Close on route change
   useEffect(() => { close(); }, [pathname]);
+
+  // Radio-Seite hat ein eigenes Menü
+  if (pathname === "/radio") return null;
 
   const grouped = groupByCategory(devices);
 
@@ -240,10 +243,10 @@ export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
 
           {/* Main pages */}
-          <NavItem href="/" label="HiFi-Bibliothek" active={pathname === "/"} onClick={close}
+          <NavItem href="/hifi" label="HiFi-Bibliothek" active={pathname === "/hifi"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z" /></svg>}
           />
-          <NavItem href="/devices/new" label="Gerät hinzufügen" active={pathname === "/devices/new"} onClick={close}
+          <NavItem href="/hifi/devices/new" label="Gerät hinzufügen" active={pathname === "/hifi/devices/new"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="8" y1="2" x2="8" y2="14" /><line x1="2" y1="8" x2="14" y2="8" /></svg>}
           />
 
@@ -283,16 +286,16 @@ export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
           <div className="py-1"><div className="border-t border-zinc-800/70" /></div>
 
           {/* Mockup + Impressum */}
-          <NavItem href="/book" label="Blätterbuch" active={pathname === "/book"} onClick={close}
+          <NavItem href="/hifi/book" label="Blätterbuch" active={pathname === "/hifi/book"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2 2h5v12H2z"/><path d="M9 2h5v12H9z"/><line x1="7" y1="8" x2="9" y2="8"/></svg>}
           />
-          <NavItem href="/mockup" label="Mobile Mockup" active={pathname === "/mockup"} onClick={close}
+          <NavItem href="/hifi/mockup" label="Mobile Mockup" active={pathname === "/hifi/mockup"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="1" width="8" height="14" rx="2" /><line x1="7" y1="12.5" x2="9" y2="12.5" strokeWidth="1.8" /></svg>}
           />
-          <NavItem href="/einstellungen" label="Einstellungen" active={pathname === "/einstellungen"} onClick={close}
+          <NavItem href="/hifi/einstellungen" label="Einstellungen" active={pathname === "/hifi/einstellungen"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2M3.05 3.05l1.41 1.41M11.54 11.54l1.41 1.41M3.05 12.95l1.41-1.41M11.54 4.46l1.41-1.41"/></svg>}
           />
-          <NavItem href="/impressum" label="Impressum" active={pathname === "/impressum"} onClick={close}
+          <NavItem href="/hifi/impressum" label="Impressum" active={pathname === "/hifi/impressum"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="8" cy="8" r="7" /><line x1="8" y1="7" x2="8" y2="11" /><circle cx="8" cy="5" r="0.7" fill="currentColor" stroke="none" /></svg>}
           />
 

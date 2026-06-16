@@ -47,7 +47,7 @@ export default async function DevicePage({ params }: PageProps) {
       <div className="mx-auto max-w-4xl">
         {/* Back */}
         <Link
-          href="/"
+          href="/hifi"
           className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-8"
         >
           ← Zurück zur Sammlung
