@@ -15,6 +15,7 @@
   "build": {
     "appId": "de.thowl.radio-research-tool",
     "productName": "Radio Research Tool",
+    "npmRebuild": false,
     "files": [
       "electron/**/*",
       "package.json"
