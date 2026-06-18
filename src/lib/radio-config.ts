@@ -79,20 +79,125 @@ export function saveFeeds(feeds: RadioFeed[]): void {
   try { localStorage.setItem(FEEDS_KEY, JSON.stringify(feeds)); } catch { /* ignore */ }
 }
 
-// ── Anthropic-API-Key (nur lokal gespeichert) ────────────────────────────────
-// Wird per Header an den lokalen Server gereicht; verlässt das Gerät nicht.
-export function loadApiKey(): string {
+// ── KI-Zugänge (Profile, nur lokal gespeichert) ──────────────────────────────
+// Mehrere benannte Zugänge mit Anbieter + Key + Modell. Der aktive Zugang
+// erzeugt die Sprechtexte; im Betrieb umschaltbar. Keys verlassen das Gerät
+// nicht — sie werden nur per Header an den lokalen Server gereicht.
+
+export type AiProvider = "anthropic" | "openai";
+
+export type AiProfile = {
+  id: string;
+  label: string;
+  provider: AiProvider;
+  key: string;
+  model: string;
+};
+
+export const PROVIDER_LABELS: Record<AiProvider, string> = {
+  anthropic: "Anthropic (Claude)",
+  openai: "OpenAI (GPT)",
+};
+
+export const DEFAULT_MODELS: Record<AiProvider, string> = {
+  anthropic: "claude-sonnet-4-6",
+  openai: "gpt-4o",
+};
+
+const PROFILES_KEY = "radio-ai-profiles-v2";
+const ACTIVE_KEY   = "radio-ai-active-v2";
+
+export function loadProfiles(): AiProfile[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PROFILES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .filter((p) => p && typeof p.key === "string")
+          .map((p) => ({
+            id: typeof p.id === "string" ? p.id : crypto.randomUUID(),
+            label: typeof p.label === "string" && p.label.trim() ? p.label : "Zugang",
+            provider: (p.provider === "openai" ? "openai" : "anthropic") as AiProvider,
+            key: p.key,
+            model: typeof p.model === "string" && p.model.trim()
+              ? p.model
+              : DEFAULT_MODELS[(p.provider === "openai" ? "openai" : "anthropic") as AiProvider],
+          }));
+      }
+    }
+    // Migration: alter Einzel-Key → ein Anthropic-Profil
+    const legacy = localStorage.getItem(API_KEY_KEY);
+    if (legacy && legacy.trim()) {
+      const migrated: AiProfile[] = [{
+        id: crypto.randomUUID(),
+        label: "Anthropic",
+        provider: "anthropic",
+        key: legacy.trim(),
+        model: DEFAULT_MODELS.anthropic,
+      }];
+      saveProfiles(migrated);
+      return migrated;
+    }
+  } catch { /* ignore */ }
+  return [];
+}
+
+export function saveProfiles(profiles: AiProfile[]): void {
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles)); } catch { /* ignore */ }
+}
+
+export function loadActiveId(): string {
   if (typeof window === "undefined") return "";
-  try { return localStorage.getItem(API_KEY_KEY) ?? ""; } catch { return ""; }
+  try { return localStorage.getItem(ACTIVE_KEY) ?? ""; } catch { return ""; }
 }
 
-export function saveApiKey(key: string): void {
-  try { localStorage.setItem(API_KEY_KEY, key.trim()); } catch { /* ignore */ }
+export function saveActiveId(id: string): void {
+  try { localStorage.setItem(ACTIVE_KEY, id); } catch { /* ignore */ }
 }
 
-// Header-Objekt für fetch-Aufrufe an KI-Routen.
-export function apiKeyHeader(): Record<string, string> {
-  const k = loadApiKey();
+// Aktives Profil (oder erstes vorhandenes als Fallback)
+export function getActiveProfile(): AiProfile | null {
+  const profiles = loadProfiles();
+  if (profiles.length === 0) return null;
+  const id = loadActiveId();
+  return profiles.find((p) => p.id === id) ?? profiles[0];
+}
+
+export function makeProfile(provider: AiProvider, label: string, key: string, model?: string): AiProfile {
+  return {
+    id: crypto.randomUUID(),
+    label: label.trim() || PROVIDER_LABELS[provider],
+    provider,
+    key: key.trim(),
+    model: model?.trim() || DEFAULT_MODELS[provider],
+  };
+}
+
+// Header für die Text-Erzeugung (aktiver Zugang).
+export function aiHeaders(): Record<string, string> {
+  const p = getActiveProfile();
+  if (!p || !p.key) return {};
+  return {
+    "x-ai-provider": p.provider,
+    "x-ai-key": p.key,
+    "x-ai-model": p.model,
+  };
+}
+
+// Header für die Feed-Suche: braucht zwingend Anthropic (Web-Suche).
+// Nimmt den aktiven Zugang, wenn Anthropic, sonst das erste Anthropic-Profil.
+export function anthropicKeyForDiscovery(): string {
+  const profiles = loadProfiles();
+  const active = getActiveProfile();
+  if (active && active.provider === "anthropic" && active.key) return active.key;
+  const anth = profiles.find((p) => p.provider === "anthropic" && p.key);
+  return anth ? anth.key : "";
+}
+
+export function discoveryHeader(): Record<string, string> {
+  const k = anthropicKeyForDiscovery();
   return k ? { "x-anthropic-key": k } : {};
 }
 

@@ -27,3 +27,33 @@ export function getAnthropicApiKeyFromRequest(req: Request): string {
   if (headerKey) return headerKey;
   return getAnthropicApiKey();
 }
+
+// ── Auswählbarer KI-Anbieter (Text-Erzeugung) ─────────────────────────────────
+// Der aktive Zugang aus der App wird per Header übergeben:
+//   x-ai-provider (anthropic|openai), x-ai-key, x-ai-model
+export type AiProviderConfig = {
+  provider: "anthropic" | "openai";
+  key: string;
+  model: string;
+};
+
+export function getAiProviderFromRequest(req: Request): AiProviderConfig {
+  const provider = req.headers.get("x-ai-provider")?.trim() === "openai" ? "openai" : "anthropic";
+  const headerKey = req.headers.get("x-ai-key")?.trim();
+  const model = req.headers.get("x-ai-model")?.trim()
+    || (provider === "openai" ? "gpt-4o" : "claude-sonnet-4-6");
+
+  // Key: Header zuerst; für Anthropic Fallback auf Env/.env.local (Dev).
+  let key = headerKey ?? "";
+  if (!key && provider === "anthropic") {
+    try { key = getAnthropicApiKey(); } catch { key = ""; }
+  }
+  if (!key) {
+    throw new Error(
+      provider === "openai"
+        ? "Kein OpenAI-API-Key hinterlegt (Menü → KI-Zugänge)."
+        : "Kein Anthropic-API-Key hinterlegt (Menü → KI-Zugänge)."
+    );
+  }
+  return { provider, key, model };
+}

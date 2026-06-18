@@ -6,7 +6,7 @@ import type { RadioFeed } from "@/lib/radio-config";
 type Props = {
   region: string;
   feeds: RadioFeed[];
-  hasApiKey: boolean;
+  activeProfileLabel: string | null;
   onChangeRegion: () => void;
   onEditFeeds: () => void;
   onDiscoverFeeds: () => void;
@@ -28,7 +28,7 @@ function Divider() {
   return <div className="py-1"><div className="border-t border-zinc-800/70" /></div>;
 }
 
-export default function RadioHamburgerMenu({ region, feeds, hasApiKey, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
+export default function RadioHamburgerMenu({ region, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const run = (fn: () => void) => { close(); fn(); };
@@ -133,9 +133,9 @@ export default function RadioHamburgerMenu({ region, feeds, hasApiKey, onChangeR
                          text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
             >
               <span className="w-5 flex-shrink-0 text-center text-zinc-600">🔑</span>
-              <span className="flex-1 text-left">KI-Zugang (API-Key)</span>
-              <span className={`text-xs ${hasApiKey ? "text-emerald-500/70" : "text-amber-500"}`}>
-                {hasApiKey ? "gesetzt" : "fehlt"}
+              <span className="flex-1 text-left">KI-Zugänge</span>
+              <span className={`text-xs truncate max-w-[45%] ${activeProfileLabel ? "text-emerald-500/70" : "text-amber-500"}`}>
+                {activeProfileLabel ?? "fehlt"}
               </span>
             </button>
           </Section>

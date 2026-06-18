@@ -1,26 +1,19 @@
 import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
+import { getAiProviderFromRequest, type AiProviderConfig } from "@/lib/get-api-key";
 
-const MODEL = "claude-sonnet-4-6";
-const AI_TIMEOUT_MS = 30_000;
+const AI_TIMEOUT_MS = 45_000;
 
-// ── Retry helper ─────────────────────────────────────────────────────────────
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  maxAttempts = 4,
-  baseDelayMs = 15_000
-): Promise<T> {
+// ── Retry helper (anbieterübergreifend: 529/429) ──────────────────────────────
+async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelayMs = 12_000): Promise<T> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (err) {
-      const isOverloaded = err instanceof Anthropic.APIError && err.status === 529;
-      const isRateLimit  = err instanceof Anthropic.APIError && err.status === 429;
-      if ((isOverloaded || isRateLimit) && attempt < maxAttempts) {
-        const delay = baseDelayMs * attempt;
-        console.warn(`[radio-research] API ${(err as InstanceType<typeof Anthropic.APIError>).status} – Versuch ${attempt}/${maxAttempts}. Warte ${delay / 1000}s…`);
-        await new Promise((r) => setTimeout(r, delay));
+      const status = (err as { status?: number })?.status ?? 0;
+      if ((status === 529 || status === 429) && attempt < maxAttempts) {
+        await new Promise((r) => setTimeout(r, baseDelayMs * attempt));
         continue;
       }
       throw err;
@@ -58,16 +51,40 @@ const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
 - Präsens oder Perfekt, nie Futur für Vergangenes
 - Neutral und sachlich`;
 
+// ── Modellaufruf je Anbieter → liefert reinen Text ────────────────────────────
+async function callModel(cfg: AiProviderConfig, system: string, prompt: string): Promise<string> {
+  if (cfg.provider === "openai") {
+    const client = new OpenAI({ apiKey: cfg.key });
+    const res = await withRetry(() =>
+      client.chat.completions.create({
+        model: cfg.model,
+        max_tokens: 2000,
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: prompt },
+        ],
+      })
+    );
+    return res.choices[0]?.message?.content ?? "";
+  }
 
-// ════════════════════════════════════════════════════════════════════════════
-// MODE A: RSS-only
-//   Ranking & Kategorisierung: algorithmisch im Client (kein API-Call)
-//   Dieser Schritt: Sprechtext nur für übergebene Top-Items
-// ════════════════════════════════════════════════════════════════════════════
+  // anthropic (Default)
+  const client = new Anthropic({ apiKey: cfg.key });
+  const res = await withRetry(() =>
+    client.messages.create({
+      model: cfg.model,
+      max_tokens: 2000,
+      system,
+      messages: [{ role: "user", content: prompt }],
+    })
+  );
+  const block = res.content.find((b) => b.type === "text");
+  return block?.type === "text" ? block.text : "";
+}
 
-// Sprechtexte für übergebene Items generieren
-async function rssStep2GenerateTexts(
-  client: Anthropic,
+// ── Sprechtexte für übergebene Items generieren ───────────────────────────────
+async function generateTexts(
+  cfg: AiProviderConfig,
   items: Array<{ category: string; rank: number; headline: string; sources: string[] }>
 ): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
 
@@ -89,19 +106,12 @@ Format:
   ...
 ]`;
 
-  const messages: Anthropic.Messages.MessageParam[] = [{ role: "user", content: prompt }];
-
-  const response = await withRetry(() =>
-    client.messages.create({ model: MODEL, max_tokens: 2000, system, messages })
-  );
-
-  const block = response.content.find((b) => b.type === "text");
-  if (!block || block.type !== "text") return [];
+  const text = await callModel(cfg, system, prompt);
+  if (!text) return [];
 
   // Robustes Parsing: JSON-Array aus dem Text extrahieren
-  const text = block.text;
   const stripped = text.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
-  const arrMatch = (stripped.match(/\[[\s\S]*\]/) ?? text.match(/\[[\s\S]*\]/));
+  const arrMatch = stripped.match(/\[[\s\S]*\]/) ?? text.match(/\[[\s\S]*\]/);
   if (!arrMatch) return [];
   try {
     return JSON.parse(arrMatch[0]);
@@ -121,7 +131,7 @@ export async function POST(req: NextRequest) {
       itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[] }>;
     } = await req.json();
 
-    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
+    const cfg = getAiProviderFromRequest(req);
 
     const timeoutPromise = new Promise<never>((_, reject) =>
       setTimeout(() => reject(new Error("TIMEOUT")), AI_TIMEOUT_MS)
@@ -129,7 +139,7 @@ export async function POST(req: NextRequest) {
 
     const researchPromise = (async () => {
       if (step === "texts") {
-        const texts = await rssStep2GenerateTexts(client, itemsForText);
+        const texts = await generateTexts(cfg, itemsForText);
         return NextResponse.json({ texts, step: "texts" });
       }
       return NextResponse.json({ error: "Unbekannter step" }, { status: 400 });
@@ -139,15 +149,15 @@ export async function POST(req: NextRequest) {
 
   } catch (err) {
     const isTimeout    = err instanceof Error && err.message === "TIMEOUT";
-    const isOverloaded = err instanceof Anthropic.APIError && err.status === 529;
-    const rawPreview   = (err as { rawPreview?: string }).rawPreview;
+    const status       = (err as { status?: number })?.status ?? 0;
+    const isOverloaded = status === 529;
     const message = isTimeout
       ? `Zeitüberschreitung nach ${AI_TIMEOUT_MS / 1000}s. Bitte erneut versuchen.`
       : isOverloaded
       ? "Die KI-API ist überlastet (529). Bitte in 1–2 Minuten erneut versuchen."
       : err instanceof Error ? err.message : "Fehler bei der Recherche";
     return NextResponse.json(
-      { error: message, ...(rawPreview ? { rawPreview } : {}) },
+      { error: message },
       { status: isTimeout ? 504 : isOverloaded ? 503 : 500 }
     );
   }

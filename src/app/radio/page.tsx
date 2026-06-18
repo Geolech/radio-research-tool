@@ -9,15 +9,23 @@ import RadioHamburgerMenu from "@/components/RadioHamburgerMenu";
 import {
   type RadioFeed,
   type FeedCategory,
+  type AiProfile,
+  type AiProvider,
   DEFAULT_REGION,
+  PROVIDER_LABELS,
+  DEFAULT_MODELS,
   loadRegion,
   saveRegion,
   loadFeeds,
   saveFeeds,
   makeFeed,
-  loadApiKey,
-  saveApiKey,
-  apiKeyHeader,
+  loadProfiles,
+  saveProfiles,
+  saveActiveId,
+  getActiveProfile,
+  makeProfile,
+  aiHeaders,
+  discoveryHeader,
 } from "@/lib/radio-config";
 import type { DiscoveredFeed } from "@/app/api/discover-feeds/route";
 
@@ -547,56 +555,177 @@ function RegionModal({ region, onSave, onClose }: { region: string; onSave: (r: 
   );
 }
 
-// ── KI-Zugang (API-Key) ──────────────────────────────────────────────────────
+// ── KI-Zugänge verwalten (mehrere Anbieter) ───────────────────────────────────
 
-function ApiKeyModal({ onClose, onSaved }: { onClose: () => void; onSaved: (hasKey: boolean) => void }) {
-  const [value, setValue] = useState(() => loadApiKey());
-  const [reveal, setReveal] = useState(false);
+function AiAccessModal({
+  profiles,
+  activeId,
+  onSave,
+  onClose,
+}: {
+  profiles: AiProfile[];
+  activeId: string;
+  onSave: (profiles: AiProfile[], activeId: string) => void;
+  onClose: () => void;
+}) {
+  const [list, setList] = useState<AiProfile[]>(() => profiles.map((p) => ({ ...p })));
+  const [active, setActive] = useState(activeId || (profiles[0]?.id ?? ""));
+  const [reveal, setReveal] = useState<Set<string>>(new Set());
+
+  // Neuer Zugang
+  const [newProvider, setNewProvider] = useState<AiProvider>("openai");
+  const [newLabel, setNewLabel] = useState("");
+  const [newKey, setNewKey] = useState("");
+  const [newModel, setNewModel] = useState("");
+
+  function update(id: string, patch: Partial<AiProfile>) {
+    setList((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  }
+  function remove(id: string) {
+    setList((prev) => prev.filter((p) => p.id !== id));
+    if (active === id) setActive("");
+  }
+  function add() {
+    if (!newKey.trim()) return;
+    const p = makeProfile(newProvider, newLabel, newKey, newModel);
+    setList((prev) => [...prev, p]);
+    if (!active) setActive(p.id);
+    setNewLabel(""); setNewKey(""); setNewModel("");
+  }
+  function toggleReveal(id: string) {
+    setReveal((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+
+  const hasAnthropic = list.some((p) => p.provider === "anthropic" && p.key.trim());
+
   return (
     <Modal
-      title="KI-Zugang (Anthropic-API-Key)"
-      subtitle="Wird nur lokal auf diesem Gerät gespeichert."
+      title="KI-Zugänge"
+      subtitle="Mehrere Anbieter hinterlegen und den aktiven Zugang wählen. Keys bleiben lokal."
       onClose={onClose}
+      wide
       footer={
-        <div className="flex justify-between gap-2">
+        <div className="flex justify-end gap-2">
+          <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
           <button
-            onClick={() => { saveApiKey(""); onSaved(false); onClose(); }}
-            className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:text-red-400 transition-colors"
+            onClick={() => onSave(list, active || (list[0]?.id ?? ""))}
+            className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
           >
-            Key löschen
+            Speichern
           </button>
-          <div className="flex gap-2">
-            <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
-            <button
-              onClick={() => { saveApiKey(value); onSaved(!!value.trim()); onClose(); }}
-              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
-            >
-              Speichern
-            </button>
-          </div>
         </div>
       }
     >
-      <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">API-Key</label>
-      <div className="flex gap-2">
-        <input
-          type={reveal ? "text" : "password"}
-          value={value}
-          autoFocus
-          onChange={(e) => setValue(e.target.value)}
-          placeholder="sk-ant-…"
-          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
-        />
-        <button
-          onClick={() => setReveal((v) => !v)}
-          className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-xs text-zinc-400 hover:text-zinc-200 transition-colors"
-        >
-          {reveal ? "verbergen" : "zeigen"}
-        </button>
+      <div className="space-y-2">
+        {list.map((p) => {
+          const isActive = active === p.id;
+          return (
+            <div key={p.id} className={`rounded-lg border px-3 py-2.5 ${isActive ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-900"}`}>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => setActive(p.id)}
+                  title="Als aktiven Zugang wählen"
+                  className={`flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border text-[9px] ${
+                    isActive ? "border-amber-400 bg-amber-400 text-zinc-950" : "border-zinc-600"
+                  }`}
+                >
+                  {isActive ? "✓" : ""}
+                </button>
+                <input
+                  value={p.label}
+                  onChange={(e) => update(p.id, { label: e.target.value })}
+                  className="flex-1 min-w-0 rounded border border-transparent bg-transparent px-1 py-0.5 text-sm font-medium text-zinc-100 hover:border-zinc-700 focus:border-amber-500/50 focus:bg-zinc-800 focus:outline-none"
+                />
+                <select
+                  value={p.provider}
+                  onChange={(e) => update(p.id, { provider: e.target.value as AiProvider, model: DEFAULT_MODELS[e.target.value as AiProvider] })}
+                  className="flex-shrink-0 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 focus:outline-none"
+                >
+                  <option value="anthropic">Anthropic</option>
+                  <option value="openai">OpenAI</option>
+                </select>
+                <button onClick={() => remove(p.id)} title="Entfernen" className="flex-shrink-0 text-zinc-600 hover:text-red-400 transition-colors px-1">✕</button>
+              </div>
+              <div className="flex gap-2 pl-6">
+                <input
+                  type={reveal.has(p.id) ? "text" : "password"}
+                  value={p.key}
+                  onChange={(e) => update(p.id, { key: e.target.value })}
+                  placeholder={p.provider === "openai" ? "sk-…" : "sk-ant-…"}
+                  className="flex-1 min-w-0 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                />
+                <button onClick={() => toggleReveal(p.id)} className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 text-xs text-zinc-400 hover:text-zinc-200 transition-colors">
+                  {reveal.has(p.id) ? "verbergen" : "zeigen"}
+                </button>
+                <input
+                  value={p.model}
+                  onChange={(e) => update(p.id, { model: e.target.value })}
+                  placeholder="Modell"
+                  className="w-40 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                />
+              </div>
+            </div>
+          );
+        })}
+        {list.length === 0 && <p className="text-sm text-zinc-600 py-3 text-center">Noch kein Zugang hinterlegt — unten hinzufügen.</p>}
       </div>
-      <p className="mt-3 text-xs text-zinc-500 leading-relaxed">
-        Der Key wird für KI-Sprechtexte und die RSS-Quellen-Suche benötigt. Du erhältst ihn unter{" "}
-        <span className="text-amber-400">console.anthropic.com</span>. Es entstehen Kosten gemäß deinem Anthropic-Tarif.
+
+      {/* Neuer Zugang */}
+      <div className="mt-4 rounded-lg border border-dashed border-zinc-700 p-3">
+        <p className="text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Zugang hinzufügen</p>
+        <div className="flex gap-2 mb-2">
+          <select
+            value={newProvider}
+            onChange={(e) => setNewProvider(e.target.value as AiProvider)}
+            className="rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-200 focus:outline-none"
+          >
+            <option value="anthropic">Anthropic (Claude)</option>
+            <option value="openai">OpenAI (GPT)</option>
+          </select>
+          <input
+            value={newLabel}
+            onChange={(e) => setNewLabel(e.target.value)}
+            placeholder={`Name (z. B. „${newProvider === "openai" ? "OpenAI Redaktion" : "Anthropic privat"}")`}
+            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+          />
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="password"
+            value={newKey}
+            onChange={(e) => setNewKey(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+            placeholder={newProvider === "openai" ? "OpenAI-API-Key (sk-…)" : "Anthropic-API-Key (sk-ant-…)"}
+            className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+          />
+          <input
+            value={newModel}
+            onChange={(e) => setNewModel(e.target.value)}
+            placeholder={DEFAULT_MODELS[newProvider]}
+            className="w-40 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+          />
+          <button
+            onClick={add}
+            disabled={!newKey.trim()}
+            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 transition-colors"
+          >
+            + Hinzufügen
+          </button>
+        </div>
+      </div>
+
+      {!hasAnthropic && (
+        <p className="mt-3 text-xs text-amber-600/80 flex items-start gap-1.5">
+          <span className="flex-shrink-0 mt-0.5">⚠</span>
+          <span>Die RSS-Quellen-Suche nutzt Anthropics Web-Suche und benötigt einen Anthropic-Zugang. Ohne ihn funktioniert nur die Texterzeugung (z. B. mit OpenAI).</span>
+        </p>
+      )}
+      <p className="mt-2 text-xs text-zinc-600 leading-relaxed">
+        Keys gibt es unter <span className="text-amber-400">console.anthropic.com</span> bzw. <span className="text-amber-400">platform.openai.com</span>. Es entstehen Kosten gemäß deinem Tarif beim jeweiligen Anbieter.
       </p>
     </Modal>
   );
@@ -673,7 +802,7 @@ function FeedEditorModal({ feeds, onSave, onClose }: { feeds: RadioFeed[]; onSav
             <button onClick={() => remove(f.id)} title="Entfernen" className="flex-shrink-0 text-zinc-600 hover:text-red-400 transition-colors px-1">✕</button>
           </div>
         ))}
-        {list.length === 0 && <p className="text-sm text-zinc-600 py-4 text-center">Keine Quellen. Füge unten welche hinzu oder nutze „RSS-Quellen suchen".</p>}
+        {list.length === 0 && <p className="text-sm text-zinc-600 py-4 text-center">{"Keine Quellen. Füge unten welche hinzu oder nutze „RSS-Quellen suchen“."}</p>}
       </div>
 
       {/* Neu hinzufügen */}
@@ -733,7 +862,7 @@ function FeedDiscoveryModal({ region, onAdd, onClose }: { region: string; onAdd:
     try {
       const r = await fetch("/api/discover-feeds", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+        headers: { "Content-Type": "application/json", ...discoveryHeader() },
         body: JSON.stringify({ region }),
       });
       const data = await r.json();
@@ -866,7 +995,10 @@ export default function RadioResearchPage() {
 
   // Einstellungs-Modals
   const [modal, setModal] = useState<null | "region" | "feeds" | "discover" | "apikey">(null);
-  const [hasApiKey, setHasApiKey] = useState(true);
+
+  // KI-Zugänge (Profile) + aktiver Zugang
+  const [profiles, setProfiles] = useState<AiProfile[]>([]);
+  const [activeId, setActiveId] = useState("");
 
   // Zustand
   const [phase, setPhase] = useState<"idle" | "rss" | "texts" | "done" | "error">("idle");
@@ -899,14 +1031,31 @@ export default function RadioResearchPage() {
     } catch { /* ignore */ }
     setRegion(loadRegion());
     setFeeds(loadFeeds());
-    setHasApiKey(!!loadApiKey());
+    const ps = loadProfiles();
+    setProfiles(ps);
+    setActiveId(getActiveProfile()?.id ?? "");
   }, []);
+
+  const activeProfile = profiles.find((p) => p.id === activeId) ?? profiles[0] ?? null;
 
   // ── Config-Handler ─────────────────────────────────────────────────────────
   function handleSaveRegion(next: string) {
     const clean = next.trim() || DEFAULT_REGION;
     setRegion(clean);
     saveRegion(clean);
+  }
+
+  function handleSaveProfiles(next: AiProfile[], nextActive: string) {
+    setProfiles(next);
+    saveProfiles(next);
+    const valid = next.some((p) => p.id === nextActive) ? nextActive : (next[0]?.id ?? "");
+    setActiveId(valid);
+    saveActiveId(valid);
+  }
+
+  function handleSwitchActive(id: string) {
+    setActiveId(id);
+    saveActiveId(id);
   }
 
   function handleSaveFeeds(next: RadioFeed[]) {
@@ -996,7 +1145,7 @@ export default function RadioResearchPage() {
         }));
         const r = await fetch("/api/radio-research", {
           method: "POST",
-          headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+          headers: { "Content-Type": "application/json", ...aiHeaders() },
           body: JSON.stringify({ mode: "rss", step: "texts", itemsForText }),
         });
         const data = await r.json();
@@ -1030,7 +1179,7 @@ export default function RadioResearchPage() {
     try {
       const r = await fetch("/api/radio-research", {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...apiKeyHeader() },
+        headers: { "Content-Type": "application/json", ...aiHeaders() },
         body: JSON.stringify({
           mode: "rss",
           step: "texts",
@@ -1175,6 +1324,41 @@ export default function RadioResearchPage() {
 
             {/* Aktions-Button */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 mb-4">
+              {/* KI-Zugang: aktiver Anbieter, im Betrieb umschaltbar */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-xs text-zinc-500 flex-shrink-0">KI</span>
+                {profiles.length > 0 ? (
+                  <select
+                    value={activeId}
+                    onChange={(e) => handleSwitchActive(e.target.value)}
+                    disabled={isRunning}
+                    className="flex-1 min-w-0 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-200 focus:border-amber-500/50 focus:outline-none disabled:opacity-40"
+                  >
+                    {profiles.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label} · {PROVIDER_LABELS[p.provider]}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <button
+                    onClick={() => setModal("apikey")}
+                    className="flex-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-400 hover:bg-amber-500/20 transition-colors"
+                  >
+                    KI-Zugang einrichten →
+                  </button>
+                )}
+                {profiles.length > 0 && (
+                  <button
+                    onClick={() => setModal("apikey")}
+                    title="KI-Zugänge verwalten"
+                    className="flex-shrink-0 text-xs text-zinc-500 hover:text-amber-400 transition-colors"
+                  >
+                    ⚙
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => handleResearch()}
                 disabled={isRunning}
@@ -1363,7 +1547,7 @@ export default function RadioResearchPage() {
       <RadioHamburgerMenu
         region={region}
         feeds={feeds}
-        hasApiKey={hasApiKey}
+        activeProfileLabel={activeProfile?.label ?? null}
         onChangeRegion={() => setModal("region")}
         onEditFeeds={() => setModal("feeds")}
         onDiscoverFeeds={() => setModal("discover")}
@@ -1393,9 +1577,11 @@ export default function RadioResearchPage() {
         />
       )}
       {modal === "apikey" && (
-        <ApiKeyModal
+        <AiAccessModal
+          profiles={profiles}
+          activeId={activeId}
+          onSave={(ps, act) => { handleSaveProfiles(ps, act); setModal(null); }}
           onClose={() => setModal(null)}
-          onSaved={(has) => setHasApiKey(has)}
         />
       )}
     </div>
