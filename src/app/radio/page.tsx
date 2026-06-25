@@ -14,6 +14,7 @@ import {
   DEFAULT_REGION,
   PROVIDER_LABELS,
   DEFAULT_MODELS,
+  CUSTOM_PRESETS,
   loadRegion,
   saveRegion,
   loadFeeds,
@@ -577,6 +578,7 @@ function AiAccessModal({
   const [newLabel, setNewLabel] = useState("");
   const [newKey, setNewKey] = useState("");
   const [newModel, setNewModel] = useState("");
+  const [newBaseUrl, setNewBaseUrl] = useState("");
 
   function update(id: string, patch: Partial<AiProfile>) {
     setList((prev) => prev.map((p) => (p.id === id ? { ...p, ...patch } : p)));
@@ -585,12 +587,17 @@ function AiAccessModal({
     setList((prev) => prev.filter((p) => p.id !== id));
     if (active === id) setActive("");
   }
+  // custom: braucht Base-URL + Modell (Key optional); sonst: Key
+  const canAdd = newProvider === "custom"
+    ? !!(newBaseUrl.trim() && newModel.trim())
+    : !!newKey.trim();
+
   function add() {
-    if (!newKey.trim()) return;
-    const p = makeProfile(newProvider, newLabel, newKey, newModel);
+    if (!canAdd) return;
+    const p = makeProfile(newProvider, newLabel, newKey, newModel, newBaseUrl);
     setList((prev) => [...prev, p]);
     if (!active) setActive(p.id);
-    setNewLabel(""); setNewKey(""); setNewModel("");
+    setNewLabel(""); setNewKey(""); setNewModel(""); setNewBaseUrl("");
   }
   function toggleReveal(id: string) {
     setReveal((prev) => {
@@ -642,20 +649,31 @@ function AiAccessModal({
                 />
                 <select
                   value={p.provider}
-                  onChange={(e) => update(p.id, { provider: e.target.value as AiProvider, model: DEFAULT_MODELS[e.target.value as AiProvider] })}
+                  onChange={(e) => update(p.id, { provider: e.target.value as AiProvider, model: DEFAULT_MODELS[e.target.value as AiProvider] || p.model })}
                   className="flex-shrink-0 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 focus:outline-none"
                 >
                   <option value="anthropic">Anthropic</option>
                   <option value="openai">OpenAI</option>
+                  <option value="custom">Custom</option>
                 </select>
                 <button onClick={() => remove(p.id)} title="Entfernen" className="flex-shrink-0 text-zinc-600 hover:text-red-400 transition-colors px-1">✕</button>
               </div>
+              {p.provider === "custom" && (
+                <div className="pl-6 mb-2">
+                  <input
+                    value={p.baseUrl ?? ""}
+                    onChange={(e) => update(p.id, { baseUrl: e.target.value })}
+                    placeholder="Endpoint-URL (z. B. http://localhost:11434/v1)"
+                    className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+                  />
+                </div>
+              )}
               <div className="flex gap-2 pl-6">
                 <input
                   type={reveal.has(p.id) ? "text" : "password"}
                   value={p.key}
                   onChange={(e) => update(p.id, { key: e.target.value })}
-                  placeholder={p.provider === "openai" ? "sk-…" : "sk-ant-…"}
+                  placeholder={p.provider === "openai" ? "sk-…" : p.provider === "custom" ? "API-Key (optional bei lokalem LLM)" : "sk-ant-…"}
                   className="flex-1 min-w-0 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
                 />
                 <button onClick={() => toggleReveal(p.id)} className="rounded-lg border border-zinc-700 bg-zinc-800 px-2 text-xs text-zinc-400 hover:text-zinc-200 transition-colors">
@@ -680,37 +698,62 @@ function AiAccessModal({
         <div className="flex gap-2 mb-2">
           <select
             value={newProvider}
-            onChange={(e) => setNewProvider(e.target.value as AiProvider)}
+            onChange={(e) => { const v = e.target.value as AiProvider; setNewProvider(v); if (v !== "custom") setNewModel(""); }}
             className="rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-200 focus:outline-none"
           >
             <option value="anthropic">Anthropic (Claude)</option>
             <option value="openai">OpenAI (GPT)</option>
+            <option value="custom">OpenAI-kompatibel (Custom)</option>
           </select>
           <input
             value={newLabel}
             onChange={(e) => setNewLabel(e.target.value)}
-            placeholder={`Name (z. B. „${newProvider === "openai" ? "OpenAI Redaktion" : "Anthropic privat"}")`}
+            placeholder={`Name (z. B. „${newProvider === "openai" ? "OpenAI Redaktion" : newProvider === "custom" ? "Infomaniak / Lokales LLM" : "Anthropic privat"}")`}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
           />
         </div>
+
+        {newProvider === "custom" && (
+          <div className="mb-2 space-y-2">
+            <input
+              value={newBaseUrl}
+              onChange={(e) => setNewBaseUrl(e.target.value)}
+              placeholder="Endpoint-URL (OpenAI-kompatibel)"
+              className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+            />
+            <div className="flex flex-wrap gap-1.5">
+              <span className="text-xs text-zinc-600 self-center">Vorlagen:</span>
+              {CUSTOM_PRESETS.map((preset) => (
+                <button
+                  key={preset.label}
+                  onClick={() => { setNewBaseUrl(preset.baseUrl); if (!newModel.trim()) setNewModel(preset.model); }}
+                  className="rounded-full border border-zinc-700 bg-zinc-800 px-2.5 py-1 text-xs text-zinc-400 hover:border-amber-500/50 hover:text-amber-400 transition-colors"
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-2">
           <input
             type="password"
             value={newKey}
             onChange={(e) => setNewKey(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && add()}
-            placeholder={newProvider === "openai" ? "OpenAI-API-Key (sk-…)" : "Anthropic-API-Key (sk-ant-…)"}
+            placeholder={newProvider === "openai" ? "OpenAI-API-Key (sk-…)" : newProvider === "custom" ? "API-Key (optional bei lokalem LLM)" : "Anthropic-API-Key (sk-ant-…)"}
             className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
           />
           <input
             value={newModel}
             onChange={(e) => setNewModel(e.target.value)}
-            placeholder={DEFAULT_MODELS[newProvider]}
+            placeholder={DEFAULT_MODELS[newProvider] || "Modellname"}
             className="w-40 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-2 text-sm text-zinc-300 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
           />
           <button
             onClick={add}
-            disabled={!newKey.trim()}
+            disabled={!canAdd}
             className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 transition-colors"
           >
             + Hinzufügen

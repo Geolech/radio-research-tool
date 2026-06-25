@@ -30,24 +30,37 @@ export function getAnthropicApiKeyFromRequest(req: Request): string {
 
 // ── Auswählbarer KI-Anbieter (Text-Erzeugung) ─────────────────────────────────
 // Der aktive Zugang aus der App wird per Header übergeben:
-//   x-ai-provider (anthropic|openai), x-ai-key, x-ai-model
+//   x-ai-provider (anthropic|openai|custom), x-ai-key, x-ai-model, x-ai-base-url
+// "custom" = beliebiger OpenAI-kompatibler Endpoint (Infomaniak, lokales LLM …).
 export type AiProviderConfig = {
-  provider: "anthropic" | "openai";
+  provider: "anthropic" | "openai" | "custom";
   key: string;
   model: string;
+  baseUrl?: string;
 };
 
 export function getAiProviderFromRequest(req: Request): AiProviderConfig {
-  const provider = req.headers.get("x-ai-provider")?.trim() === "openai" ? "openai" : "anthropic";
+  const raw = req.headers.get("x-ai-provider")?.trim();
+  const provider: AiProviderConfig["provider"] =
+    raw === "openai" ? "openai" : raw === "custom" ? "custom" : "anthropic";
   const headerKey = req.headers.get("x-ai-key")?.trim();
+  const baseUrl = req.headers.get("x-ai-base-url")?.trim() || undefined;
   const model = req.headers.get("x-ai-model")?.trim()
-    || (provider === "openai" ? "gpt-4o" : "claude-sonnet-4-6");
+    || (provider === "anthropic" ? "claude-sonnet-4-6" : provider === "openai" ? "gpt-4o" : "");
 
   // Key: Header zuerst; für Anthropic Fallback auf Env/.env.local (Dev).
   let key = headerKey ?? "";
   if (!key && provider === "anthropic") {
     try { key = getAnthropicApiKey(); } catch { key = ""; }
   }
+
+  // custom: braucht zwingend eine Endpoint-URL; Key optional (lokale LLMs).
+  if (provider === "custom") {
+    if (!baseUrl) throw new Error("Kein Endpoint (Base-URL) für den Custom-Zugang hinterlegt (Menü → KI-Zugänge).");
+    if (!model)   throw new Error("Kein Modellname für den Custom-Zugang hinterlegt (Menü → KI-Zugänge).");
+    return { provider, key: key || "no-key", model, baseUrl };
+  }
+
   if (!key) {
     throw new Error(
       provider === "openai"

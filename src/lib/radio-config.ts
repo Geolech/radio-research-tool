@@ -84,7 +84,9 @@ export function saveFeeds(feeds: RadioFeed[]): void {
 // erzeugt die Sprechtexte; im Betrieb umschaltbar. Keys verlassen das Gerät
 // nicht — sie werden nur per Header an den lokalen Server gereicht.
 
-export type AiProvider = "anthropic" | "openai";
+// "custom" = beliebiger OpenAI-kompatibler Endpoint (Infomaniak, lokales LLM
+// wie Ollama/LM Studio/vLLM, Groq, Together …) mit frei wählbarer baseUrl.
+export type AiProvider = "anthropic" | "openai" | "custom";
 
 export type AiProfile = {
   id: string;
@@ -92,17 +94,29 @@ export type AiProfile = {
   provider: AiProvider;
   key: string;
   model: string;
+  baseUrl?: string; // nur für "custom"
 };
 
 export const PROVIDER_LABELS: Record<AiProvider, string> = {
   anthropic: "Anthropic (Claude)",
   openai: "OpenAI (GPT)",
+  custom: "OpenAI-kompatibel (Custom)",
 };
 
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
   anthropic: "claude-sonnet-4-6",
   openai: "gpt-4o",
+  custom: "",
 };
+
+const VALID_PROVIDERS: AiProvider[] = ["anthropic", "openai", "custom"];
+
+// Beispiel-Endpunkte als Hilfestellung im UI.
+export const CUSTOM_PRESETS: Array<{ label: string; baseUrl: string; model: string }> = [
+  { label: "Ollama (lokal)",   baseUrl: "http://localhost:11434/v1", model: "llama3.1" },
+  { label: "LM Studio (lokal)", baseUrl: "http://localhost:1234/v1",  model: "local-model" },
+  { label: "Infomaniak",        baseUrl: "https://api.infomaniak.com/1/ai/PRODUKT_ID/openai/v1", model: "mixtral" },
+];
 
 const PROFILES_KEY = "radio-ai-profiles-v2";
 const ACTIVE_KEY   = "radio-ai-active-v2";
@@ -116,15 +130,17 @@ export function loadProfiles(): AiProfile[] {
       if (Array.isArray(parsed)) {
         return parsed
           .filter((p) => p && typeof p.key === "string")
-          .map((p) => ({
-            id: typeof p.id === "string" ? p.id : crypto.randomUUID(),
-            label: typeof p.label === "string" && p.label.trim() ? p.label : "Zugang",
-            provider: (p.provider === "openai" ? "openai" : "anthropic") as AiProvider,
-            key: p.key,
-            model: typeof p.model === "string" && p.model.trim()
-              ? p.model
-              : DEFAULT_MODELS[(p.provider === "openai" ? "openai" : "anthropic") as AiProvider],
-          }));
+          .map((p) => {
+            const provider: AiProvider = VALID_PROVIDERS.includes(p.provider) ? p.provider : "anthropic";
+            return {
+              id: typeof p.id === "string" ? p.id : crypto.randomUUID(),
+              label: typeof p.label === "string" && p.label.trim() ? p.label : "Zugang",
+              provider,
+              key: p.key,
+              model: typeof p.model === "string" && p.model.trim() ? p.model : DEFAULT_MODELS[provider],
+              baseUrl: typeof p.baseUrl === "string" ? p.baseUrl : undefined,
+            };
+          });
       }
     }
     // Migration: alter Einzel-Key → ein Anthropic-Profil
@@ -165,25 +181,36 @@ export function getActiveProfile(): AiProfile | null {
   return profiles.find((p) => p.id === id) ?? profiles[0];
 }
 
-export function makeProfile(provider: AiProvider, label: string, key: string, model?: string): AiProfile {
+export function makeProfile(provider: AiProvider, label: string, key: string, model?: string, baseUrl?: string): AiProfile {
   return {
     id: crypto.randomUUID(),
     label: label.trim() || PROVIDER_LABELS[provider],
     provider,
     key: key.trim(),
     model: model?.trim() || DEFAULT_MODELS[provider],
+    baseUrl: provider === "custom" ? (baseUrl?.trim() || undefined) : undefined,
   };
+}
+
+// Ein Profil ist „nutzbar", wenn es einen Key hat — oder ein custom-Endpoint
+// (lokale LLMs brauchen oft keinen Key).
+export function profileUsable(p: AiProfile | null): boolean {
+  if (!p) return false;
+  if (p.provider === "custom") return !!(p.baseUrl && p.baseUrl.trim());
+  return !!p.key;
 }
 
 // Header für die Text-Erzeugung (aktiver Zugang).
 export function aiHeaders(): Record<string, string> {
   const p = getActiveProfile();
-  if (!p || !p.key) return {};
-  return {
+  if (!profileUsable(p) || !p) return {};
+  const h: Record<string, string> = {
     "x-ai-provider": p.provider,
-    "x-ai-key": p.key,
+    "x-ai-key": p.key || "",
     "x-ai-model": p.model,
   };
+  if (p.provider === "custom" && p.baseUrl) h["x-ai-base-url"] = p.baseUrl;
+  return h;
 }
 
 // Header für die Feed-Suche: braucht zwingend Anthropic (Web-Suche).

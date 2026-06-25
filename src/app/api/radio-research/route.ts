@@ -53,8 +53,12 @@ const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
 
 // ── Modellaufruf je Anbieter → liefert reinen Text ────────────────────────────
 async function callModel(cfg: AiProviderConfig, system: string, prompt: string): Promise<string> {
-  if (cfg.provider === "openai") {
-    const client = new OpenAI({ apiKey: cfg.key });
+  // OpenAI sowie jeder OpenAI-kompatible Custom-Endpoint (Infomaniak, lokales LLM …)
+  if (cfg.provider === "openai" || cfg.provider === "custom") {
+    const client = new OpenAI({
+      apiKey: cfg.key,
+      ...(cfg.provider === "custom" && cfg.baseUrl ? { baseURL: cfg.baseUrl } : {}),
+    });
     const res = await withRetry(() =>
       client.chat.completions.create({
         model: cfg.model,
