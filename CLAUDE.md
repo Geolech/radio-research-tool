@@ -1,5 +1,11 @@
 @AGENTS.md
 
+## Aktive Arbeitskopie
+
+Dieser Klon liegt unter `~/HiFiApp` (lokal, KEIN iCloud).
+Nicht parallel in der iCloud-Kopie unter `…/Claude HiFi App/hifi-app` editieren.
+`git push origin main` synchronisiert mit GitHub; Vercel deployt automatisch.
+
 ## Vault-Synchronisation — HiFi Bibliothek App
 
 Zu Beginn jeder Session: Lies zuerst:

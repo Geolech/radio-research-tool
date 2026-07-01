@@ -5,11 +5,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { HifiDevice, InventoryStatus, ANLAGE_LABELS } from "@/lib/types";
 
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const MonitorSpeakerIcon = (
+  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3.5" y="1" width="9" height="14" rx="1.5" />
+    <circle cx="8" cy="5"    r="1.5" />
+    <circle cx="8" cy="10.5" r="3"   />
+    <line x1="1" y1="15" x2="15" y2="1" />
+  </svg>
+);
+
 // ─── Status-Konfiguration ─────────────────────────────────────────────────────
 
 const STATUS_BUTTONS: {
   value: InventoryStatus;
-  icon: string;
+  icon: React.ReactNode;
   label: string;
   activeClass: string;
   inactiveClass: string;
@@ -18,12 +30,12 @@ const STATUS_BUTTONS: {
     value: "aktueller_bestand",
     icon: "✓",
     label: "Aktueller Bestand",
-    activeClass:   "bg-emerald-500 border-emerald-500 text-zinc-900",
-    inactiveClass: "border-zinc-700 text-zinc-600 hover:border-emerald-500/60 hover:text-emerald-500",
+    activeClass:   "bg-emerald-700 border-emerald-700 text-white",
+    inactiveClass: "border-zinc-700 text-zinc-600 hover:border-emerald-700/60 hover:text-emerald-600",
   },
   {
     value: "ehemaliger_bestand",
-    icon: "↩",
+    icon: MonitorSpeakerIcon,
     label: "Ehemaliger Bestand",
     activeClass:   "bg-zinc-500 border-zinc-500 text-zinc-900",
     inactiveClass: "border-zinc-700 text-zinc-600 hover:border-zinc-500/60 hover:text-zinc-400",
@@ -85,7 +97,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
     status === "aktueller_bestand"
       ? device.anlageLocation === "defekt"
         ? "bg-red-500/10 border-red-500/30 text-red-400"
-        : "bg-emerald-500/10 border-emerald-500/25 text-emerald-500"
+        : "bg-emerald-900/50 border-emerald-700/40 text-emerald-400"
       : status === "wunschgeraet"
         ? "bg-amber-500/10 border-amber-500/25 text-amber-400"
         : "bg-zinc-800 border-zinc-700 text-zinc-500";
@@ -116,7 +128,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
         <div className="p-4 pb-3">
           {/* Kategorie + Bestands-Badge */}
           <div className="flex items-start justify-between gap-2">
-            <span className="inline-block rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-400 border border-amber-500/20">
+            <span className="inline-block rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500 border border-amber-500/20">
               {device.category}
             </span>
             {badgeLabel && (

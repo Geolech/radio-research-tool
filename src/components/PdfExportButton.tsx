@@ -34,12 +34,17 @@ export default function PdfExportButton({ deviceCount }: { deviceCount: number }
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2.5 text-sm font-medium text-rose-400 hover:bg-rose-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/60 px-4 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         title={`DIN A5 PDF · Titelseite, Inhaltsverzeichnis, ${deviceCount} Geräte, Versicherungsübersicht`}
       >
         {loading
           ? <><span className="animate-spin inline-block">⟳</span> PDF wird erstellt …</>
-          : <>📄 Als PDF exportieren</>}
+          : <>
+              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 12h10M8 2v8M5 7l3 3 3-3" />
+              </svg>
+              PDF exportieren
+            </>}
       </button>
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>

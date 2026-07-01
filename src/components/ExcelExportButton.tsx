@@ -94,22 +94,23 @@ export default function ExcelExportButton({ devices }: ExcelExportButtonProps) {
     }
   }
 
-  const withPrices = devices.filter((d) => d.purchasePrice != null || d.currentValue != null).length;
-
   return (
-    <div className="flex items-center gap-3 flex-wrap">
-      <button
-        onClick={handleExport}
-        disabled={generating}
-        className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2.5 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
-      >
-        {generating ? <><span className="animate-spin">⟳</span> Erstelle …</> : <>📊 Als Excel exportieren</>}
-      </button>
-      <span className="text-xs text-zinc-600">
-        {withPrices > 0
-          ? `${withPrices} von ${devices.length} Geräten mit Preisangabe`
-          : `Noch keine Preise eingetragen – auf der Geräteseite ergänzen`}
-      </span>
-    </div>
+    <button
+      onClick={handleExport}
+      disabled={generating}
+      className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/60 px-4 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 transition-colors disabled:opacity-50"
+    >
+      {generating
+        ? <><span className="animate-spin">⟳</span> Erstelle …</>
+        : <>
+            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="2" width="12" height="12" rx="1.5" />
+              <line x1="5" y1="6" x2="11" y2="6" />
+              <line x1="5" y1="9" x2="11" y2="9" />
+              <line x1="5" y1="12" x2="8" y2="12" />
+            </svg>
+            Excel exportieren
+          </>}
+    </button>
   );
 }

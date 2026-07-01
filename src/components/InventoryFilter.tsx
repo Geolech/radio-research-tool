@@ -11,42 +11,26 @@ import { ANLAGE_LABELS } from "@/lib/types";
 type StatusFilter = InventoryStatus | "unassigned" | "all";
 type AnlageFilter = AnlageLocation | "all";
 
+const MonitorSpeakerIcon = (
+  <svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3.5" y="1" width="9" height="14" rx="1.5" />
+    <circle cx="8" cy="5"    r="1.5" />
+    <circle cx="8" cy="10.5" r="3"   />
+    <line x1="1" y1="15" x2="15" y2="1" />
+  </svg>
+);
+
 const STATUS_OPTIONS: {
   value: StatusFilter;
   label: string;
-  icon: string;
-  activeClass: string;
+  icon: React.ReactNode;
 }[] = [
-  {
-    value: "all",
-    label: "Alle",
-    icon: "",
-    activeClass: "border-zinc-400 bg-zinc-800 text-zinc-100",
-  },
-  {
-    value: "aktueller_bestand",
-    label: "Aktueller Bestand",
-    icon: "✓",
-    activeClass: "border-emerald-500/70 bg-emerald-500/15 text-emerald-400",
-  },
-  {
-    value: "ehemaliger_bestand",
-    label: "Ehemaliger Bestand",
-    icon: "↩",
-    activeClass: "border-zinc-500/70 bg-zinc-700/40 text-zinc-300",
-  },
-  {
-    value: "wunschgeraet",
-    label: "Wunschgerät",
-    icon: "★",
-    activeClass: "border-amber-500/70 bg-amber-500/15 text-amber-400",
-  },
-  {
-    value: "unassigned",
-    label: "Nicht zugeordnet",
-    icon: "○",
-    activeClass: "border-zinc-600 bg-zinc-800/60 text-zinc-400",
-  },
+  { value: "all",               label: "Alle",                icon: null },
+  { value: "aktueller_bestand", label: "Aktueller Bestand",   icon: "✓" },
+  { value: "ehemaliger_bestand",label: "Ehemaliger Bestand",  icon: MonitorSpeakerIcon },
+  { value: "wunschgeraet",      label: "Wunschgerät",         icon: "★" },
+  { value: "unassigned",        label: "Nicht zugeordnet",    icon: "○" },
 ];
 
 const ANLAGE_OPTIONS: { value: AnlageFilter; icon: string }[] = [
@@ -107,23 +91,17 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
             <button
               key={opt.value}
               onClick={() => handleStatusClick(opt.value)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-medium transition-all duration-150 ${
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                 active
-                  ? opt.activeClass
-                  : "border-zinc-800 bg-zinc-900/50 text-zinc-500 hover:border-zinc-700 hover:text-zinc-300"
+                  ? "border-zinc-400 bg-zinc-700 text-zinc-100"
+                  : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
               }`}
             >
-              {opt.icon && (
-                <span className={`text-[11px] ${active ? "" : "opacity-60"}`}>
-                  {opt.icon}
-                </span>
-              )}
+              {opt.icon != null && <span className="flex items-center text-[11px]">{opt.icon}</span>}
               {opt.label}
-              <span
-                className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  active ? "bg-white/10" : "bg-zinc-800 text-zinc-600"
-                }`}
-              >
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                active ? "bg-white/15 text-zinc-200" : "bg-zinc-900 text-zinc-600"
+              }`}>
                 {count}
               </span>
             </button>
@@ -133,31 +111,25 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
 
       {/* ── Anlage-Sub-Filter (nur bei "Aktueller Bestand") ──────────── */}
       {showAnlageFilter && (
-        <div className="mb-6 flex flex-wrap gap-2 pl-1 border-l-2 border-emerald-500/30">
+        <div className="mb-6 flex flex-wrap gap-2 pl-1 border-l-2 border-zinc-700">
           {ANLAGE_OPTIONS.map((opt) => {
             const count  = countAnlage(devices, opt.value);
             const active = anlageFilter === opt.value;
             const label  = opt.value === "all" ? "Alle" : ANLAGE_LABELS[opt.value as AnlageLocation];
-            const isDefekt = opt.value === "defekt";
-            const isLager  = opt.value === "lagerbestand";
             return (
               <button
                 key={opt.value}
                 onClick={() => setAnlageFilter(opt.value)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-medium transition-all duration-150 ${
+                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
                   active
-                    ? isDefekt
-                      ? "border-red-500/60 bg-red-500/10 text-red-400"
-                      : isLager
-                        ? "border-blue-500/40 bg-blue-500/10 text-blue-400"
-                        : "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-                    : "border-zinc-800 bg-zinc-900/30 text-zinc-600 hover:border-zinc-700 hover:text-zinc-400"
+                    ? "border-zinc-400 bg-zinc-700 text-zinc-100"
+                    : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
                 }`}
               >
                 <span className="text-[11px]">{opt.icon}</span>
                 {label}
-                <span className={`ml-0.5 rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  active ? "bg-white/10" : "bg-zinc-800 text-zinc-700"
+                <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
+                  active ? "bg-white/15 text-zinc-200" : "bg-zinc-900 text-zinc-600"
                 }`}>
                   {count}
                 </span>
