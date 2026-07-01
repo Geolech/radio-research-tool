@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 interface ReviewInput {
   title: string;
@@ -127,7 +127,7 @@ ${text}
     ].join(" | ");
 
     // ── 4. Call Claude ──────────────────────────────────────────────────────
-    const client = new Anthropic({ apiKey: getAnthropicApiKey() });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
 
     const systemPrompt = `Du bist ein sachlicher HiFi-Redakteur. Du erstellst Gerätebeschreibungen im Markdown-Format auf Basis bereitgestellter Testbericht-Texte.
 

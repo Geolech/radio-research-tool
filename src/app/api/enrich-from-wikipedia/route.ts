@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 const UA = "HifiCatalogApp/1.0 (educational project; contact via hifi-app)";
 
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
 
     // ── 2. Claude: extract description + specs from article text ──────────────
     // (No web search needed – article text is already provided)
-    const client = new Anthropic({ apiKey: getAnthropicApiKey(), timeout: 20000 });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req), timeout: 20000 });
 
     const langNote = articleLang === "en"
       ? "Der Text ist auf Englisch – bitte Beschreibung und Spezifikationen auf Deutsch ausgeben."

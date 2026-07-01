@@ -1,9 +1,10 @@
 import fs from "fs";
 import path from "path";
 import { cache } from "react";
-import { HifiDevice, InventoryStatus, AnlageLocation, ReceiptFile } from "./types";
+import { HifiDevice } from "./types";
 import overrides from "./devices-overrides.json";
 import { getSupabaseClient } from "./supabase";
+import { OverrideData, rowToOverride } from "./device-overrides";
 
 const CUSTOM_PATH = path.join(process.cwd(), "src/lib/devices-custom.json");
 const OVERRIDES_PATH = path.join(process.cwd(), "src/lib/devices-overrides.json");
@@ -218,21 +219,7 @@ export const devices: HifiDevice[] = [
   },
 ];
 
-type Overrides = Record<string, {
-  description?: string;
-  specs?: Record<string, string>;
-  imageUrl?: string;
-  officialImageUrl?: string;
-  officialImageAttribution?: string;
-  officialImagePageUrl?: string;
-  purchasePrice?: number | null;
-  currentValue?: number | null;
-  priceNote?: string | null;
-  inventoryStatus?: InventoryStatus | null;
-  anlageLocation?: AnlageLocation | null;
-  receipts?: ReceiptFile[];
-  userNotes?: string;
-}>;
+type Overrides = Record<string, OverrideData>;
 const _overrides = overrides as Overrides;
 
 function applyOverride(d: HifiDevice, o: Overrides[string] | undefined): HifiDevice {
@@ -246,25 +233,6 @@ export const devicesWithOverrides: HifiDevice[] = devices.map((d) =>
 );
 
 // ── Supabase row → TypeScript ────────────────────────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rowToOverride(row: any): Overrides[string] {
-  return {
-    ...(row.description        !== null ? { description:              row.description }        : {}),
-    ...(row.specs              !== null ? { specs:                    row.specs }               : {}),
-    ...(row.image_url          !== null ? { imageUrl:                 row.image_url }           : {}),
-    ...(row.official_image_url !== null ? { officialImageUrl:         row.official_image_url }  : {}),
-    ...(row.official_image_attribution !== null ? { officialImageAttribution: row.official_image_attribution } : {}),
-    ...(row.official_image_page_url    !== null ? { officialImagePageUrl:     row.official_image_page_url }    : {}),
-    ...(row.purchase_price     !== null ? { purchasePrice:            row.purchase_price }      : {}),
-    ...(row.current_value      !== null ? { currentValue:             row.current_value }       : {}),
-    ...(row.price_note         !== null ? { priceNote:                row.price_note }          : {}),
-    ...(row.inventory_status   !== null ? { inventoryStatus:  row.inventory_status  as InventoryStatus } : {}),
-    ...(row.anlage_location    !== null ? { anlageLocation:   row.anlage_location   as AnlageLocation }  : {}),
-    ...(row.receipts           !== null ? { receipts:                 row.receipts as ReceiptFile[] }     : {}),
-    ...(row.user_notes         !== null ? { userNotes:                row.user_notes }          : {}),
-  };
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function rowToDevice(row: any): HifiDevice {

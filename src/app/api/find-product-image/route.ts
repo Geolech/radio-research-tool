@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 export const maxDuration = 30; // 30s max for this route
 
@@ -109,8 +109,8 @@ async function searchWikimediaCommons(brand: string, model: string): Promise<Off
 
 // ─── Phase 2: Claude web search for press/manufacturer images ─────────────────
 
-async function searchPressImage(brand: string, model: string): Promise<OfficialImage | null> {
-  const client = new Anthropic({ apiKey: getAnthropicApiKey(), timeout: 20000 });
+async function searchPressImage(brand: string, model: string, apiKey: string): Promise<OfficialImage | null> {
+  const client = new Anthropic({ apiKey, timeout: 20000 });
 
   const messages: Anthropic.Messages.MessageParam[] = [
     {
@@ -212,7 +212,8 @@ export async function POST(req: NextRequest) {
     console.log("[find-product-image] Wikimedia miss → Claude web search");
 
     // Phase 2: Claude web search for manufacturer press image
-    const pressResult = await searchPressImage(brand, model);
+    // Key erst hier auflösen — Phase 1 (Wikimedia) kommt ohne KI-Key aus.
+    const pressResult = await searchPressImage(brand, model, getAnthropicApiKeyFromRequest(req));
     if (pressResult) {
       console.log("[find-product-image] Press image found:", pressResult.url);
       return NextResponse.json({ image: pressResult });

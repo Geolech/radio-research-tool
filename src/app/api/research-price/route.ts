@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 export const maxDuration = 30;
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "brand und model erforderlich" }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey: getAnthropicApiKey(), timeout: 25000 });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req), timeout: 25000 });
 
     const messages: Anthropic.Messages.MessageParam[] = [
       {

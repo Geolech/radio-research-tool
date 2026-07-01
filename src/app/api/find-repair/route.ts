@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 export interface RepairShop {
   name: string;
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "brand und location erforderlich" }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey: getAnthropicApiKey() });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
 
     // ── Phase 1: Modellwissen (kein Web-Aufruf) ───────────────────────────
     if (!forceWeb) {

@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { NextRequest, NextResponse } from "next/server";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 const MODEL = "claude-sonnet-4-6";
 const TOOLS = [{ type: "web_search_20250305" as const, name: "web_search" as const }];
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "brand und model erforderlich" }, { status: 400 });
     }
 
-    const client = new Anthropic({ apiKey: getAnthropicApiKey() });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
 
     // ── Phase 1: Modellwissen ────────────────────────────────────────────
     if (!forceWeb) {

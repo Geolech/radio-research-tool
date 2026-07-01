@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
 import path from "path";
-import { getAnthropicApiKey } from "@/lib/get-api-key";
+import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
 export interface EbayListing {
   title: string;
@@ -33,7 +33,7 @@ export interface DevicePricesEntry {
 export async function POST(req: Request) {
   try {
     const { id, brand, model } = await req.json();
-    const client = new Anthropic({ apiKey: getAnthropicApiKey() });
+    const client = new Anthropic({ apiKey: getAnthropicApiKeyFromRequest(req) });
 
     const messages: Anthropic.Messages.MessageParam[] = [
       {
