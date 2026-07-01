@@ -103,7 +103,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
         : "bg-zinc-800 border-zinc-700 text-zinc-500";
 
   return (
-    <Link href={`/devices/${device.id}`} className="group block">
+    <Link href={`/hifi/devices/${device.id}`} className="group block">
       <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 transition-all duration-300 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10">
 
         {/* Bild */}

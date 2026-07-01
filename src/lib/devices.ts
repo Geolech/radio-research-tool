@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { cache } from "react";
 import { HifiDevice, InventoryStatus, AnlageLocation, ReceiptFile } from "./types";
 import overrides from "./devices-overrides.json";
 import { getSupabaseClient } from "./supabase";
@@ -298,8 +299,11 @@ function getAllDevicesWithOverridesJSON(): HifiDevice[] {
 
 // ── Öffentliche async-API ────────────────────────────────────────────────────
 
+// `cache()` dedupliziert Aufrufe innerhalb eines Requests: Layout (Menü) und
+// Page rufen dieselbe Funktion auf, lösen aber nur eine Supabase-Abfrage aus.
+
 /** Alle Geräte (hardcodiert + benutzerdefiniert), ohne Overrides */
-export async function getAllDevices(): Promise<HifiDevice[]> {
+export const getAllDevices = cache(async function getAllDevices(): Promise<HifiDevice[]> {
   const sb = getSupabaseClient();
   if (sb) {
     try {
@@ -311,10 +315,10 @@ export async function getAllDevices(): Promise<HifiDevice[]> {
     }
   }
   return getAllDevicesJSON();
-}
+});
 
 /** Alle Geräte mit angewendeten Overrides */
-export async function getAllDevicesWithOverrides(): Promise<HifiDevice[]> {
+export const getAllDevicesWithOverrides = cache(async function getAllDevicesWithOverrides(): Promise<HifiDevice[]> {
   const sb = getSupabaseClient();
   if (sb) {
     try {
@@ -338,4 +342,4 @@ export async function getAllDevicesWithOverrides(): Promise<HifiDevice[]> {
     }
   }
   return getAllDevicesWithOverridesJSON();
-}
+});
