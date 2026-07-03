@@ -30,9 +30,13 @@ export default async function RootLayout({
   return (
     <html
       lang="de"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* suppressHydrationWarning: toleriert DOM-Injektionen von Browser-
+          Erweiterungen (z. B. Synology Photos), die sonst im Dev-Modus die
+          Hydration app-weit brechen und alle Buttons tot erscheinen lassen. */}
+      <body suppressHydrationWarning className="min-h-full flex flex-col">
         {children}
         <HamburgerMenu devices={devices} />
       </body>
