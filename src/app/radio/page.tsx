@@ -12,11 +12,14 @@ import {
   type AiProfile,
   type AiProvider,
   DEFAULT_REGION,
+  DEFAULT_STATION,
   PROVIDER_LABELS,
   DEFAULT_MODELS,
   CUSTOM_PRESETS,
   loadRegion,
   saveRegion,
+  loadStation,
+  saveStation,
   loadFeeds,
   saveFeeds,
   makeFeed,
@@ -519,19 +522,30 @@ function Modal({
 
 // ── Region ändern ──────────────────────────────────────────────────────────────
 
-function RegionModal({ region, onSave, onClose }: { region: string; onSave: (r: string) => void; onClose: () => void }) {
-  const [value, setValue] = useState(region);
+function RegionModal({
+  region,
+  station,
+  onSave,
+  onClose,
+}: {
+  region: string;
+  station: string;
+  onSave: (station: string, region: string) => void;
+  onClose: () => void;
+}) {
+  const [reg, setReg] = useState(region);
+  const [name, setName] = useState(station);
   return (
     <Modal
-      title="Region ändern"
-      subtitle="Bestimmt das Sendegebiet für Bulletins und die Feed-Suche."
+      title="Sender & Region"
+      subtitle="Sendername (Branding) und Sendegebiet für Bulletins & Feed-Suche."
       onClose={onClose}
       footer={
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
           <button
-            onClick={() => onSave(value)}
-            disabled={!value.trim()}
+            onClick={() => onSave(name, reg)}
+            disabled={!reg.trim()}
             className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:opacity-40 transition-colors"
           >
             Speichern
@@ -539,18 +553,28 @@ function RegionModal({ region, onSave, onClose }: { region: string; onSave: (r: 
         </div>
       }
     >
+      <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Sendername</label>
+      <input
+        type="text"
+        value={name}
+        autoFocus
+        onChange={(e) => setName(e.target.value)}
+        placeholder="z. B. Campusradio Münster"
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none mb-4"
+      />
+
       <label className="block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2">Sendegebiet</label>
       <input
         type="text"
-        value={value}
-        autoFocus
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => { if (e.key === "Enter" && value.trim()) onSave(value); }}
+        value={reg}
+        onChange={(e) => setReg(e.target.value)}
+        onKeyDown={(e) => { if (e.key === "Enter" && reg.trim()) onSave(name, reg); }}
         placeholder="z. B. Münster, NRW"
         className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
       />
       <p className="mt-2 text-xs text-zinc-600">
-        Tipp: Eine Stadt oder Region möglichst eindeutig angeben (z. B. mit Bundesland), damit die Feed-Suche das Zentrum korrekt bestimmt.
+        Der Sendername erscheint in der Kopfzeile. Die Region möglichst eindeutig angeben
+        (z. B. mit Bundesland), damit die Feed-Suche das Zentrum korrekt bestimmt.
       </p>
     </Modal>
   );
@@ -1034,6 +1058,7 @@ function FeedDiscoveryModal({ region, onAdd, onClose }: { region: string; onAdd:
 export default function RadioResearchPage() {
   // Konfiguration (nutzerverwaltet, localStorage)
   const [region, setRegion] = useState(DEFAULT_REGION);
+  const [station, setStation] = useState(DEFAULT_STATION);
   const [feeds, setFeeds] = useState<RadioFeed[]>([]);
 
   // Einstellungs-Modals
@@ -1073,6 +1098,7 @@ export default function RadioResearchPage() {
       if (raw) setDb(JSON.parse(raw));
     } catch { /* ignore */ }
     setRegion(loadRegion());
+    setStation(loadStation());
     setFeeds(loadFeeds());
     const ps = loadProfiles();
     setProfiles(ps);
@@ -1086,6 +1112,12 @@ export default function RadioResearchPage() {
     const clean = next.trim() || DEFAULT_REGION;
     setRegion(clean);
     saveRegion(clean);
+  }
+
+  function handleSaveStation(next: string) {
+    const clean = next.trim() || DEFAULT_STATION;
+    setStation(clean);
+    saveStation(clean);
   }
 
   function handleSaveProfiles(next: AiProfile[], nextActive: string) {
@@ -1176,7 +1208,7 @@ export default function RadioResearchPage() {
         national:    [],
         regional:    newsItems,
         searched_at: new Date().toISOString(),
-        region:      region?.trim() || "OWL",
+        region:      region?.trim() || DEFAULT_REGION,
         mode:        "rss",
       };
       setResult(initialResult);
@@ -1303,7 +1335,7 @@ export default function RadioResearchPage() {
           </Link>
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-amber-500 leading-none mb-0.5">
-              Radioredaktion OWL
+              {station}
             </p>
             <h1 className="text-xl font-bold text-zinc-100 tracking-tight leading-none">
               Radio Research Tool
@@ -1588,6 +1620,7 @@ export default function RadioResearchPage() {
 
       {/* Radio-Hamburger-Menü */}
       <RadioHamburgerMenu
+        station={station}
         region={region}
         feeds={feeds}
         activeProfileLabel={activeProfile?.label ?? null}
@@ -1601,7 +1634,8 @@ export default function RadioResearchPage() {
       {modal === "region" && (
         <RegionModal
           region={region}
-          onSave={(r) => { handleSaveRegion(r); setModal(null); }}
+          station={station}
+          onSave={(s, r) => { handleSaveStation(s); handleSaveRegion(r); setModal(null); }}
           onClose={() => setModal(null)}
         />
       )}

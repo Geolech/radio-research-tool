@@ -19,8 +19,26 @@ export type RadioFeed = {
 const REGION_KEY  = "radio-region-v1";
 const FEEDS_KEY   = "radio-feeds-v1";
 const API_KEY_KEY = "radio-anthropic-key-v1";
+const STATION_KEY = "radio-station-v1";
 
 export const DEFAULT_REGION = "OWL, Kreis Lippe, Detmold";
+// Standortneutraler Default — jede Redaktion trägt ihren eigenen Sendernamen ein.
+export const DEFAULT_STATION = "Lokalradio-Redaktion";
+
+// ── Sendername (Branding, standortneutral konfigurierbar) ─────────────────────
+export function loadStation(): string {
+  if (typeof window === "undefined") return DEFAULT_STATION;
+  try {
+    const raw = localStorage.getItem(STATION_KEY);
+    return raw && raw.trim() ? raw : DEFAULT_STATION;
+  } catch {
+    return DEFAULT_STATION;
+  }
+}
+
+export function saveStation(name: string): void {
+  try { localStorage.setItem(STATION_KEY, name); } catch { /* ignore */ }
+}
 
 // ── Seed aus den statischen Default-Feeds ─────────────────────────────────────
 // primär + sekundär aktiv, deep deaktiviert (spiegelt das bisherige

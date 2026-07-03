@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { RadioFeed } from "@/lib/radio-config";
 
 type Props = {
+  station: string;
   region: string;
   feeds: RadioFeed[];
   activeProfileLabel: string | null;
@@ -28,7 +29,7 @@ function Divider() {
   return <div className="py-1"><div className="border-t border-zinc-800/70" /></div>;
 }
 
-export default function RadioHamburgerMenu({ region, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
+export default function RadioHamburgerMenu({ station, region, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const run = (fn: () => void) => { close(); fn(); };
@@ -77,7 +78,7 @@ export default function RadioHamburgerMenu({ region, feeds, activeProfileLabel, 
         <div className="flex items-center justify-between border-b-2 border-amber-500/60 px-6 py-5 flex-shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-amber-500 mb-1">
-              Radioredaktion OWL
+              {station}
             </p>
             <p className="text-base font-bold text-zinc-100">Radio Research Tool</p>
           </div>
@@ -106,7 +107,7 @@ export default function RadioHamburgerMenu({ region, feeds, activeProfileLabel, 
                          text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
             >
               <span className="w-5 flex-shrink-0 text-center text-zinc-600">⌖</span>
-              <span className="flex-1 text-left">Region ändern</span>
+              <span className="flex-1 text-left">Sender &amp; Region</span>
               <span className="text-xs text-zinc-600 truncate max-w-[45%]">{region}</span>
             </button>
             <button
