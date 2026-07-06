@@ -47,8 +47,8 @@ export default function RadioHamburgerMenu({ station, region, feeds, activeProfi
         onClick={() => setOpen(true)}
         aria-label="Menü öffnen"
         className="fixed top-4 right-4 z-50 flex h-10 w-10 items-center justify-center
-                   rounded-xl bg-zinc-900 border border-amber-500/40 shadow-lg
-                   text-amber-400 hover:bg-amber-500/10 hover:border-amber-500/70
+                   rounded-xl bg-zinc-900 border border-zinc-800 shadow-lg
+                   text-zinc-400 hover:text-amber-400 hover:border-amber-500/40
                    transition-all duration-200"
       >
         <svg width="18" height="14" viewBox="0 0 18 14" fill="none"
@@ -69,13 +69,13 @@ export default function RadioHamburgerMenu({ station, region, feeds, activeProfi
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 right-0 z-50 h-full w-72 bg-zinc-950 border-l-2 border-amber-500/60
+        className={`fixed top-0 right-0 z-50 h-full w-72 bg-zinc-950 border-l border-zinc-800
                     shadow-2xl flex flex-col
                     transition-transform duration-300 ease-in-out
                     ${open ? "translate-x-0" : "translate-x-full"}`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b-2 border-amber-500/60 px-6 py-5 flex-shrink-0">
+        <div className="flex items-center justify-between border-b border-zinc-800 px-6 py-5 flex-shrink-0">
           <div>
             <p className="text-xs font-medium uppercase tracking-widest text-amber-500 mb-1">
               {station}

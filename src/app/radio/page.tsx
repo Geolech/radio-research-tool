@@ -45,6 +45,23 @@ function Spinner() {
   );
 }
 
+// Logo: Lupe mit Blick auf ein stilisiertes Radio (nutzt currentColor)
+function RadioLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <circle cx="25" cy="25" r="17" />
+      <line x1="37.5" y1="37.5" x2="52" y2="52" strokeWidth={3.6} />
+      <rect x="14" y="20" width="22" height="12" rx="2" />
+      <circle cx="20" cy="26" r="3" />
+      <line x1="27" y1="23.5" x2="32" y2="23.5" />
+      <line x1="27" y1="26" x2="32" y2="26" />
+      <line x1="27" y1="28.5" x2="32" y2="28.5" />
+      <line x1="30" y1="20" x2="41" y2="7" />
+      <circle cx="41" cy="7" r="1.7" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function SourceBadge({ sourceType, validated, count }: { sourceType: string; validated: boolean; count: number }) {
   if (sourceType === "verified") return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
@@ -278,7 +295,7 @@ function SourceOverlay({ url, onClose }: { url: string; onClose: () => void }) {
   const [blocked, setBlocked] = useState(false);
 
   return (
-    <div className="fixed bottom-0 right-0 w-1/2 h-1/2 z-50 flex flex-col shadow-2xl border-2 border-amber-500/60 rounded-tl-xl overflow-hidden">
+    <div className="fixed bottom-0 right-0 w-1/2 h-1/2 z-50 flex flex-col shadow-2xl border border-zinc-700 rounded-tl-xl overflow-hidden">
       {/* Titelleiste */}
       <div className="flex items-center justify-between px-4 py-2 bg-zinc-900 border-b border-amber-500/40 flex-shrink-0">
         <span className="text-xs text-zinc-400 truncate max-w-[70%]">{url}</span>
@@ -496,7 +513,7 @@ function Modal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
       <div
-        className={`relative z-10 flex max-h-[85vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} flex-col overflow-hidden rounded-2xl border-2 border-amber-500/60 bg-zinc-950 shadow-2xl`}
+        className={`relative z-10 flex max-h-[85vh] w-full ${wide ? "max-w-2xl" : "max-w-lg"} flex-col overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-2xl`}
       >
         <div className="flex items-start justify-between border-b border-zinc-800 px-5 py-4 flex-shrink-0">
           <div>
@@ -1327,31 +1344,43 @@ export default function RadioResearchPage() {
         .panel-scroll { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
       `}</style>
 
-      {/* Header */}
-      <header className="flex-shrink-0 px-6 py-4 border-b-2 border-amber-500/60">
-        <div className="flex items-center gap-6">
-          <Link href="/hifi" className="text-sm text-zinc-500 hover:text-amber-400 transition-colors">
-            ← Sammlung
-          </Link>
-          <div>
-            <p className="text-xs font-medium uppercase tracking-widest text-amber-500 leading-none mb-0.5">
-              {station}
-            </p>
-            <h1 className="text-xl font-bold text-zinc-100 tracking-tight leading-none">
-              Radio Research Tool
-            </h1>
+      {/* Header (HiFi-Stil: Eyebrow = Sendername, Untertitel mit Region, Logo-Badge) */}
+      <header className="flex-shrink-0">
+        <div className="flex items-center justify-between gap-4 pl-6 pr-20 py-3">
+          <div className="flex items-center gap-5 min-w-0">
+            <Link href="/hifi" className="flex-shrink-0 text-sm text-zinc-500 hover:text-amber-400 transition-colors">
+              ← Sammlung
+            </Link>
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-500 leading-none mb-1 truncate">
+                {station}
+              </p>
+              <h1 className="text-xl font-bold text-zinc-100 tracking-tight leading-none">
+                Radio Research Tool
+              </h1>
+              <p className="mt-1 text-xs text-zinc-500 truncate">
+                KI-gestütztes Nachrichten-Bulletin aus RSS-Quellen
+                {region?.trim() ? ` der Region ${region}` : ""}
+              </p>
+            </div>
+          </div>
+          {/* Logo-Badge: Lupe mit Blick auf ein stilisiertes Radio */}
+          <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/[0.07]">
+            <RadioLogo className="h-7 w-7 text-amber-500" />
           </div>
         </div>
+        {/* feine Amber-Linie wie in der HiFi-App */}
+        <div className="h-px bg-gradient-to-r from-amber-500/40 via-amber-500/15 to-transparent" />
       </header>
 
       {/* Hauptbereich: obere Hälfte 2-spaltig + untere Hälfte Editor */}
       <div className="flex-1 flex flex-col min-h-0">
 
         {/* Obere Hälfte */}
-        <div className="flex-1 min-h-0 flex border-b-2 border-amber-500/60 overflow-hidden">
+        <div className="flex-1 min-h-0 flex border-b border-zinc-800 overflow-hidden">
 
           {/* Linkes Panel: Steuerung */}
-          <div className="panel-scroll w-1/2 overflow-y-scroll border-r-2 border-amber-500/60 p-4">
+          <div className="panel-scroll w-1/2 overflow-y-scroll border-r border-zinc-800 p-4">
 
             {/* Konfiguration */}
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-4 mb-4">
@@ -1407,7 +1436,7 @@ export default function RadioResearchPage() {
                     value={activeId}
                     onChange={(e) => handleSwitchActive(e.target.value)}
                     disabled={isRunning}
-                    className="flex-1 min-w-0 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-200 focus:border-amber-500/50 focus:outline-none disabled:opacity-40"
+                    className="flex-1 min-w-0 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700/60 focus:border-zinc-600 focus:outline-none disabled:opacity-40 transition-colors"
                   >
                     {profiles.map((p) => (
                       <option key={p.id} value={p.id}>
@@ -1418,7 +1447,7 @@ export default function RadioResearchPage() {
                 ) : (
                   <button
                     onClick={() => setModal("apikey")}
-                    className="flex-1 rounded-lg border border-amber-500/40 bg-amber-500/10 px-2.5 py-1.5 text-xs text-amber-400 hover:bg-amber-500/20 transition-colors"
+                    className="flex-1 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700/60 hover:text-zinc-100 transition-colors"
                   >
                     KI-Zugang einrichten →
                   </button>
@@ -1437,7 +1466,7 @@ export default function RadioResearchPage() {
               <button
                 onClick={() => handleResearch()}
                 disabled={isRunning}
-                className="w-full rounded-xl bg-amber-500 px-4 py-2.5 font-semibold text-sm text-zinc-950 hover:bg-amber-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 font-medium text-sm text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isRunning && <Spinner />}
                 {isRunning ? "Läuft …" : "📋 RSS-Bulletin erstellen"}
