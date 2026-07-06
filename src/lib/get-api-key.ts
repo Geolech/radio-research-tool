@@ -1,16 +1,24 @@
 import fs from "fs";
 import path from "path";
 
+// Ein API-Key enthält nie Whitespace. Falls der Wert versehentlich mehrfach
+// eingefügt wurde (z. B. "key\nkey\nkey") oder mit Zeilenumbruch endet, nur das
+// erste Token verwenden — sonst wirft das SDK beim Setzen des Auth-Headers
+// (Headers.append erlaubt keine Zeilenumbrüche).
+function sanitizeKey(raw: string): string {
+  return raw.trim().split(/\s+/)[0] ?? "";
+}
+
 export function getAnthropicApiKey(): string {
   // Erst Standard-Umgebungsvariable versuchen
-  if (process.env.ANTHROPIC_API_KEY) return process.env.ANTHROPIC_API_KEY;
+  if (process.env.ANTHROPIC_API_KEY) return sanitizeKey(process.env.ANTHROPIC_API_KEY);
 
   // Fallback: .env.local direkt einlesen (nötig bei Pfaden mit Leerzeichen)
   try {
     const envPath = path.join(process.cwd(), ".env.local");
     const content = fs.readFileSync(envPath, "utf-8");
     const match = content.match(/^ANTHROPIC_API_KEY=(.+)$/m);
-    if (match) return match[1].trim();
+    if (match) return sanitizeKey(match[1]);
   } catch {
     // Datei nicht gefunden
   }
@@ -23,8 +31,8 @@ export function getAnthropicApiKey(): string {
 // (x-anthropic-key) an den lokalen Server gereicht wird. Reihenfolge:
 // 1) Header (eigener Key der Redaktion), 2) Server-Env / .env.local (Dev).
 export function getAnthropicApiKeyFromRequest(req: Request): string {
-  const headerKey = req.headers.get("x-anthropic-key")?.trim();
-  if (headerKey) return headerKey;
+  const headerKey = req.headers.get("x-anthropic-key");
+  if (headerKey?.trim()) return sanitizeKey(headerKey);
   return getAnthropicApiKey();
 }
 
