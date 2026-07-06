@@ -5,7 +5,6 @@ import type { RadioFeed } from "@/lib/radio-config";
 
 type Props = {
   station: string;
-  region: string;
   feeds: RadioFeed[];
   activeProfileLabel: string | null;
   onChangeRegion: () => void;
@@ -29,7 +28,7 @@ function Divider() {
   return <div className="py-1"><div className="border-t border-zinc-800/70" /></div>;
 }
 
-export default function RadioHamburgerMenu({ station, region, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
+export default function RadioHamburgerMenu({ station, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const run = (fn: () => void) => { close(); fn(); };
@@ -107,8 +106,8 @@ export default function RadioHamburgerMenu({ station, region, feeds, activeProfi
                          text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
             >
               <span className="w-5 flex-shrink-0 text-center text-zinc-600">⌖</span>
-              <span className="flex-1 text-left">Sender &amp; Region</span>
-              <span className="text-xs text-zinc-600 truncate max-w-[45%]">{region}</span>
+              <span className="flex-1 text-left">Sendername &amp; Region</span>
+              <span className="text-xs text-zinc-600 truncate max-w-[45%]">{station}</span>
             </button>
             <button
               onClick={() => run(onEditFeeds)}

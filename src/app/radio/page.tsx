@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import Link from "next/link";
 import type { RadioResearchResult, NewsItem } from "@/app/api/radio-research/route";
 import type { RSSItem, FeedResult } from "@/app/api/fetch-rss/route";
 import { rankRSSItems, rssToNewsItems } from "@/lib/rank-rss";
@@ -1344,29 +1343,24 @@ export default function RadioResearchPage() {
         .panel-scroll { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
       `}</style>
 
-      {/* Header (HiFi-Stil: Eyebrow = Sendername, Untertitel mit Region, Logo-Badge) */}
-      <header className="flex-shrink-0">
-        <div className="flex items-center justify-between gap-4 pl-6 pr-20 py-3">
-          <div className="flex items-center gap-5 min-w-0">
-            <Link href="/hifi" className="flex-shrink-0 text-sm text-zinc-500 hover:text-amber-400 transition-colors">
-              ← Sammlung
-            </Link>
-            <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-amber-500 leading-none mb-1 truncate">
-                {station}
-              </p>
-              <h1 className="text-xl font-bold text-zinc-100 tracking-tight leading-none">
-                Radio Research Tool
-              </h1>
-              <p className="mt-1 text-xs text-zinc-500 truncate">
-                KI-gestütztes Nachrichten-Bulletin aus RSS-Quellen
-                {region?.trim() ? ` der Region ${region}` : ""}
-              </p>
-            </div>
+      {/* Header (HiFi-Stil: hellere Karte, Eyebrow = Sendername, Untertitel mit Region, Logo-Badge) */}
+      <header className="flex-shrink-0" style={{ background: "#1c1c1f" }}>
+        <div className="flex items-center justify-between gap-4 pl-6 pr-20 py-5">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-amber-500 saturate-[0.65] leading-none mb-1.5 truncate">
+              {station}
+            </p>
+            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight leading-none">
+              Radio Research Tool
+            </h1>
+            <p className="mt-1.5 text-sm text-zinc-500 truncate">
+              KI-gestütztes Nachrichten-Bulletin aus RSS-Quellen
+              {region?.trim() ? ` der Region ${region}` : ""}
+            </p>
           </div>
-          {/* Logo-Badge: Lupe mit Blick auf ein stilisiertes Radio */}
-          <div className="flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-xl border border-amber-500/35 bg-amber-500/[0.07]">
-            <RadioLogo className="h-7 w-7 text-amber-500" />
+          {/* Logo-Badge: Lupe mit Blick auf ein stilisiertes Radio (~30 % entsättigt) */}
+          <div className="flex-shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl border border-amber-500/35 bg-amber-500/[0.07] saturate-[0.7]">
+            <RadioLogo className="h-8 w-8 text-amber-500" />
           </div>
         </div>
         {/* feine Amber-Linie wie in der HiFi-App */}
@@ -1466,7 +1460,7 @@ export default function RadioResearchPage() {
               <button
                 onClick={() => handleResearch()}
                 disabled={isRunning}
-                className="w-full rounded-full border border-amber-500/40 bg-amber-500/10 px-4 py-2.5 font-medium text-sm text-amber-300 hover:bg-amber-500/20 hover:text-amber-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="w-full rounded-full border border-amber-500/50 bg-amber-500/15 px-4 py-2.5 font-medium text-sm text-amber-400 hover:bg-amber-500/25 hover:text-amber-300 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
               >
                 {isRunning && <Spinner />}
                 {isRunning ? "Läuft …" : "📋 RSS-Bulletin erstellen"}
@@ -1650,7 +1644,6 @@ export default function RadioResearchPage() {
       {/* Radio-Hamburger-Menü */}
       <RadioHamburgerMenu
         station={station}
-        region={region}
         feeds={feeds}
         activeProfileLabel={activeProfile?.label ?? null}
         onChangeRegion={() => setModal("region")}
