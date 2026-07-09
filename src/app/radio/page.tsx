@@ -1303,16 +1303,24 @@ export default function RadioResearchPage() {
         const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
         setResult(prev => {
           if (!prev) return prev;
-          const updated: RadioResearchResult = {
+          return {
             ...prev,
             regional: prev.regional.map(item => {
               const found = texts.find(t => t.rank === item.rank);
               return found ? { ...item, radio_text: found.radio_text } : item;
             }),
           };
-          saveToDb(updated);
-          return updated;
         });
+
+        // Fallback: was der Batch nicht (sauber) geliefert hat, einzeln nachgenerieren.
+        // Robust bei kleinen Modellen mit unsauberem JSON; kostet nur bei Bedarf extra.
+        const missing = top5.filter(i => !texts.find(t => t.rank === i.rank && t.radio_text?.trim()));
+        for (const item of missing) {
+          await generateSingleText(item, "Regional");
+        }
+
+        // Endstand (inkl. einzeln nachgenerierter Texte) speichern
+        setResult(prev => { if (prev) saveToDb(prev); return prev; });
         setPhase("done");
         stopTimer();
       } catch (e) { return fail(e); }
