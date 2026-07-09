@@ -255,28 +255,35 @@ function NewsCard({
         </div>
       </div>
 
-      {item.radio_text ? (
+      {generating ? (
+        <p className="text-xs text-zinc-600 italic pl-4 border-l-2 border-zinc-800 flex items-center gap-2">
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent flex-shrink-0" />
+          Sprechtext wird generiert …
+        </p>
+      ) : item.radio_text ? (
         <>
           <blockquote className="border-l-2 border-amber-500/30 pl-4 text-sm text-zinc-300 leading-relaxed">
             {item.radio_text}
           </blockquote>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
             <button
               onClick={() => onSendToEditor?.(item.radio_text)}
               className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
             >
               ✎ In Editor bearbeiten
             </button>
-            <button onClick={copy} className="text-xs text-zinc-600 hover:text-amber-400 transition-colors">
-              {copied ? "✓ Kopiert" : "Sprechtext kopieren"}
-            </button>
+            <div className="flex items-center gap-3">
+              {onGenerate && (
+                <button onClick={onGenerate} className="text-xs text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1" title="Neuen Sprechtext aus der Quelle erzeugen">
+                  ↻ Erneut generieren
+                </button>
+              )}
+              <button onClick={copy} className="text-xs text-zinc-600 hover:text-amber-400 transition-colors">
+                {copied ? "✓ Kopiert" : "Sprechtext kopieren"}
+              </button>
+            </div>
           </div>
         </>
-      ) : generating ? (
-        <p className="text-xs text-zinc-600 italic pl-4 border-l-2 border-zinc-800 flex items-center gap-2">
-          <span className="h-3 w-3 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent flex-shrink-0" />
-          Sprechtext wird generiert …
-        </p>
       ) : onGenerate ? (
         <button
           onClick={onGenerate}
@@ -378,7 +385,7 @@ function CategorySection({
             rank={item.rank}
             generating={generatingRanks?.has(item.rank)}
             onGenerate={
-              !item.radio_text && !generatingRanks?.has(item.rank) && onGenerate
+              onGenerate && !generatingRanks?.has(item.rank)
                 ? () => onGenerate(item, title)
                 : undefined
             }
@@ -1283,7 +1290,7 @@ export default function RadioResearchPage() {
       setPhase("texts");
       try {
         const itemsForText = top5.map(i => ({
-          category: "Regional", rank: i.rank, headline: i.headline, sources: i.sources,
+          category: "Regional", rank: i.rank, headline: i.headline, sources: i.sources, summary: i.description,
         }));
         const r = await fetch("/api/radio-research", {
           method: "POST",
@@ -1325,7 +1332,7 @@ export default function RadioResearchPage() {
         body: JSON.stringify({
           mode: "rss",
           step: "texts",
-          itemsForText: [{ category, rank: item.rank, headline: item.headline, sources: item.sources }],
+          itemsForText: [{ category, rank: item.rank, headline: item.headline, sources: item.sources, summary: item.description }],
         }),
       });
       const data = await r.json();

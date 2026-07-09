@@ -72,7 +72,7 @@ function parseRSS2(xml: string, feedId: string, feedName: string, feedCategory: 
       feedCategory,
       title,
       link,
-      description: description.slice(0, 400),
+      description: description.slice(0, 1000),
       pubDate: pubDate || null,
       pubDateIso: parseDate(pubDate),
     });
@@ -103,7 +103,7 @@ function parseAtom(xml: string, feedId: string, feedName: string, feedCategory: 
       feedCategory,
       title,
       link,
-      description: description.slice(0, 400),
+      description: description.slice(0, 1000),
       pubDate: pubDate || null,
       pubDateIso: parseDate(pubDate),
     });

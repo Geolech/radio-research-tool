@@ -81,5 +81,6 @@ export function rssToNewsItems(ranked: RankedRSSItem[]): NewsItem[] {
     source_type:  "rss" as const,
     radio_text:   "",
     url:          item.link || undefined,
+    description:  item.description || undefined,
   }));
 }

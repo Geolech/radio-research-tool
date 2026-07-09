@@ -32,6 +32,7 @@ export type NewsItem = {
   validated: boolean;
   source_type: "rss" | "web" | "verified";
   url?: string;
+  description?: string; // RSS-Kurztext als inhaltliche Grundlage der Sprechtext-Erzeugung
 };
 
 export type RadioResearchResult = {
@@ -45,11 +46,12 @@ export type RadioResearchResult = {
 
 // ── Sprechtext-Regeln ─────────────────────────────────────────────────────────
 const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
+- QUELLENTREUE (WICHTIGSTE REGEL): Nutze AUSSCHLIESSLICH die zur jeweiligen Meldung gegebenen Informationen (Überschrift + Kurztext). Erfinde KEINE Fakten, Zahlen, Namen, Orte, Zitate oder Details, die dort nicht stehen. Wenn Informationen fehlen, formuliere allgemeiner oder lass den Punkt weg — niemals dazudichten. Nicht spekulieren, nicht abstrahieren.
 - Gesprochene Sprache, keine Abkürzungen
 - Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
-- Genau 3 Sätze: Satz 1 nennt das Wichtigste. Satz 2 liefert Kontext oder Hintergrund. Satz 3 gibt ein weiteres Detail oder eine Einordnung — KEIN Quellenhinweis, die Quelle wird separat angezeigt.
+- In der Regel 4 vollständige Sätze; schöpfe die im Kurztext genannten Details voll aus (Satz 1: Kern · Satz 2: Kontext · Satz 3: Hintergrund · Satz 4: weiteres Detail/Einordnung). Erfinde dabei nichts dazu — wenn der Kurztext für 4 Sätze nicht genug hergibt, lieber weniger Sätze als erfundene Inhalte. KEIN Quellenhinweis (die Quelle wird separat angezeigt).
 - Präsens oder Perfekt, nie Futur für Vergangenes
-- Neutral und sachlich`;
+- Neutral und sachlich, nah am Wortlaut der Quelle`;
 
 // ── Modellaufruf je Anbieter → liefert reinen Text ────────────────────────────
 async function callModel(cfg: AiProviderConfig, system: string, prompt: string): Promise<string> {
@@ -63,6 +65,7 @@ async function callModel(cfg: AiProviderConfig, system: string, prompt: string):
       client.chat.completions.create({
         model: cfg.model,
         max_tokens: 2000,
+        temperature: 0.2,
         messages: [
           { role: "system", content: system },
           { role: "user", content: prompt },
@@ -78,6 +81,7 @@ async function callModel(cfg: AiProviderConfig, system: string, prompt: string):
     client.messages.create({
       model: cfg.model,
       max_tokens: 2000,
+      temperature: 0.2,
       system,
       messages: [{ role: "user", content: prompt }],
     })
@@ -89,24 +93,27 @@ async function callModel(cfg: AiProviderConfig, system: string, prompt: string):
 // ── Sprechtexte für übergebene Items generieren ───────────────────────────────
 async function generateTexts(
   cfg: AiProviderConfig,
-  items: Array<{ category: string; rank: number; headline: string; sources: string[] }>
+  items: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>
 ): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
 
-  const system = `Du bist Radiosprecher-Texter.
+  const system = `Du bist Radiosprecher-Texter. Du formulierst gegebene Meldungen in Radiosprache um — du recherchierst NICHT und fügst NICHTS hinzu.
 ${SPEECH_RULES}
 Antworte NUR mit validem JSON-Array.`;
 
   const itemList = items.map((it, i) =>
-    `${i + 1}. [${it.category}] Rang ${it.rank}: "${it.headline}" (Quelle: ${it.sources.join(", ")})`
-  ).join("\n");
+    `${i + 1}. [${it.category}] Rang ${it.rank}\n   Überschrift: "${it.headline}"\n   Quelle: ${it.sources.join(", ")}` +
+    (it.summary && it.summary.trim()
+      ? `\n   Kurztext (einzige inhaltliche Grundlage): ${it.summary.trim()}`
+      : `\n   Kurztext: (keiner — nur die Überschrift verwenden, nichts ergänzen)`)
+  ).join("\n\n");
 
-  const prompt = `Schreibe für jede der folgenden Meldungen einen fertigen Radio-Sprechtext.
+  const prompt = `Formuliere für jede der folgenden Meldungen einen fertigen Radio-Sprechtext — ausschließlich auf Basis von Überschrift und Kurztext. Nichts hinzuerfinden.
 
 ${itemList}
 
-Format:
+Format (nur JSON, radio_text nah am Kurztext):
 [
-  {"category":"Welt","rank":1,"radio_text":"Was ist passiert. Kontext oder Hintergrund. Weiteres Detail oder Einordnung."},
+  {"category":"Regional","rank":1,"radio_text":"…"},
   ...
 ]`;
 
@@ -132,7 +139,7 @@ export async function POST(req: NextRequest) {
       itemsForText = [],
     }: {
       step?: string;
-      itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[] }>;
+      itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>;
     } = await req.json();
 
     const cfg = getAiProviderFromRequest(req);
@@ -155,7 +162,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, sample: sample.trim().slice(0, 160) });
       }
       if (step === "texts") {
-        const texts = await generateTexts(cfg, itemsForText);
+        let texts = await generateTexts(cfg, itemsForText);
+        // Kleine Modelle liefern nicht immer sauberes JSON → ein Nachversuch,
+        // wenn die erste Antwort leer geparst wurde.
+        if (texts.length === 0 && itemsForText.length > 0) {
+          texts = await generateTexts(cfg, itemsForText);
+        }
         return NextResponse.json({ texts, step: "texts" });
       }
       return NextResponse.json({ error: "Unbekannter step" }, { status: 400 });
