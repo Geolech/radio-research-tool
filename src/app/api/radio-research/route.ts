@@ -142,6 +142,18 @@ export async function POST(req: NextRequest) {
     );
 
     const researchPromise = (async () => {
+      if (step === "test") {
+        // Minimaler Verbindungstest: prüft, ob der Anbieter überhaupt antwortet.
+        const sample = await callModel(
+          cfg,
+          "Du bist ein Verbindungstest. Antworte in genau einem kurzen Satz.",
+          "Bestätige kurz, dass du erreichbar bist."
+        );
+        if (!sample.trim()) {
+          return NextResponse.json({ error: "Keine Rückantwort von der KI erhalten." }, { status: 502 });
+        }
+        return NextResponse.json({ ok: true, sample: sample.trim().slice(0, 160) });
+      }
       if (step === "texts") {
         const texts = await generateTexts(cfg, itemsForText);
         return NextResponse.json({ texts, step: "texts" });

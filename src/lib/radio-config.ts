@@ -218,10 +218,8 @@ export function profileUsable(p: AiProfile | null): boolean {
   return !!p.key;
 }
 
-// Header für die Text-Erzeugung (aktiver Zugang).
-export function aiHeaders(): Record<string, string> {
-  const p = getActiveProfile();
-  if (!profileUsable(p) || !p) return {};
+// Header für ein bestimmtes Profil (auch ungespeichert, z. B. für den Testlauf).
+export function headersForProfile(p: AiProfile): Record<string, string> {
   const h: Record<string, string> = {
     "x-ai-provider": p.provider,
     "x-ai-key": p.key || "",
@@ -229,6 +227,13 @@ export function aiHeaders(): Record<string, string> {
   };
   if (p.provider === "custom" && p.baseUrl) h["x-ai-base-url"] = p.baseUrl;
   return h;
+}
+
+// Header für die Text-Erzeugung (aktiver Zugang).
+export function aiHeaders(): Record<string, string> {
+  const p = getActiveProfile();
+  if (!profileUsable(p) || !p) return {};
+  return headersForProfile(p);
 }
 
 // Header für die Feed-Suche: braucht zwingend Anthropic (Web-Suche).

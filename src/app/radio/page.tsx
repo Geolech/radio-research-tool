@@ -28,6 +28,7 @@ import {
   getActiveProfile,
   makeProfile,
   aiHeaders,
+  headersForProfile,
   discoveryHeader,
 } from "@/lib/radio-config";
 import type { DiscoveredFeed } from "@/app/api/discover-feeds/route";
@@ -613,6 +614,26 @@ function AiAccessModal({
   const [active, setActive] = useState(activeId || (profiles[0]?.id ?? ""));
   const [reveal, setReveal] = useState<Set<string>>(new Set());
 
+  // Testlauf-Ergebnis je Profil
+  type TestResult = { state: "running" } | { state: "ok"; sample: string } | { state: "err"; msg: string };
+  const [tests, setTests] = useState<Record<string, TestResult>>({});
+
+  async function testProfile(p: AiProfile) {
+    setTests((t) => ({ ...t, [p.id]: { state: "running" } }));
+    try {
+      const r = await fetch("/api/radio-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headersForProfile(p) },
+        body: JSON.stringify({ step: "test" }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.ok) throw new Error(data.error ?? "Keine Antwort");
+      setTests((t) => ({ ...t, [p.id]: { state: "ok", sample: data.sample ?? "" } }));
+    } catch (e) {
+      setTests((t) => ({ ...t, [p.id]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
+    }
+  }
+
   // Neuer Zugang
   const [newProvider, setNewProvider] = useState<AiProvider>("openai");
   const [newLabel, setNewLabel] = useState("");
@@ -670,6 +691,7 @@ function AiAccessModal({
       <div className="space-y-2">
         {list.map((p) => {
           const isActive = active === p.id;
+          const t = tests[p.id];
           return (
             <div key={p.id} className={`rounded-lg border px-3 py-2.5 ${isActive ? "border-amber-500/50 bg-amber-500/5" : "border-zinc-800 bg-zinc-900"}`}>
               <div className="flex items-center gap-2 mb-2">
@@ -725,6 +747,26 @@ function AiAccessModal({
                   placeholder="Modell"
                   className="w-40 rounded-lg border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
                 />
+              </div>
+              {/* Testlauf: prüft, ob dieser Zugang antwortet */}
+              <div className="flex items-center gap-2 pl-6 mt-2 min-w-0">
+                <button
+                  onClick={() => testProfile(p)}
+                  disabled={t?.state === "running"}
+                  className="flex-shrink-0 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1 text-xs text-zinc-300 hover:text-amber-400 hover:bg-zinc-700/60 disabled:opacity-40 transition-colors"
+                >
+                  {t?.state === "running" ? "Teste …" : "Testlauf"}
+                </button>
+                {t && t.state === "ok" && (
+                  <span className="min-w-0 truncate text-xs text-emerald-400" title={t.sample}>
+                    ✓ antwortet — „{t.sample}"
+                  </span>
+                )}
+                {t && t.state === "err" && (
+                  <span className="min-w-0 truncate text-xs text-red-400" title={t.msg}>
+                    ✕ {t.msg}
+                  </span>
+                )}
               </div>
             </div>
           );
@@ -794,11 +836,20 @@ function AiAccessModal({
           <button
             onClick={add}
             disabled={!canAdd}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 transition-colors"
+            title={canAdd ? "Zugang hinzufügen" : (newProvider === "custom" ? "Endpoint-URL und Modellname erforderlich" : "API-Key erforderlich")}
+            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             + Hinzufügen
           </button>
         </div>
+        <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
+          {newProvider === "custom"
+            ? "Custom-Zugang: Endpoint-URL UND Modellname erforderlich (z. B. llama3.1 oder mixtral), API-Key optional."
+            : newProvider === "openai"
+            ? "OpenAI: API-Key erforderlich (Modell optional, Standard gpt-4o)."
+            : "Anthropic: API-Key erforderlich (Modell optional, Standard claude-sonnet-4-6)."}
+          {" "}Danach <span className="text-zinc-300">„+ Hinzufügen"</span> klicken und unten mit <span className="text-amber-400">„Speichern"</span> übernehmen — erst dann erscheint der Zugang im KI-Dropdown.
+        </p>
       </div>
 
       {!hasAnthropic && (
@@ -1434,7 +1485,7 @@ export default function RadioResearchPage() {
                   >
                     {profiles.map((p) => (
                       <option key={p.id} value={p.id}>
-                        {p.label} · {PROVIDER_LABELS[p.provider]}
+                        {p.label}{p.label !== PROVIDER_LABELS[p.provider] ? ` · ${PROVIDER_LABELS[p.provider]}` : ""}
                       </option>
                     ))}
                   </select>
@@ -1449,10 +1500,10 @@ export default function RadioResearchPage() {
                 {profiles.length > 0 && (
                   <button
                     onClick={() => setModal("apikey")}
-                    title="KI-Zugänge verwalten"
-                    className="flex-shrink-0 text-xs text-zinc-500 hover:text-amber-400 transition-colors"
+                    title="KI-Zugänge verwalten: Anbieter hinzufügen, Key/Modell bearbeiten"
+                    className="flex-shrink-0 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1.5 text-xs text-zinc-400 hover:text-amber-400 hover:bg-zinc-700/60 transition-colors"
                   >
-                    ⚙
+                    Verwalten
                   </button>
                 )}
               </div>
