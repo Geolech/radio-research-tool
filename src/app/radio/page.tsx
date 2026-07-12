@@ -24,6 +24,7 @@ import {
   makeFeed,
   loadProfiles,
   saveProfiles,
+  initSecureKeys,
   saveActiveId,
   getActiveProfile,
   makeProfile,
@@ -1174,9 +1175,12 @@ export default function RadioResearchPage() {
     setRegion(loadRegion());
     setStation(loadStation());
     setFeeds(loadFeeds());
-    const ps = loadProfiles();
-    setProfiles(ps);
-    setActiveId(getActiveProfile()?.id ?? "");
+    // Keys ggf. entschlüsseln (Electron), dann Profile laden.
+    (async () => {
+      await initSecureKeys();
+      setProfiles(loadProfiles());
+      setActiveId(getActiveProfile()?.id ?? "");
+    })();
   }, []);
 
   const activeProfile = profiles.find((p) => p.id === activeId) ?? profiles[0] ?? null;
@@ -1196,7 +1200,7 @@ export default function RadioResearchPage() {
 
   function handleSaveProfiles(next: AiProfile[], nextActive: string) {
     setProfiles(next);
-    saveProfiles(next);
+    void saveProfiles(next); // async (Verschlüsselung); Cache wird synchron gefüllt
     const valid = next.some((p) => p.id === nextActive) ? nextActive : (next[0]?.id ?? "");
     setActiveId(valid);
     saveActiveId(valid);

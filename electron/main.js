@@ -1,7 +1,7 @@
 // Electron-Hauptprozess
 // Startet im gepackten Zustand den gebündelten Next.js-Standalone-Server
 // (autark, kein externer Dev-Server) und öffnet das Radio Research Tool.
-const { app, BrowserWindow, shell } = require("electron");
+const { app, BrowserWindow, shell, ipcMain, safeStorage } = require("electron");
 const { spawn } = require("child_process");
 const path = require("path");
 const http = require("http");
@@ -9,6 +9,26 @@ const net = require("net");
 
 const isDev = !app.isPackaged;
 const ROUTE = "/radio";
+
+// ── Key-Verschlüsselung (OS-Schlüsselbund via safeStorage) ────────────────────
+ipcMain.handle("secure:encrypt", (_e, text) => {
+  if (typeof text !== "string" || !text) return null;
+  if (!safeStorage.isEncryptionAvailable()) return null;
+  try {
+    return safeStorage.encryptString(text).toString("base64");
+  } catch {
+    return null;
+  }
+});
+ipcMain.handle("secure:decrypt", (_e, b64) => {
+  if (typeof b64 !== "string" || !b64) return null;
+  if (!safeStorage.isEncryptionAvailable()) return null;
+  try {
+    return safeStorage.decryptString(Buffer.from(b64, "base64"));
+  } catch {
+    return null;
+  }
+});
 
 let serverProcess = null;
 let mainWindow = null;
@@ -83,7 +103,11 @@ async function createWindow() {
     backgroundColor: "#09090b",
     title: "Radio Research Tool",
     autoHideMenuBar: true,
-    webPreferences: { contextIsolation: true, nodeIntegration: false },
+    webPreferences: {
+      contextIsolation: true,
+      nodeIntegration: false,
+      preload: path.join(__dirname, "preload.js"),
+    },
   });
 
   // Fenstertitel fest halten — sonst übernimmt Electron den Dokument-Titel

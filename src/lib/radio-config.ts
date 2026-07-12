@@ -139,7 +139,24 @@ export const CUSTOM_PRESETS: Array<{ label: string; baseUrl: string; model: stri
 const PROFILES_KEY = "radio-ai-profiles-v2";
 const ACTIVE_KEY   = "radio-ai-active-v2";
 
-export function loadProfiles(): AiProfile[] {
+// ── Key-Verschlüsselung (Electron safeStorage, Fallback: Klartext im Browser) ─
+// In der Electron-App verschlüsselt der Main-Prozess die Keys über den
+// OS-Schlüsselbund; gespeichert wird dann "enc:<base64>". Im Browser/Dev fehlt
+// die Bridge (window.radioSecure) → Keys bleiben wie bisher Klartext.
+const ENC_PREFIX = "enc:";
+type SecureBridge = {
+  encrypt: (text: string) => Promise<string | null>;
+  decrypt: (blob: string) => Promise<string | null>;
+};
+function secureBridge(): SecureBridge | null {
+  if (typeof window === "undefined") return null;
+  return (window as unknown as { radioSecure?: SecureBridge }).radioSecure ?? null;
+}
+// Laufzeit-Cache: profileId → Klartext-Key (nur im Speicher, nie persistiert).
+const keyCache = new Map<string, string>();
+
+// Roh-Profile aus localStorage (Keys wie gespeichert, evtl. "enc:"-Blob).
+function rawProfiles(): AiProfile[] {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(PROFILES_KEY);
@@ -161,25 +178,71 @@ export function loadProfiles(): AiProfile[] {
           });
       }
     }
-    // Migration: alter Einzel-Key → ein Anthropic-Profil
+    // Migration: alter Einzel-Key → ein Anthropic-Profil (Klartext; wird beim
+    // Init/Speichern ggf. verschlüsselt).
     const legacy = localStorage.getItem(API_KEY_KEY);
     if (legacy && legacy.trim()) {
-      const migrated: AiProfile[] = [{
+      return [{
         id: crypto.randomUUID(),
         label: "Anthropic",
         provider: "anthropic",
         key: legacy.trim(),
         model: DEFAULT_MODELS.anthropic,
       }];
-      saveProfiles(migrated);
-      return migrated;
     }
   } catch { /* ignore */ }
   return [];
 }
 
-export function saveProfiles(profiles: AiProfile[]): void {
-  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles)); } catch { /* ignore */ }
+// Key eines Roh-Profils in Klartext auflösen: Cache bevorzugt, sonst Klartext
+// (verschlüsselte Keys ohne Cache-Eintrag → "" bis initSecureKeys() lief).
+function resolveKey(p: AiProfile): string {
+  if (keyCache.has(p.id)) return keyCache.get(p.id)!;
+  return p.key.startsWith(ENC_PREFIX) ? "" : p.key;
+}
+
+export function loadProfiles(): AiProfile[] {
+  return rawProfiles().map((p) => ({ ...p, key: resolveKey(p) }));
+}
+
+// Persistiert Profile; verschlüsselt Keys, wenn die Electron-Bridge vorhanden ist.
+export async function saveProfiles(profiles: AiProfile[]): Promise<void> {
+  if (typeof window === "undefined") return;
+  // Cache sofort (synchron) mit Klartext füllen → aiHeaders/loadProfiles stimmen direkt.
+  for (const p of profiles) keyCache.set(p.id, p.key);
+  const s = secureBridge();
+  const toStore: AiProfile[] = [];
+  for (const p of profiles) {
+    let stored = p.key;
+    if (s && p.key) {
+      const enc = await s.encrypt(p.key);
+      if (enc) stored = ENC_PREFIX + enc;
+    }
+    toStore.push({ ...p, key: stored });
+  }
+  try { localStorage.setItem(PROFILES_KEY, JSON.stringify(toStore)); } catch { /* ignore */ }
+}
+
+// Einmal beim App-Start: verschlüsselte Keys entschlüsseln (Cache füllen) und
+// im Klartext liegende Keys im Electron-Kontext migrieren (verschlüsseln).
+let secureInited = false;
+export async function initSecureKeys(): Promise<void> {
+  if (secureInited || typeof window === "undefined") return;
+  secureInited = true;
+  const s = secureBridge();
+  const profiles = rawProfiles();
+  let needsRewrite = !localStorage.getItem(PROFILES_KEY) && profiles.length > 0; // Legacy persistieren
+  for (const p of profiles) {
+    if (p.key.startsWith(ENC_PREFIX)) {
+      keyCache.set(p.id, (s ? await s.decrypt(p.key.slice(ENC_PREFIX.length)) : null) ?? "");
+    } else {
+      keyCache.set(p.id, p.key);
+      if (s && p.key) needsRewrite = true; // Klartext → beim Rewrite verschlüsseln
+    }
+  }
+  if (needsRewrite) {
+    await saveProfiles(profiles.map((p) => ({ ...p, key: keyCache.get(p.id) ?? "" })));
+  }
 }
 
 export function loadActiveId(): string {
