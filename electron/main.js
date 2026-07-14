@@ -46,6 +46,28 @@ function getFreePort() {
   });
 }
 
+// WICHTIG: localStorage ist an die Origin INKLUSIVE Port gebunden. Ein zufälliger
+// Port je Start würde alle Einstellungen (Keys, Feeds, Region, Archiv) bei jedem
+// Neustart "verlieren". Daher: fester Wunschport mit deterministischer
+// Ausweichliste — die Origin bleibt über Neustarts stabil.
+const PREFERRED_PORTS = [47812, 47813, 47814, 47815, 47816];
+
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.unref();
+    srv.on("error", () => resolve(false));
+    srv.listen(port, "127.0.0.1", () => srv.close(() => resolve(true)));
+  });
+}
+
+async function getStablePort() {
+  for (const p of PREFERRED_PORTS) {
+    if (await isPortFree(p)) return p;
+  }
+  return getFreePort(); // letzter Ausweg (Origin dann instabil, aber App läuft)
+}
+
 // Warten, bis der Server antwortet
 function waitForServer(url, timeoutMs = 30000) {
   const start = Date.now();
@@ -89,7 +111,7 @@ async function createWindow() {
     // Entwicklung: gegen laufenden `next dev` (npm run dev) auf 3000
     baseUrl = "http://127.0.0.1:3000";
   } else {
-    const port = await getFreePort();
+    const port = await getStablePort();
     startServer(port);
     baseUrl = `http://127.0.0.1:${port}`;
     await waitForServer(baseUrl + ROUTE);

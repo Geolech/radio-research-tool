@@ -215,8 +215,11 @@ export async function POST(req: NextRequest) {
     await req.json().catch(() => ({}));
 
   // Bevorzugt: kuratierte Feed-Liste vom Client. Fallback: statische Defaults.
+  // Eine MITGESCHICKTE Liste wird respektiert — auch wenn sie leer ist (alle Feeds
+  // deaktiviert ⇒ leeres Bulletin, NICHT die Defaults laden). Der Default-Fallback
+  // greift nur, wenn gar kein feeds-Feld übergeben wurde (ältere Clients).
   const feeds: FeedInput[] =
-    Array.isArray(body.feeds) && body.feeds.length > 0
+    Array.isArray(body.feeds)
       ? body.feeds
       : RSS_FEEDS
           .filter((f) => (body.priorities ?? ["primary", "secondary"]).includes(f.priority))

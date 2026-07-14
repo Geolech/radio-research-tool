@@ -767,7 +767,7 @@ function AiAccessModal({
                 </button>
                 {t && t.state === "ok" && (
                   <span className="min-w-0 truncate text-xs text-emerald-400" title={t.sample}>
-                    ✓ antwortet — „{t.sample}"
+                    {`✓ antwortet — „${t.sample}“`}
                   </span>
                 )}
                 {t && t.state === "err" && (
@@ -856,7 +856,7 @@ function AiAccessModal({
             : newProvider === "openai"
             ? "OpenAI: API-Key erforderlich (Modell optional, Standard gpt-4o)."
             : "Anthropic: API-Key erforderlich (Modell optional, Standard claude-sonnet-4-6)."}
-          {" "}Danach <span className="text-zinc-300">„+ Hinzufügen"</span> klicken und unten mit <span className="text-amber-400">„Speichern"</span> übernehmen — erst dann erscheint der Zugang im KI-Dropdown.
+          {" Danach "}<span className="text-zinc-300">{"„+ Hinzufügen“"}</span>{" klicken und unten mit "}<span className="text-amber-400">{"„Speichern“"}</span>{" übernehmen — erst dann erscheint der Zugang im KI-Dropdown."}
         </p>
       </div>
 
@@ -1305,26 +1305,41 @@ export default function RadioResearchPage() {
         if (!r.ok) throw new Error(data.error ?? "Fehler");
 
         const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
+        // Texte je Rang sammeln (Batch + ggf. Einzel-Fallback), Endstand lokal bauen —
+        // saveToDb NICHT in einem setState-Updater aufrufen (unpur → doppelte
+        // Archiv-Einträge im Dev-StrictMode).
+        const batchTexts = new Map<number, string>();
+        for (const t of texts) if (t.radio_text?.trim()) batchTexts.set(t.rank, t.radio_text);
+
         setResult(prev => {
           if (!prev) return prev;
           return {
             ...prev,
-            regional: prev.regional.map(item => {
-              const found = texts.find(t => t.rank === item.rank);
-              return found ? { ...item, radio_text: found.radio_text } : item;
-            }),
+            regional: prev.regional.map(item =>
+              batchTexts.has(item.rank) ? { ...item, radio_text: batchTexts.get(item.rank)! } : item
+            ),
           };
         });
 
         // Fallback: was der Batch nicht (sauber) geliefert hat, einzeln nachgenerieren.
         // Robust bei kleinen Modellen mit unsauberem JSON; kostet nur bei Bedarf extra.
-        const missing = top5.filter(i => !texts.find(t => t.rank === i.rank && t.radio_text?.trim()));
+        // (Eigene Map-Kopie — batchTexts ist von der setResult-Closure eingefroren.)
+        const allTexts = new Map(batchTexts);
+        const missing = top5.filter(i => !allTexts.has(i.rank));
         for (const item of missing) {
-          await generateSingleText(item, "Regional");
+          const single = await generateSingleText(item, "Regional");
+          if (single) allTexts.set(item.rank, single);
         }
 
-        // Endstand (inkl. einzeln nachgenerierter Texte) speichern
-        setResult(prev => { if (prev) saveToDb(prev); return prev; });
+        // Endstand aus lokalen Daten bauen und einmal speichern
+        const finalResult: RadioResearchResult = {
+          ...initialResult,
+          regional: newsItems.map(item =>
+            allTexts.has(item.rank) ? { ...item, radio_text: allTexts.get(item.rank)! } : item
+          ),
+        };
+        setResult(finalResult);
+        saveToDb(finalResult);
         setPhase("done");
         stopTimer();
       } catch (e) { return fail(e); }
@@ -1335,7 +1350,9 @@ export default function RadioResearchPage() {
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  async function generateSingleText(item: NewsItem, category: string) {
+  // Liefert den erzeugten Text zurück (oder null), damit Aufrufer den Endstand
+  // lokal weiterverwenden können; aktualisiert zusätzlich selbst das result-State.
+  async function generateSingleText(item: NewsItem, category: string): Promise<string | null> {
     setGeneratingRanks(prev => new Set(prev).add(item.rank));
     try {
       const r = await fetch("/api/radio-research", {
@@ -1350,7 +1367,7 @@ export default function RadioResearchPage() {
       const data = await r.json();
       if (!r.ok) throw new Error(data.error ?? "Fehler");
       const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
-      if (texts.length > 0) {
+      if (texts.length > 0 && texts[0].radio_text?.trim()) {
         setResult(prev => {
           if (!prev) return prev;
           return {
@@ -1360,8 +1377,12 @@ export default function RadioResearchPage() {
             ),
           };
         });
+        return texts[0].radio_text;
       }
-    } catch { /* ignore */ }
+      return null;
+    } catch {
+      return null;
+    }
     finally {
       setGeneratingRanks(prev => { const n = new Set(prev); n.delete(item.rank); return n; });
     }
