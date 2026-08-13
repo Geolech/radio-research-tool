@@ -35,6 +35,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Delete previous artifacts
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'RadioResearchTool-Windows',
+              per_page: 100,
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              console.log(`Deleting artifact ${artifact.id} (${artifact.name}, ${artifact.created_at})`);
+              await github.rest.actions.deleteArtifact({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                artifact_id: artifact.id,
+              });
+            }
+
       - name: Upload installer & portable
         uses: actions/upload-artifact@v4
         with:
@@ -42,4 +61,4 @@ jobs:
           path: |
             dist/*.exe
           if-no-files-found: error
-retention-days: 7
+          retention-days: 90
