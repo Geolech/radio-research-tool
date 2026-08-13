@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverError } from "@/lib/security";
 import Anthropic from "@anthropic-ai/sdk";
 import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
@@ -224,7 +225,6 @@ export async function POST(req: NextRequest) {
       { status: 404 }
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Fehler");
   }
 }

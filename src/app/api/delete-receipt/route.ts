@@ -3,15 +3,17 @@ import fs from "fs";
 import path from "path";
 import { ReceiptFile } from "@/lib/types";
 import { getSupabaseClient } from "@/lib/supabase";
+import { safeDeviceId, resolveWithin, serverError } from "@/lib/security";
 
 const OVERRIDES_PATH = path.join(process.cwd(), "src/lib/devices-overrides.json");
 const RECEIPTS_DIR   = path.join(process.cwd(), "public/receipts");
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { deviceId, receiptId } = await req.json();
+    const { deviceId: rawId, receiptId } = await req.json();
+    const deviceId = safeDeviceId(rawId);
     if (!deviceId || !receiptId) {
-      return NextResponse.json({ error: "deviceId und receiptId erforderlich" }, { status: 400 });
+      return NextResponse.json({ error: "gültige deviceId und receiptId erforderlich" }, { status: 400 });
     }
 
     // ── Supabase ─────────────────────────────────────────────────────────────
@@ -43,14 +45,14 @@ export async function DELETE(req: NextRequest) {
     const target    = existing.find((r) => r.id === receiptId);
     if (!target) return NextResponse.json({ error: "Rechnung nicht gefunden" }, { status: 404 });
 
-    try { fs.unlinkSync(path.join(RECEIPTS_DIR, deviceId, path.basename(target.url))); } catch { /* gone */ }
+    const victim = resolveWithin(RECEIPTS_DIR, deviceId, path.basename(target.url));
+    if (victim) { try { fs.unlinkSync(victim); } catch { /* gone */ } }
     entry.receipts      = existing.filter((r) => r.id !== receiptId);
     overrides[deviceId] = entry;
     fs.writeFileSync(OVERRIDES_PATH, JSON.stringify(overrides, null, 2) + "\n");
     return NextResponse.json({ ok: true });
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Löschen fehlgeschlagen");
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverError } from "@/lib/security";
 import fs from "fs";
 import { getSupabaseClient } from "@/lib/supabase";
 
@@ -136,7 +137,6 @@ export async function POST(req: NextRequest) {
       styleGuideFound: rules.remove.length + rules.replace.length > 0,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Fehler");
   }
 }

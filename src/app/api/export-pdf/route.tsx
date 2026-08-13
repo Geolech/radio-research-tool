@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { serverError } from "@/lib/security";
 import { renderToBuffer } from "@react-pdf/renderer";
 import React from "react";
 import fs from "fs";
@@ -70,7 +71,6 @@ export async function GET() {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "PDF-Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "PDF-Fehler");
   }
 }

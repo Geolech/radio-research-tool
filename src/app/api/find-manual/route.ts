@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { serverError } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
@@ -100,6 +101,6 @@ ${JSON_FORMAT}`,
       return NextResponse.json({ manuals: [], source: "web" });
     }
   } catch (err) {
-    return NextResponse.json({ error: err instanceof Error ? err.message : "Fehler" }, { status: 500 });
+    return serverError(err, "Fehler");
   }
 }

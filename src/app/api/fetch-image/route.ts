@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { safeDeviceId, assertPublicHttpUrl, resolveWithin, serverError } from "@/lib/security";
 
 const IMAGES_DIR = path.join(process.cwd(), "public/images/devices");
 const MAX_SIZE_MB = 20;
 
 export async function POST(req: NextRequest) {
   try {
-    const { url, deviceId } = (await req.json()) as { url: string; deviceId: string };
+    const { url, deviceId: rawId } = (await req.json()) as { url: string; deviceId: string };
+    const deviceId = safeDeviceId(rawId);
     if (!url || !deviceId) {
-      return NextResponse.json({ error: "url und deviceId erforderlich" }, { status: 400 });
+      return NextResponse.json({ error: "url und gültige deviceId erforderlich" }, { status: 400 });
     }
+
+    // SSRF-Schutz: nur öffentliche http(s)-Ziele, keine internen Adressen
+    await assertPublicHttpUrl(url);
 
     // Fetch image server-side (bypasses hotlink protection)
     const res = await fetch(url, {
@@ -53,12 +58,14 @@ export async function POST(req: NextRequest) {
       : "jpeg";
 
     const filename = `${deviceId}-official.${ext}`;
-    const filePath = path.join(IMAGES_DIR, filename);
+    const filePath = resolveWithin(IMAGES_DIR, filename);
+    if (!filePath) {
+      return NextResponse.json({ error: "Ungültiger Zielpfad" }, { status: 400 });
+    }
     fs.writeFileSync(filePath, buffer);
 
     return NextResponse.json({ url: `/images/devices/${filename}` });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Abruf fehlgeschlagen";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Abruf fehlgeschlagen");
   }
 }

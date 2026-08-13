@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import path from "path";
+import { safeDeviceId, resolveWithin, serverError } from "@/lib/security";
 
 const IMAGES_DIR = path.join(process.cwd(), "public/images/devices");
 const OVERRIDES_PATH = path.join(process.cwd(), "src/lib/devices-overrides.json");
@@ -11,10 +12,10 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
-    const deviceId = formData.get("deviceId") as string | null;
+    const deviceId = safeDeviceId(formData.get("deviceId"));
 
     if (!file || !deviceId) {
-      return NextResponse.json({ error: "file und deviceId erforderlich" }, { status: 400 });
+      return NextResponse.json({ error: "file und gültige deviceId erforderlich" }, { status: 400 });
     }
 
     const contentType = file.type;
@@ -29,7 +30,10 @@ export async function POST(req: NextRequest) {
 
     const ext = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpeg";
     const filename = `${deviceId}.${ext}`;
-    const filePath = path.join(IMAGES_DIR, filename);
+    const filePath = resolveWithin(IMAGES_DIR, filename);
+    if (!filePath) {
+      return NextResponse.json({ error: "Ungültiger Zielpfad" }, { status: 400 });
+    }
 
     if (!fs.existsSync(IMAGES_DIR)) fs.mkdirSync(IMAGES_DIR, { recursive: true });
     fs.writeFileSync(filePath, buffer);
@@ -56,7 +60,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: imageUrl });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Upload fehlgeschlagen";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Upload fehlgeschlagen");
   }
 }

@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { serverError } from "@/lib/security";
 import { NextRequest, NextResponse } from "next/server";
 import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
@@ -41,7 +42,6 @@ Füge 4-8 relevante technische Spezifikationen ein.`,
     const data = JSON.parse(jsonMatch[0]);
     return NextResponse.json(data);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Unbekannter Fehler");
   }
 }

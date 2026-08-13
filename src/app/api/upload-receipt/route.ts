@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { ReceiptFile } from "@/lib/types";
 import { getSupabaseClient } from "@/lib/supabase";
+import { safeDeviceId, resolveWithin, serverError } from "@/lib/security";
 
 const OVERRIDES_PATH = path.join(process.cwd(), "src/lib/devices-overrides.json");
 const RECEIPTS_DIR   = path.join(process.cwd(), "public/receipts");
@@ -18,10 +19,10 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file     = formData.get("file") as File | null;
-    const deviceId = (formData.get("deviceId") as string | null)?.trim();
+    const deviceId = safeDeviceId(formData.get("deviceId"));
 
     if (!file || !deviceId) {
-      return NextResponse.json({ error: "file und deviceId erforderlich" }, { status: 400 });
+      return NextResponse.json({ error: "file und gültige deviceId erforderlich" }, { status: 400 });
     }
 
     const mimeType = ALLOWED_TYPES[file.type];
@@ -65,9 +66,13 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Lokaler Fallback (Datei auf Disk) ─────────────────────────────────────
-    const deviceDir = path.join(RECEIPTS_DIR, deviceId);
+    const deviceDir = resolveWithin(RECEIPTS_DIR, deviceId);
+    const targetFile = deviceDir && resolveWithin(deviceDir, fileName);
+    if (!deviceDir || !targetFile) {
+      return NextResponse.json({ error: "Ungültiger Zielpfad" }, { status: 400 });
+    }
     fs.mkdirSync(deviceDir, { recursive: true });
-    fs.writeFileSync(path.join(deviceDir, fileName), buffer);
+    fs.writeFileSync(targetFile, buffer);
     const publicUrl = `/receipts/${deviceId}/${fileName}`;
 
     const receipt: ReceiptFile = {
@@ -84,7 +89,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, receipt });
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Upload-Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Upload-Fehler");
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverError } from "@/lib/security";
 import fs from "fs";
 import path from "path";
 
@@ -43,7 +44,6 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ url: `/images/devices/${filename}` });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Upload fehlgeschlagen";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Upload fehlgeschlagen");
   }
 }

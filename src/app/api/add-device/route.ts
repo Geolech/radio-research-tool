@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { serverError } from "@/lib/security";
 import fs from "fs";
 import path from "path";
 import { HifiDevice, DeviceCategory } from "@/lib/types";
@@ -67,7 +68,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ id, device: newDevice });
 
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Fehler";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return serverError(err, "Fehler");
   }
 }
