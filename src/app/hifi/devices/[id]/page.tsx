@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { IconPhotoOff } from "@tabler/icons-react";
 import { devices, getAllDevicesWithOverrides } from "@/lib/devices";
+import { isAdmin } from "@/lib/admin";
 import EnrichButton from "@/components/EnrichButton";
 import ManualSection from "@/components/ManualSection";
 import ReviewSection from "@/components/ReviewSection";
@@ -32,6 +34,8 @@ export default async function DevicePage({ params }: PageProps) {
   const device = (await getAllDevicesWithOverrides()).find((d) => d.id === id);
   if (!device) notFound();
 
+  const admin = await isAdmin();
+
   type ManualEntry = { title: string; url: string; source: string; type: string; language?: string };
   const allManuals = manualsData as Record<string, ManualEntry[]>;
   const savedManuals: ManualEntry[] = allManuals[id] ?? [];
@@ -57,8 +61,21 @@ export default async function DevicePage({ params }: PageProps) {
         <div className="grid gap-8 md:grid-cols-2">
           {/* Images: own photo + optional official image side by side */}
           <div className="space-y-2">
-            {/* Own photo - with inline upload */}
-            <HeroPhotoUpload deviceId={device.id} currentImageUrl={device.imageUrl} />
+            {/* Own photo - Upload nur für Owner, sonst read-only Bild */}
+            {admin ? (
+              <HeroPhotoUpload deviceId={device.id} currentImageUrl={device.imageUrl} />
+            ) : (
+              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900">
+                {device.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={device.imageUrl} alt={`${device.brand} ${device.model}`} className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <IconPhotoOff size={48} className="text-zinc-700" stroke={1.3} />
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Official image (if saved) */}
             {hasOfficialImage && (
@@ -108,36 +125,42 @@ export default async function DevicePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Offizielles Produktbild - direkt unter dem Hero */}
-        <div className="mt-6">
-          <OfficialImageSection device={device} />
-        </div>
-
-        {/* Beschreibung recherchieren */}
-        <EnrichButton device={device} />
-
-        {/* Eigene Notizen & Ergänzungen */}
-        <NotesEditor device={device} />
-
-        {/* Specs */}
-        <SpecsEditor device={device} />
-
-        {/* Bestand & Rechnungen */}
-        <div className="mt-10 grid gap-4 sm:grid-cols-2">
-          <InventorySelector device={device} />
-          <ReceiptSection device={device} />
-        </div>
-
-        {/* Sektionen */}
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <ManualSection device={device} savedManuals={savedManuals} />
-          <ReviewSection device={device} savedReviews={savedReviews} />
-          <PriceEditor device={device} />
-          <RepairSection device={device} />
-          <div className="sm:col-span-2">
-            <PriceSection device={device} />
+        {/* Offizielles Produktbild recherchieren — nur Owner */}
+        {admin && (
+          <div className="mt-6">
+            <OfficialImageSection device={device} />
           </div>
-        </div>
+        )}
+
+        {/* Beschreibung recherchieren — nur Owner (KI) */}
+        {admin && <EnrichButton device={device} />}
+
+        {/* Eigene Notizen & Ergänzungen — nur Owner */}
+        {admin && <NotesEditor device={device} />}
+
+        {/* Specs — Inhalt öffentlich, Bearbeiten nur Owner */}
+        <SpecsEditor device={device} canEdit={admin} />
+
+        {/* Bestand & Rechnungen (Versicherungsbelege) — nur Owner */}
+        {admin && (
+          <div className="mt-10 grid gap-4 sm:grid-cols-2">
+            <InventorySelector device={device} />
+            <ReceiptSection device={device} />
+          </div>
+        )}
+
+        {/* Handbücher, Tests, Preise, Reparatur — nur Owner */}
+        {admin && (
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <ManualSection device={device} savedManuals={savedManuals} />
+            <ReviewSection device={device} savedReviews={savedReviews} />
+            <PriceEditor device={device} />
+            <RepairSection device={device} />
+            <div className="sm:col-span-2">
+              <PriceSection device={device} />
+            </div>
+          </div>
+        )}
       </div>
     </main>
   );

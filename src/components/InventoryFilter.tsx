@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { IconCheck, IconStar, IconCircleDashed, IconBox, IconAlertTriangle, IconInbox } from "@tabler/icons-react";
 import DeviceCard from "@/components/DeviceCard";
+import { useAdmin } from "@/components/AdminProvider";
 import type { HifiDevice, InventoryStatus, AnlageLocation } from "@/lib/types";
 import { ANLAGE_LABELS } from "@/lib/types";
 
@@ -60,6 +61,7 @@ function countAnlage(devices: HifiDevice[], anlage: AnlageFilter): number {
 // ─── Komponente ───────────────────────────────────────────────────────────────
 
 export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) {
+  const admin = useAdmin();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [anlageFilter, setAnlageFilter] = useState<AnlageFilter>("all");
 
@@ -157,8 +159,8 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
           <DeviceCard key={device.id} device={device} />
         ))}
 
-        {/* Gerät hinzufügen — nur bei "Alle" oder "Aktueller Bestand" anzeigen */}
-        {(statusFilter === "all" || statusFilter === "aktueller_bestand") && (
+        {/* Gerät hinzufügen — nur für Owner, bei "Alle" oder "Aktueller Bestand" */}
+        {admin && (statusFilter === "all" || statusFilter === "aktueller_bestand") && (
           <Link href="/hifi/devices/new" className="group block">
             <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-800 transition-all duration-300 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10">
               <div className="flex flex-col items-center justify-center gap-3 p-8 text-zinc-700 group-hover:text-zinc-400 transition-colors min-h-[200px]">

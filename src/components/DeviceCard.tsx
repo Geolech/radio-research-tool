@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { IconCheck, IconStar, IconPhotoOff } from "@tabler/icons-react";
 import { HifiDevice, InventoryStatus, ANLAGE_LABELS } from "@/lib/types";
+import { useAdmin } from "@/components/AdminProvider";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,7 @@ const STATUS_BUTTONS: {
 // ─── Komponente ───────────────────────────────────────────────────────────────
 
 export default function DeviceCard({ device }: { device: HifiDevice }) {
+  const admin = useAdmin();
   const [status,  setStatus]  = useState<InventoryStatus | null>(device.inventoryStatus ?? null);
   const [saving,  setSaving]  = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -150,7 +152,8 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
           )}
         </div>
 
-        {/* ── Status-Picker (unten rechts) ────────────────────────────── */}
+        {/* ── Status-Picker (unten rechts) — nur für Owner ─────────────── */}
+        {admin && (
         <div className="flex items-center justify-between px-4 pb-3 pt-1">
           {/* Spar-Feedback */}
           <span className={`inline-flex items-center transition-opacity duration-300 ${
@@ -182,6 +185,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
             })}
           </div>
         </div>
+        )}
 
       </div>
     </Link>

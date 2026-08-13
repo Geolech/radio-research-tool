@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ADMIN_COOKIE } from "@/lib/admin-cookie";
 
 // Zustandsändernde /api-Aufrufe (POST/PUT/PATCH/DELETE) nur von der eigenen
 // Origin zulassen. Blockiert Cross-Origin-Missbrauch und naive Skripte gegen die
@@ -13,31 +14,40 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Bevorzugt Fetch-Metadata (von allen modernen Browsern gesendet)
-  const secFetchSite = req.headers.get("sec-fetch-site");
-  if (secFetchSite) {
-    return secFetchSite === "same-origin" || secFetchSite === "same-site"
-      ? NextResponse.next()
-      : deny();
+  // 1) Same-Origin-Prüfung für alle zustandsändernden Aufrufe
+  if (!isSameOrigin(req)) {
+    return deny("Zugriff nur von der App erlaubt");
   }
 
-  // Fallback: Origin-Host muss zum Request-Host passen
+  // 2) Owner-Gate: Schreiben/KI nur mit gültigem Owner-Cookie.
+  //    Nur aktiv, wenn ADMIN_TOKEN gesetzt ist. /api/admin (Login) ausgenommen.
+  const adminToken = process.env.ADMIN_TOKEN;
+  const isLogin = req.nextUrl.pathname === "/api/admin";
+  if (adminToken && !isLogin) {
+    const cookie = req.cookies.get(ADMIN_COOKIE)?.value;
+    if (cookie !== adminToken) {
+      return deny("Nur der Owner darf Änderungen vornehmen");
+    }
+  }
+
+  return NextResponse.next();
+}
+
+function isSameOrigin(req: NextRequest): boolean {
+  const secFetchSite = req.headers.get("sec-fetch-site");
+  if (secFetchSite) {
+    return secFetchSite === "same-origin" || secFetchSite === "same-site";
+  }
   const origin = req.headers.get("origin");
   const host = req.headers.get("host");
   if (origin && host) {
-    try {
-      if (new URL(origin).host === host) return NextResponse.next();
-    } catch { /* ungültige Origin */ }
+    try { return new URL(origin).host === host; } catch { return false; }
   }
-
-  return deny();
+  return false;
 }
 
-function deny() {
-  return NextResponse.json(
-    { error: "Zugriff nur von der App erlaubt" },
-    { status: 403 }
-  );
+function deny(message: string) {
+  return NextResponse.json({ error: message }, { status: 403 });
 }
 
 export const config = {

@@ -6,11 +6,12 @@ import { HifiDevice } from "@/lib/types";
 
 interface SpecsEditorProps {
   device: HifiDevice;
+  canEdit?: boolean;
 }
 
 type SpecRow = { key: string; value: string };
 
-export default function SpecsEditor({ device }: SpecsEditorProps) {
+export default function SpecsEditor({ device, canEdit = true }: SpecsEditorProps) {
   const initialRows: SpecRow[] = Object.entries(device.specs ?? {}).map(
     ([key, value]) => ({ key, value })
   );
@@ -76,7 +77,7 @@ export default function SpecsEditor({ device }: SpecsEditorProps) {
         <h2 className="text-xs font-medium uppercase tracking-widest text-amber-500">
           Technische Daten
         </h2>
-        {!editing ? (
+        {!canEdit ? null : !editing ? (
           <button
             onClick={() => { setEditing(true); setSaved(false); }}
             className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-400 hover:border-amber-500/40 hover:text-amber-400 transition-colors"

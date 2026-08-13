@@ -1,9 +1,14 @@
 import StyleGuideEditor from "@/components/StyleGuideEditor";
+import AdminUnlock from "@/components/AdminUnlock";
 import Link from "next/link";
+import { isAdmin, adminEnabled } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
-export default function EinstellungenPage() {
+export default async function EinstellungenPage() {
+  const admin = await isAdmin();
+  const enabled = adminEnabled();
+
   return (
     <main className="min-h-screen bg-zinc-950 px-6 py-12">
       <div className="mx-auto max-w-3xl">
@@ -23,7 +28,9 @@ export default function EinstellungenPage() {
           </h1>
         </div>
 
-        <StyleGuideEditor />
+        <AdminUnlock enabled={enabled} isAdmin={admin} />
+
+        {admin && <StyleGuideEditor />}
       </div>
     </main>
   );

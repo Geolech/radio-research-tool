@@ -3,8 +3,9 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { IconCamera, IconLoader2, IconPlus, IconArrowLeft } from "@tabler/icons-react";
+import { IconCamera, IconLoader2, IconPlus, IconArrowLeft, IconLock } from "@tabler/icons-react";
 import { DeviceCategory } from "@/lib/types";
+import { useAdmin } from "@/components/AdminProvider";
 
 const CATEGORIES: DeviceCategory[] = [
   "Verstärker", "Vorverstärker", "Endstufe", "Kopfhörerverstärker",
@@ -13,6 +14,7 @@ const CATEGORIES: DeviceCategory[] = [
 ];
 
 export default function NewDevicePage() {
+  const admin = useAdmin();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -74,6 +76,30 @@ export default function NewDevicePage() {
       setError(err instanceof Error ? err.message : "Unbekannter Fehler");
       setSaving(false);
     }
+  }
+
+  if (!admin) {
+    return (
+      <main className="min-h-screen bg-zinc-950 px-6 py-12">
+        <div className="mx-auto max-w-lg">
+          <Link
+            href="/hifi"
+            className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-8"
+          >
+            <IconArrowLeft size={16} stroke={1.8} /> Zurück zur Sammlung
+          </Link>
+          <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-8 text-center">
+            <IconLock size={32} className="mx-auto text-zinc-600 mb-3" stroke={1.5} />
+            <p className="text-sm text-zinc-400">
+              Geräte hinzufügen ist nur dem Owner vorbehalten.
+            </p>
+            <Link href="/hifi/einstellungen" className="mt-3 inline-block text-xs text-amber-500 hover:text-amber-400">
+              Als Owner freischalten
+            </Link>
+          </div>
+        </div>
+      </main>
+    );
   }
 
   return (

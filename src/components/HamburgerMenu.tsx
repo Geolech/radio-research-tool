@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { HifiDevice } from "@/lib/types";
+import { useAdmin } from "@/components/AdminProvider";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +132,7 @@ function CategoryGroup({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
+  const admin = useAdmin();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -246,9 +248,11 @@ export default function HamburgerMenu({ devices }: { devices: HifiDevice[] }) {
           <NavItem href="/hifi" label="HiFi-Bibliothek" active={pathname === "/hifi"} onClick={close}
             icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M1 6.5L8 1l7 5.5V15H1V6.5z" /></svg>}
           />
-          <NavItem href="/hifi/devices/new" label="Gerät hinzufügen" active={pathname === "/hifi/devices/new"} onClick={close}
-            icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="8" y1="2" x2="8" y2="14" /><line x1="2" y1="8" x2="14" y2="8" /></svg>}
-          />
+          {admin && (
+            <NavItem href="/hifi/devices/new" label="Gerät hinzufügen" active={pathname === "/hifi/devices/new"} onClick={close}
+              icon={<svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="8" y1="2" x2="8" y2="14" /><line x1="2" y1="8" x2="14" y2="8" /></svg>}
+            />
+          )}
 
           <div className="py-1"><div className="border-t border-zinc-800/70" /></div>
 

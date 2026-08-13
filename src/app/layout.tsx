@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HamburgerMenu from "@/components/HamburgerMenu";
+import AdminProvider from "@/components/AdminProvider";
 import { getAllDevicesWithOverrides } from "@/lib/devices";
+import { isAdmin } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const devices = await getAllDevicesWithOverrides();
+  const admin = await isAdmin();
   return (
     <html
       lang="de"
@@ -42,8 +45,10 @@ export default async function RootLayout({
           Erweiterungen (z. B. Synology Photos), die sonst im Dev-Modus die
           Hydration app-weit brechen und alle Buttons tot erscheinen lassen. */}
       <body suppressHydrationWarning className="min-h-full flex flex-col">
-        {children}
-        <HamburgerMenu devices={devices} />
+        <AdminProvider isAdmin={admin}>
+          {children}
+          <HamburgerMenu devices={devices} />
+        </AdminProvider>
       </body>
     </html>
   );
