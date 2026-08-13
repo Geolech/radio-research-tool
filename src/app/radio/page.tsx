@@ -481,6 +481,11 @@ function EditorPanel({
         </div>
       </div>
 
+      {/* Sorgfaltspflicht-Hinweis: KI-Texte vor Sendung prüfen */}
+      <p className="flex-shrink-0 px-4 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-200/70">
+        ⚠ KI-generierte Sprechtexte sind Entwürfe — vor der Sendung redaktionell prüfen.
+      </p>
+
       {/* Textbereich */}
       <textarea
         value={value}
