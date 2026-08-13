@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconPencil, IconPlus, IconArrowsExchange, IconDeviceFloppy } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 
 interface NotesEditorProps {
@@ -101,14 +102,14 @@ export default function NotesEditor({ device }: NotesEditorProps) {
             onClick={() => { setStep("editing"); setSaved(false); }}
             className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-400 hover:border-amber-500/40 hover:text-amber-400 transition-colors"
           >
-            {hasNotes ? "✎ Bearbeiten" : "+ Hinzufügen"}
+            {hasNotes ? <><IconPencil size={13} stroke={1.8} /> Bearbeiten</> : <><IconPlus size={13} stroke={2} /> Hinzufügen</>}
           </button>
         )}
       </div>
 
       {/* Feedback */}
       {saved && (
-        <p className="text-xs text-emerald-400 font-medium mb-3">✓ Gespeichert und Beschreibung aktualisiert</p>
+        <p className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium mb-3"><IconCheck size={13} stroke={2.5} /> Gespeichert und Beschreibung aktualisiert</p>
       )}
       {error && (
         <p className="text-xs text-red-400 mb-3">{error}</p>
@@ -176,7 +177,7 @@ export default function NotesEditor({ device }: NotesEditorProps) {
               disabled={!notes.trim()}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 px-4 py-1.5 text-xs font-medium text-amber-400 hover:bg-amber-500/10 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {device.description ? "⇄ Mit bisherigem Text zusammenführen" : "Vorschau"}
+              {device.description ? <><IconArrowsExchange size={13} stroke={1.8} /> Mit bisherigem Text zusammenführen</> : "Vorschau"}
             </button>
           </div>
         </div>
@@ -226,7 +227,7 @@ export default function NotesEditor({ device }: NotesEditorProps) {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
             >
-              {saving ? "Speichere …" : "↓ Übernehmen"}
+              {saving ? "Speichere …" : <><IconDeviceFloppy size={13} stroke={1.8} /> Übernehmen</>}
             </button>
           </div>
         </div>

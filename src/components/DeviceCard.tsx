@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { IconCheck, IconStar, IconPhotoOff } from "@tabler/icons-react";
 import { HifiDevice, InventoryStatus, ANLAGE_LABELS } from "@/lib/types";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ const STATUS_BUTTONS: {
 }[] = [
   {
     value: "aktueller_bestand",
-    icon: "✓",
+    icon: <IconCheck size={15} stroke={2.5} />,
     label: "Aktueller Bestand",
     activeClass:   "bg-emerald-700 border-emerald-700 text-white",
     inactiveClass: "border-zinc-700 text-zinc-600 hover:border-emerald-700/60 hover:text-emerald-600",
@@ -42,7 +43,7 @@ const STATUS_BUTTONS: {
   },
   {
     value: "wunschgeraet",
-    icon: "★",
+    icon: <IconStar size={14} stroke={2} />,
     label: "Wunschgerät",
     activeClass:   "bg-amber-500 border-amber-500 text-zinc-900",
     inactiveClass: "border-zinc-700 text-zinc-600 hover:border-amber-500/60 hover:text-amber-400",
@@ -118,7 +119,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
             />
           ) : (
             <div className="flex h-full items-center justify-center">
-              <span className="text-4xl text-zinc-600">◎</span>
+              <IconPhotoOff size={36} className="text-zinc-600" stroke={1.5} />
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent" />
@@ -152,12 +153,14 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
         {/* ── Status-Picker (unten rechts) ────────────────────────────── */}
         <div className="flex items-center justify-between px-4 pb-3 pt-1">
           {/* Spar-Feedback */}
-          <span className={`text-[10px] transition-opacity duration-300 ${
+          <span className={`inline-flex items-center transition-opacity duration-300 ${
             saving     ? "text-zinc-600 opacity-100" :
             justSaved  ? "text-emerald-500 opacity-100" :
                         "opacity-0"
           }`}>
-            {saving ? "…" : "✓"}
+            {saving
+              ? <span className="text-[10px]">…</span>
+              : <IconCheck size={13} stroke={2.5} />}
           </span>
 
           {/* Drei Häkchen-Buttons */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconFileTypePdf, IconLoader2 } from "@tabler/icons-react";
 
 export default function PdfExportButton({ deviceCount }: { deviceCount: number }) {
   const [loading, setLoading] = useState(false);
@@ -38,13 +39,8 @@ export default function PdfExportButton({ deviceCount }: { deviceCount: number }
         title={`DIN A5 PDF · Titelseite, Inhaltsverzeichnis, ${deviceCount} Geräte, Versicherungsübersicht`}
       >
         {loading
-          ? <><span className="animate-spin inline-block">⟳</span> PDF wird erstellt …</>
-          : <>
-              <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M3 12h10M8 2v8M5 7l3 3 3-3" />
-              </svg>
-              PDF exportieren
-            </>}
+          ? <><IconLoader2 size={13} className="animate-spin" /> PDF wird erstellt …</>
+          : <><IconFileTypePdf size={13} stroke={1.8} /> PDF exportieren</>}
       </button>
       {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
     </div>

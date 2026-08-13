@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { IconCheck, IconStar, IconCircleDashed, IconBox, IconAlertTriangle, IconInbox } from "@tabler/icons-react";
 import DeviceCard from "@/components/DeviceCard";
 import type { HifiDevice, InventoryStatus, AnlageLocation } from "@/lib/types";
 import { ANLAGE_LABELS } from "@/lib/types";
@@ -27,19 +28,19 @@ const STATUS_OPTIONS: {
   icon: React.ReactNode;
 }[] = [
   { value: "all",               label: "Alle",                icon: null },
-  { value: "aktueller_bestand", label: "Aktueller Bestand",   icon: "✓" },
+  { value: "aktueller_bestand", label: "Aktueller Bestand",   icon: <IconCheck size={13} stroke={2.5} /> },
   { value: "ehemaliger_bestand",label: "Ehemaliger Bestand",  icon: MonitorSpeakerIcon },
-  { value: "wunschgeraet",      label: "Wunschgerät",         icon: "★" },
-  { value: "unassigned",        label: "Nicht zugeordnet",    icon: "○" },
+  { value: "wunschgeraet",      label: "Wunschgerät",         icon: <IconStar size={12} stroke={2} /> },
+  { value: "unassigned",        label: "Nicht zugeordnet",    icon: <IconCircleDashed size={12} stroke={2} /> },
 ];
 
-const ANLAGE_OPTIONS: { value: AnlageFilter; icon: string }[] = [
-  { value: "all",          icon: "—"  },
+const ANLAGE_OPTIONS: { value: AnlageFilter; icon: React.ReactNode }[] = [
+  { value: "all",          icon: null },
   { value: "anlage_1",     icon: "①"  },
   { value: "anlage_2",     icon: "②"  },
   { value: "anlage_3",     icon: "③"  },
-  { value: "lagerbestand", icon: "📦" },
-  { value: "defekt",       icon: "⚠"  },
+  { value: "lagerbestand", icon: <IconBox size={12} stroke={2} /> },
+  { value: "defekt",       icon: <IconAlertTriangle size={12} stroke={2} /> },
 ];
 
 // ─── Zähl-Helfer ──────────────────────────────────────────────────────────────
@@ -126,7 +127,7 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
                     : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
                 }`}
               >
-                <span className="text-[11px]">{opt.icon}</span>
+                {opt.icon != null && <span className="flex items-center text-[11px]">{opt.icon}</span>}
                 {label}
                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
                   active ? "bg-white/15 text-zinc-200" : "bg-zinc-900 text-zinc-600"
@@ -173,7 +174,7 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
         {/* Leer-Zustand */}
         {filtered.length === 0 && (
           <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 py-16 flex flex-col items-center gap-3 text-zinc-700">
-            <span className="text-4xl">◎</span>
+            <IconInbox size={40} stroke={1.3} />
             <p className="text-sm">Keine Geräte in dieser Kategorie</p>
             <button
               onClick={() => handleStatusClick("all")}

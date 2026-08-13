@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconFileSpreadsheet, IconLoader2 } from "@tabler/icons-react";
 import * as XLSX from "xlsx";
 import { HifiDevice } from "@/lib/types";
 
@@ -101,16 +102,8 @@ export default function ExcelExportButton({ devices }: ExcelExportButtonProps) {
       className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/60 px-4 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 transition-colors disabled:opacity-50"
     >
       {generating
-        ? <><span className="animate-spin">⟳</span> Erstelle …</>
-        : <>
-            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="2" y="2" width="12" height="12" rx="1.5" />
-              <line x1="5" y1="6" x2="11" y2="6" />
-              <line x1="5" y1="9" x2="11" y2="9" />
-              <line x1="5" y1="12" x2="8" y2="12" />
-            </svg>
-            Excel exportieren
-          </>}
+        ? <><IconLoader2 size={13} className="animate-spin" /> Erstelle …</>
+        : <><IconFileSpreadsheet size={13} stroke={1.8} /> Excel exportieren</>}
     </button>
   );
 }

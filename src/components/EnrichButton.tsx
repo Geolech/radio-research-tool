@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconLoader2, IconSparkles, IconBook, IconRobot, IconCheck } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 
 interface EnrichButtonProps {
@@ -133,8 +134,8 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
           className="inline-flex items-center gap-2 rounded-full border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading
-            ? <><span className="animate-spin">⟳</span> Recherchiere …</>
-            : <>✦ Beschreibung via Web recherchieren</>}
+            ? <><IconLoader2 size={14} className="animate-spin" /> Recherchiere …</>
+            : <><IconSparkles size={14} stroke={1.8} /> Beschreibung via Web recherchieren</>}
         </button>
 
         <button
@@ -143,8 +144,8 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
           className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loadingWiki
-            ? <><span className="animate-spin">⟳</span> Wikipedia …</>
-            : hasResult ? <>📖 Mit Wikipedia anreichern</> : <>📖 Von Wikipedia</>}
+            ? <><IconLoader2 size={14} className="animate-spin" /> Wikipedia …</>
+            : hasResult ? <><IconBook size={14} stroke={1.8} /> Mit Wikipedia anreichern</> : <><IconBook size={14} stroke={1.8} /> Von Wikipedia</>}
         </button>
       </div>
 
@@ -156,18 +157,18 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
           {/* Source badge */}
           <div className="flex items-center gap-2 flex-wrap">
             {source === "wikipedia" && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
-                📖 Wikipedia · CC BY-SA
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
+                <IconBook size={12} stroke={1.8} /> Wikipedia · CC BY-SA
               </span>
             )}
             {source === "model" && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-medium">
-                🤖 KI-Modellwissen · ohne Gewähr
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-medium">
+                <IconRobot size={12} stroke={1.8} /> KI-Modellwissen · ohne Gewähr
               </span>
             )}
             {source === "combined" && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">
-                🤖+📖 Web & Wikipedia · ohne Gewähr
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">
+                <IconRobot size={12} stroke={1.8} /><IconBook size={12} stroke={1.8} /> Web & Wikipedia · ohne Gewähr
               </span>
             )}
             {(source === "wikipedia" || source === "combined") && articleUrl && (
@@ -246,14 +247,14 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
           {/* Aktionen */}
           <div className="flex items-center gap-3 pt-1 border-t border-zinc-800">
             {saved ? (
-              <p className="text-sm text-emerald-400 font-medium">✓ Gespeichert</p>
+              <p className="inline-flex items-center gap-1 text-sm text-emerald-400 font-medium"><IconCheck size={15} stroke={2.5} /> Gespeichert</p>
             ) : (
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {saving ? <><span className="animate-spin">⟳</span> Speichere …</> : <>↓ Übernehmen</>}
+                {saving ? <><IconLoader2 size={14} className="animate-spin" /> Speichere …</> : <><IconCheck size={14} stroke={2.5} /> Übernehmen</>}
               </button>
             )}
           </div>

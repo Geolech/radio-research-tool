@@ -1,28 +1,40 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconStar, IconBox, IconAlertTriangle } from "@tabler/icons-react";
 import type { HifiDevice, InventoryStatus, AnlageLocation } from "@/lib/types";
 import { ANLAGE_LABELS } from "@/lib/types";
 
 // ─── Konfiguration ────────────────────────────────────────────────────────────
 
-const STATUS_OPTIONS: { value: InventoryStatus; label: string; icon: string; color: string }[] = [
+// Stilisierter 2-Wege-Monitor mit Diagonale (= „ehemaliger Bestand")
+const MonitorSpeakerIcon = (
+  <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor"
+       strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3.5" y="1" width="9" height="14" rx="1.5" />
+    <circle cx="8" cy="5"    r="1.5" />
+    <circle cx="8" cy="10.5" r="3"   />
+    <line x1="1" y1="15" x2="15" y2="1" />
+  </svg>
+);
+
+const STATUS_OPTIONS: { value: InventoryStatus; label: string; icon: React.ReactNode; color: string }[] = [
   {
     value: "aktueller_bestand",
     label: "Aktueller Bestand",
-    icon: "✓",
+    icon: <IconCheck size={15} stroke={2.5} />,
     color: "emerald",
   },
   {
     value: "ehemaliger_bestand",
     label: "Ehemaliger Bestand",
-    icon: "↩",
+    icon: MonitorSpeakerIcon,
     color: "zinc",
   },
   {
     value: "wunschgeraet",
     label: "Wunschgerät",
-    icon: "★",
+    icon: <IconStar size={14} stroke={2} />,
     color: "amber",
   },
 ];
@@ -35,12 +47,12 @@ const ANLAGE_OPTIONS: AnlageLocation[] = [
   "defekt",
 ];
 
-const ANLAGE_ICONS: Record<AnlageLocation, string> = {
+const ANLAGE_ICONS: Record<AnlageLocation, React.ReactNode> = {
   anlage_1:     "①",
   anlage_2:     "②",
   anlage_3:     "③",
-  lagerbestand: "📦",
-  defekt:       "⚠",
+  lagerbestand: <IconBox size={13} stroke={2} />,
+  defekt:       <IconAlertTriangle size={13} stroke={2} />,
 };
 
 // ─── Farb-Hilfsfunktion ────────────────────────────────────────────────────────
@@ -116,7 +128,7 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
           <span className="text-xs text-zinc-600 animate-pulse">Speichern …</span>
         )}
         {saved && !saving && (
-          <span className="text-xs text-emerald-500">✓ Gespeichert</span>
+          <span className="inline-flex items-center gap-1 text-xs text-emerald-500"><IconCheck size={13} stroke={2.5} /> Gespeichert</span>
         )}
       </div>
 
@@ -184,9 +196,8 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
                             : "border-emerald-500 bg-emerald-500 text-zinc-900"
                         : "border-zinc-600"
                     }`}
-                    style={{ fontSize: "8px" }}
                   >
-                    {active && "✓"}
+                    {active && <IconCheck size={11} stroke={3} />}
                   </span>
                   <span>{ANLAGE_ICONS[loc]}</span>
                   {ANLAGE_LABELS[loc]}

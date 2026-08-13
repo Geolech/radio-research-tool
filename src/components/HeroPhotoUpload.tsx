@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { IconCamera, IconLoader2, IconPhotoOff } from "@tabler/icons-react";
 
 interface HeroPhotoUploadProps {
   deviceId: string;
@@ -58,7 +59,7 @@ export default function HeroPhotoUpload({ deviceId, currentImageUrl }: HeroPhoto
         />
       ) : (
         <div className="flex h-full items-center justify-center">
-          <span className="text-6xl text-zinc-700">◎</span>
+          <IconPhotoOff size={56} className="text-zinc-700" stroke={1.3} />
         </div>
       )}
 
@@ -84,8 +85,8 @@ export default function HeroPhotoUpload({ deviceId, currentImageUrl }: HeroPhoto
         title="Eigenes Foto hochladen"
       >
         {uploading
-          ? <><span className="animate-spin">⟳</span> Lade hoch …</>
-          : <>{displayUrl ? <>📷 Foto ändern</> : <>📷 Foto hochladen</>}</>}
+          ? <><IconLoader2 size={13} className="animate-spin" /> Lade hoch …</>
+          : <><IconCamera size={13} stroke={1.8} /> {displayUrl ? "Foto ändern" : "Foto hochladen"}</>}
       </button>
 
       {/* Hidden file input */}

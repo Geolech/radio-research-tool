@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconLoader2, IconRobot, IconDeviceFloppy, IconCoins } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 
 interface PriceEditorProps {
@@ -87,9 +88,9 @@ export default function PriceEditor({ device }: PriceEditorProps) {
   return (
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
       <div className="flex items-center gap-2">
-        <span className="text-lg">💶</span>
+        <IconCoins size={18} stroke={1.8} className="text-amber-500" />
         <h3 className="text-sm font-semibold text-zinc-200">Preise & Wert</h3>
-        {saved && <span className="text-xs text-emerald-400 font-medium ml-1">✓ Gespeichert</span>}
+        {saved && <span className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium ml-1"><IconCheck size={13} stroke={2.5} /> Gespeichert</span>}
       </div>
 
       {/* Input fields */}
@@ -182,7 +183,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
           disabled={saving || !hasValues}
           className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {saving ? <><span className="animate-spin">⟳</span> Speichere …</> : <>↓ Speichern</>}
+          {saving ? <><IconLoader2 size={14} className="animate-spin" /> Speichere …</> : <><IconDeviceFloppy size={14} stroke={1.8} /> Speichern</>}
         </button>
 
         {/* KI research */}
@@ -193,8 +194,8 @@ export default function PriceEditor({ device }: PriceEditorProps) {
           title="Claude recherchiert aktuellen Marktpreis via Websuche (~15 Sek.)"
         >
           {researching
-            ? <><span className="animate-spin">⟳</span> Recherchiere …</>
-            : <>🤖 KI recherchieren</>}
+            ? <><IconLoader2 size={13} className="animate-spin" /> Recherchiere …</>
+            : <><IconRobot size={13} stroke={1.8} /> KI recherchieren</>}
         </button>
 
         {/* External search links */}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { IconCheck, IconDeviceFloppy } from "@tabler/icons-react";
 
 export default function StyleGuideEditor() {
   const [content, setContent] = useState("");
@@ -54,11 +55,11 @@ export default function StyleGuideEditor() {
           disabled={saving || loading}
           className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-4 py-1.5 text-xs font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
         >
-          {saving ? "Speichere …" : "↓ Speichern"}
+          {saving ? "Speichere …" : <><IconDeviceFloppy size={13} stroke={1.8} /> Speichern</>}
         </button>
       </div>
 
-      {saved  && <p className="text-xs text-emerald-400 font-medium mb-3">✓ Gespeichert</p>}
+      {saved  && <p className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium mb-3"><IconCheck size={13} stroke={2.5} /> Gespeichert</p>}
       {error  && <p className="text-xs text-red-400 mb-3">{error}</p>}
 
       {/* Format-Hilfe */}

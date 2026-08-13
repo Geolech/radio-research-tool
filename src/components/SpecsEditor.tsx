@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IconCheck, IconPencil, IconDeviceFloppy } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 
 interface SpecsEditorProps {
@@ -80,7 +81,7 @@ export default function SpecsEditor({ device }: SpecsEditorProps) {
             onClick={() => { setEditing(true); setSaved(false); }}
             className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 px-3 py-1 text-xs font-medium text-zinc-400 hover:border-amber-500/40 hover:text-amber-400 transition-colors"
           >
-            ✎ Bearbeiten
+            <IconPencil size={13} stroke={1.8} /> Bearbeiten
           </button>
         ) : (
           <div className="flex items-center gap-2">
@@ -95,14 +96,14 @@ export default function SpecsEditor({ device }: SpecsEditorProps) {
               disabled={saving}
               className="inline-flex items-center gap-1.5 rounded-full bg-amber-500 px-3 py-1 text-xs font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
             >
-              {saving ? "Speichere …" : "↓ Übernehmen"}
+              {saving ? "Speichere …" : <><IconDeviceFloppy size={13} stroke={1.8} /> Übernehmen</>}
             </button>
           </div>
         )}
       </div>
 
       {saved && (
-        <p className="text-xs text-emerald-400 font-medium mb-3">✓ Gespeichert</p>
+        <p className="inline-flex items-center gap-1 text-xs text-emerald-400 font-medium mb-3"><IconCheck size={13} stroke={2.5} /> Gespeichert</p>
       )}
       {error && (
         <p className="text-xs text-red-400 mb-3">{error}</p>

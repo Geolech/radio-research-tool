@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { IconCamera, IconLoader2, IconPlus, IconArrowLeft } from "@tabler/icons-react";
 import { DeviceCategory } from "@/lib/types";
 
 const CATEGORIES: DeviceCategory[] = [
@@ -82,7 +83,7 @@ export default function NewDevicePage() {
           href="/hifi"
           className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-8"
         >
-          ← Zurück zur Sammlung
+          <IconArrowLeft size={16} stroke={1.8} /> Zurück zur Sammlung
         </Link>
 
         <div className="mb-8">
@@ -108,13 +109,13 @@ export default function NewDevicePage() {
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photoPreview} alt="Vorschau des ausgewählten Fotos" className="w-full h-full object-cover" />
-                  <span className="absolute inset-0 bg-zinc-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm font-medium text-white">
-                    <span aria-hidden="true" className="mr-1">📷</span> Foto ändern
+                  <span className="absolute inset-0 bg-zinc-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-sm font-medium text-white">
+                    <IconCamera size={16} stroke={1.8} aria-hidden="true" /> Foto ändern
                   </span>
                 </>
               ) : (
                 <span className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600 group-hover:text-zinc-400 transition-colors">
-                  <span className="text-5xl" aria-hidden="true">📷</span>
+                  <IconCamera size={40} stroke={1.4} aria-hidden="true" />
                   <span className="text-sm font-medium">Eigenes Foto hinzufügen</span>
                   <span className="text-xs text-zinc-700">JPEG, PNG oder WebP · optional</span>
                 </span>
@@ -213,8 +214,8 @@ export default function NewDevicePage() {
             className="w-full inline-flex items-center justify-center gap-2 rounded-full bg-amber-500 px-6 py-3 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {saving
-              ? <><span className="animate-spin">⟳</span> Wird angelegt …</>
-              : <>+ Zur Sammlung hinzufügen</>}
+              ? <><IconLoader2 size={16} className="animate-spin" /> Wird angelegt …</>
+              : <><IconPlus size={16} stroke={2} /> Zur Sammlung hinzufügen</>}
           </button>
         </form>
       </div>
