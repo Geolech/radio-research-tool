@@ -280,7 +280,7 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
                 value={summaryText}
                 onChange={(e) => { setSummaryText(e.target.value); setSummaryEdited(true); setSummarySaved(false); }}
                 rows={4}
-                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 leading-relaxed focus:border-amber-500 focus:outline-none resize-none"
+                className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 leading-relaxed focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 resize-none"
               />
               <div className="flex items-center gap-3">
                 {summarySaved ? (

@@ -75,12 +75,12 @@ export default function RepairSection({ device }: RepairSectionProps) {
           value={location}
           onChange={(e) => handleLocationChange(e.target.value)}
           placeholder="z. B. Lemgo, Detmold, Bielefeld …"
-          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+          className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
         />
       </div>
 
       <p className="text-xs text-zinc-500">
-        Suche direkt auf den Plattformen – Ergebnisse sind immer aktuell und ohne Gewähr.
+        Suche direkt auf den Plattformen - Ergebnisse sind immer aktuell und ohne Gewähr.
       </p>
 
       {/* Link cards */}

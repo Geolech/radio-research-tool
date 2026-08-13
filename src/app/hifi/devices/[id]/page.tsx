@@ -57,7 +57,7 @@ export default async function DevicePage({ params }: PageProps) {
         <div className="grid gap-8 md:grid-cols-2">
           {/* Images: own photo + optional official image side by side */}
           <div className="space-y-2">
-            {/* Own photo – with inline upload */}
+            {/* Own photo - with inline upload */}
             <HeroPhotoUpload deviceId={device.id} currentImageUrl={device.imageUrl} />
 
             {/* Official image (if saved) */}
@@ -66,7 +66,7 @@ export default async function DevicePage({ params }: PageProps) {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={device.officialImageUrl}
-                  alt={`${device.brand} ${device.model} – offizielles Bild`}
+                  alt={`${device.brand} ${device.model} - offizielles Bild`}
                   className="w-full h-full object-contain"
                 />
                 <span className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full bg-zinc-900/80 text-emerald-400 border border-emerald-500/30">
@@ -108,7 +108,7 @@ export default async function DevicePage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Offizielles Produktbild – direkt unter dem Hero */}
+        {/* Offizielles Produktbild - direkt unter dem Hero */}
         <div className="mt-6">
           <OfficialImageSection device={device} />
         </div>

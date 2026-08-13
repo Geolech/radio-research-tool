@@ -97,25 +97,29 @@ export default function NewDevicePage() {
         <form onSubmit={handleSubmit} className="space-y-5">
 
           {/* Photo upload area */}
-          <div
-            onClick={() => fileInputRef.current?.click()}
-            className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-700 hover:border-amber-500/50 transition-colors cursor-pointer group"
-          >
-            {photoPreview ? (
-              <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={photoPreview} alt="Vorschau" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-zinc-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <span className="text-sm font-medium text-white">📷 Foto ändern</span>
-                </div>
-              </>
-            ) : (
-              <div className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600 group-hover:text-zinc-400 transition-colors">
-                <span className="text-5xl">📷</span>
-                <p className="text-sm font-medium">Eigenes Foto hinzufügen</p>
-                <p className="text-xs text-zinc-700">JPEG, PNG oder WebP · optional</p>
-              </div>
-            )}
+          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-700 hover:border-amber-500/50 focus-within:border-amber-500/50 transition-colors group">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              aria-label={photoPreview ? "Foto ändern" : "Eigenes Foto hinzufügen"}
+              className="absolute inset-0 w-full h-full cursor-pointer rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/60"
+            >
+              {photoPreview ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photoPreview} alt="Vorschau des ausgewählten Fotos" className="w-full h-full object-cover" />
+                  <span className="absolute inset-0 bg-zinc-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-sm font-medium text-white">
+                    <span aria-hidden="true" className="mr-1">📷</span> Foto ändern
+                  </span>
+                </>
+              ) : (
+                <span className="flex h-full flex-col items-center justify-center gap-3 text-zinc-600 group-hover:text-zinc-400 transition-colors">
+                  <span className="text-5xl" aria-hidden="true">📷</span>
+                  <span className="text-sm font-medium">Eigenes Foto hinzufügen</span>
+                  <span className="text-xs text-zinc-700">JPEG, PNG oder WebP · optional</span>
+                </span>
+              )}
+            </button>
             <input
               ref={fileInputRef}
               type="file"
@@ -127,43 +131,51 @@ export default function NewDevicePage() {
 
           {/* Brand */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
+            <label htmlFor="brand" className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
               Marke *
             </label>
             <input
+              id="brand"
+              name="brand"
               type="text"
+              autoComplete="off"
               value={brand}
               onChange={(e) => setBrand(e.target.value)}
-              placeholder="z. B. Luxman"
+              placeholder="z. B. Luxman …"
               required
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
           </div>
 
           {/* Model */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
+            <label htmlFor="model" className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
               Modell *
             </label>
             <input
+              id="model"
+              name="model"
               type="text"
+              autoComplete="off"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              placeholder="z. B. L-550AXII"
+              placeholder="z. B. L-550AXII …"
               required
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
+            <label htmlFor="category" className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
               Kategorie *
             </label>
             <select
+              id="category"
+              name="category"
               value={category}
               onChange={(e) => setCategory(e.target.value as DeviceCategory)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             >
               {CATEGORIES.map((c) => (
                 <option key={c} value={c}>{c}</option>
@@ -173,17 +185,21 @@ export default function NewDevicePage() {
 
           {/* Year (optional) */}
           <div>
-            <label className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
+            <label htmlFor="year" className="block text-xs font-medium uppercase tracking-widest text-amber-500 mb-1.5">
               Baujahr <span className="text-zinc-600 normal-case tracking-normal font-normal">(optional)</span>
             </label>
             <input
+              id="year"
+              name="year"
               type="number"
+              autoComplete="off"
+              inputMode="numeric"
               value={year}
               onChange={(e) => setYear(e.target.value)}
               placeholder="z. B. 1985"
               min={1900}
               max={new Date().getFullYear()}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
           </div>
 

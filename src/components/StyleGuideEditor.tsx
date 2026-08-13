@@ -64,9 +64,9 @@ export default function StyleGuideEditor() {
       {/* Format-Hilfe */}
       <div className="rounded-xl border border-zinc-700/60 bg-zinc-800/40 p-4 mb-4 space-y-2 text-xs text-zinc-500">
         <p className="font-medium text-zinc-400">Format:</p>
-        <p><span className="text-zinc-300">## Entfernen</span> — eine Phrase pro Zeile mit <span className="text-zinc-300">- phrase</span></p>
-        <p><span className="text-zinc-300">## Umformulieren</span> — <span className="text-zinc-300">- "original" → "ersatz"</span> oder <span className="text-zinc-300">→ entfernen</span></p>
-        <p><span className="text-zinc-300">## Eigene Stilreferenzen</span> — Beispieltexte als Tonvorlage (werden nicht automatisch angewendet)</p>
+        <p><span className="text-zinc-300">## Entfernen</span> - eine Phrase pro Zeile mit <span className="text-zinc-300">- phrase</span></p>
+        <p><span className="text-zinc-300">## Umformulieren</span> - <span className="text-zinc-300">- "original" → "ersatz"</span> oder <span className="text-zinc-300">→ entfernen</span></p>
+        <p><span className="text-zinc-300">## Eigene Stilreferenzen</span> - Beispieltexte als Tonvorlage (werden nicht automatisch angewendet)</p>
       </div>
 
       {/* Editor */}
@@ -78,7 +78,7 @@ export default function StyleGuideEditor() {
           onChange={(e) => { setContent(e.target.value); setSaved(false); }}
           rows={28}
           spellCheck={false}
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-300 font-mono placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none resize-y leading-relaxed"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-300 font-mono placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 resize-y leading-relaxed"
         />
       )}
     </section>

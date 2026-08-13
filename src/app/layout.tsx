@@ -1,10 +1,15 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import { getAllDevicesWithOverrides } from "@/lib/devices";
 
 export const dynamic = "force-dynamic";
+
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#09090b",
+};
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

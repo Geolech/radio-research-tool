@@ -105,7 +105,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
               value={purchasePrice}
               onChange={(e) => { setPurchasePrice(e.target.value); setSaved(false); }}
               placeholder="z. B. 3500"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 pr-8 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 pr-8 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600">€</span>
           </div>
@@ -121,7 +121,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
               value={currentValue}
               onChange={(e) => { setCurrentValue(e.target.value); setSaved(false); }}
               placeholder="z. B. 2800"
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 pr-8 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 pr-8 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
             />
             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-zinc-600">€</span>
           </div>
@@ -138,7 +138,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
           value={priceNote}
           onChange={(e) => { setPriceNote(e.target.value); setSaved(false); }}
           placeholder="z. B. Neupreis 2022, idealo.de"
-          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none"
+          className="w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-200 placeholder-zinc-600 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
         />
       </div>
 

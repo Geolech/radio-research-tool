@@ -205,7 +205,7 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
       )}
       {status === "wunschgeraet" && (
         <p className="text-xs text-zinc-600 border border-amber-900/30 bg-amber-500/5 rounded-lg px-3 py-2">
-          Auf der Wunschliste — noch nicht im Besitz.
+          Auf der Wunschliste - noch nicht im Besitz.
         </p>
       )}
     </div>

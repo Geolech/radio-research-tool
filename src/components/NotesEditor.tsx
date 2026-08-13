@@ -156,7 +156,7 @@ export default function NotesEditor({ device }: NotesEditorProps) {
                   ? "Eigene Ergänzungen, Korrekturen oder persönliche Eindrücke …"
                   : "Beschreibung eingeben …"
               }
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none resize-y leading-relaxed"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-800 px-4 py-3 text-sm text-zinc-200 placeholder:text-zinc-600 focus:border-amber-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 resize-y leading-relaxed"
             />
             <p className="text-[10px] text-zinc-600 mt-1">
               Werbliche Phrasen werden beim Zusammenführen anhand deiner Stilregeln automatisch bereinigt.
@@ -196,7 +196,7 @@ export default function NotesEditor({ device }: NotesEditorProps) {
           <div>
             <div className="flex items-center gap-2 mb-2">
               <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-500">
-                Vorschau — bereinigter Text
+                Vorschau - bereinigter Text
               </p>
               {rulesApplied > 0 && (
                 <span className="rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-400">

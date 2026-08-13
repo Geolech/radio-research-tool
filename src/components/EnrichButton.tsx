@@ -191,7 +191,7 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
               value={description}
               onChange={(e) => { setDescription(e.target.value); setSaved(false); }}
               rows={4}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 leading-relaxed focus:border-amber-500 focus:outline-none resize-none"
+              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm text-zinc-200 leading-relaxed focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 resize-none"
             />
           </div>
 
@@ -207,13 +207,13 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
                     value={row.key}
                     onChange={(e) => { updateSpec(i, "key", e.target.value); setSaved(false); }}
                     placeholder="Eigenschaft"
-                    className="w-2/5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 focus:border-amber-500 focus:outline-none"
+                    className="w-2/5 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
                   />
                   <input
                     value={row.value}
                     onChange={(e) => { updateSpec(i, "value", e.target.value); setSaved(false); }}
                     placeholder="Wert"
-                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none"
+                    className="flex-1 rounded-lg border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
                   />
                   <button
                     onClick={() => removeSpec(i)}

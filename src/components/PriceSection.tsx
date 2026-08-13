@@ -19,14 +19,14 @@ export default function PriceSection({ device }: PriceSectionProps) {
 
   const links = [
     {
-      label: "eBay – Aktuelle Angebote",
+      label: "eBay - Aktuelle Angebote",
       sublabel: "Gebraucht & Neuware",
       href: `https://www.ebay.de/sch/i.html?_nkw=${q}&_sacat=0&_sop=12`,
       badge: "eBay",
       badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
     },
     {
-      label: "eBay – Verkaufte Artikel",
+      label: "eBay - Verkaufte Artikel",
       sublabel: "Reale Gebrauchtpreise als Referenz",
       href: `https://www.ebay.de/sch/i.html?_nkw=${q}&_sacat=0&LH_Complete=1&LH_Sold=1&_sop=13`,
       badge: "eBay",
@@ -50,7 +50,7 @@ export default function PriceSection({ device }: PriceSectionProps) {
       </div>
 
       <p className="text-xs text-zinc-500">
-        Direkt auf der jeweiligen Plattform suchen – Preise und Angebote sind immer aktuell.
+        Direkt auf der jeweiligen Plattform suchen - Preise und Angebote sind immer aktuell.
       </p>
 
       <div className="grid gap-2 sm:grid-cols-3">

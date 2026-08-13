@@ -129,13 +129,13 @@ export default function SpecsEditor({ device }: SpecsEditorProps) {
                 value={row.key}
                 onChange={(e) => updateRow(i, "key", e.target.value)}
                 placeholder="Eigenschaft"
-                className="w-2/5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-400 focus:border-amber-500 focus:outline-none"
+                className="w-2/5 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-400 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
               />
               <input
                 value={row.value}
                 onChange={(e) => updateRow(i, "value", e.target.value)}
                 placeholder="Wert"
-                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none"
+                className="flex-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:border-amber-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50"
               />
               <button
                 onClick={() => removeRow(i)}
