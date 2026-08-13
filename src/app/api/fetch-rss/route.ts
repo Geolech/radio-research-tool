@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { RSS_FEEDS, type FeedPriority } from "@/lib/rss-feeds";
+import { assertPublicHttpUrl } from "@/lib/security";
 
 const FETCH_TIMEOUT_MS = 6000;
 const MAX_ITEMS_PER_FEED = 10;
@@ -141,6 +142,15 @@ function fallbackUrls(url: string): string[] {
 // ── Einzelner Fetch-Versuch ──────────────────────────────────────────────────
 
 export async function tryFetch(url: string): Promise<{ ok: boolean; xml?: string; status: number }> {
+  // SSRF-Schutz: Feed-URLs kommen vom Client (fetch-rss) bzw. aus KI-Suchergebnissen
+  // (discover-feeds) — nur öffentlich erreichbare http(s)-Ziele zulassen, keine
+  // privaten/internen Adressen (inkl. Cloud-Metadaten, localhost).
+  try {
+    await assertPublicHttpUrl(url);
+  } catch {
+    return { ok: false, status: 0 };
+  }
+
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
