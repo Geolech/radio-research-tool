@@ -2,6 +2,8 @@
 
 Kurzanleitung für Campusradios/Lokalredaktionen, die das Tool neu einsetzen. Dauer: ca. 10 Minuten.
 
+*Ausführlicheres Handbuch (Systemvoraussetzungen, lokale KI mit Ollama, Cloud-KI mit Kostenhinweisen): [HANDBUCH.md](HANDBUCH.md).*
+
 ## 1. Installieren
 
 1. `.exe` aus dem Artifact/Release herunterladen (Installer oder Portable-Version).
