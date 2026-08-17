@@ -9,7 +9,19 @@ function sanitizeKey(raw: string): string {
   return raw.trim().split(/\s+/)[0] ?? "";
 }
 
+// Der Env-/.env.local-Fallback ist NUR eine Entwickler-Bequemlichkeit für
+// `npm run dev` (dort setzt Next automatisch NODE_ENV=development). In der
+// gebauten/verteilten Version (gepackte Electron-App: NODE_ENV=production, siehe
+// electron/main.js; ebenso `next build && next start`) ist er bewusst deaktiviert
+// — jede Redaktion MUSS ihren eigenen Zugang in der App hinterlegen (Menü →
+// KI-Zugänge), nie den Key aus Franks lokaler Entwicklungsumgebung.
+const DEV_ENV_FALLBACK_ALLOWED = process.env.NODE_ENV !== "production";
+
 export function getAnthropicApiKey(): string {
+  if (!DEV_ENV_FALLBACK_ALLOWED) {
+    throw new Error("ANTHROPIC_API_KEY nicht gefunden");
+  }
+
   // Erst Standard-Umgebungsvariable versuchen
   if (process.env.ANTHROPIC_API_KEY) return sanitizeKey(process.env.ANTHROPIC_API_KEY);
 
@@ -26,10 +38,10 @@ export function getAnthropicApiKey(): string {
   throw new Error("ANTHROPIC_API_KEY nicht gefunden");
 }
 
-// In der Desktop-/Standalone-App gibt es keine Server-Umgebungsvariable: Der
-// Nutzer trägt seinen Key in der App ein, der dann per Request-Header
+// In der Desktop-/Standalone-App gibt es keine nutzbare Server-Umgebungsvariable:
+// Der Nutzer trägt seinen Key in der App ein, der dann per Request-Header
 // (x-anthropic-key) an den lokalen Server gereicht wird. Reihenfolge:
-// 1) Header (eigener Key der Redaktion), 2) Server-Env / .env.local (Dev).
+// 1) Header (eigener Key der Redaktion), 2) Server-Env/.env.local — NUR im Dev-Modus.
 export function getAnthropicApiKeyFromRequest(req: Request): string {
   const headerKey = req.headers.get("x-anthropic-key");
   if (headerKey?.trim()) return sanitizeKey(headerKey);
@@ -56,7 +68,8 @@ export function getAiProviderFromRequest(req: Request): AiProviderConfig {
   const model = req.headers.get("x-ai-model")?.trim()
     || (provider === "anthropic" ? "claude-sonnet-4-6" : provider === "openai" ? "gpt-4o" : "");
 
-  // Key: Header zuerst; für Anthropic Fallback auf Env/.env.local (Dev).
+  // Key: Header zuerst; für Anthropic Fallback auf Env/.env.local — greift nur
+  // im Dev-Modus (siehe DEV_ENV_FALLBACK_ALLOWED oben).
   let key = headerKey ?? "";
   if (!key && provider === "anthropic") {
     try { key = getAnthropicApiKey(); } catch { key = ""; }

@@ -17,6 +17,8 @@ Das Tool lädt öffentlich zugängliche RSS-Feeds, wählt daraus Meldungen aus u
 
 **Es gibt keinen eigenen Server, keine Cloud-Datenbank und keine Telemetrie.** Die Entwickler des Tools (TH OWL) erhalten zu keinem Zeitpunkt Einblick in Keys, Region, Feeds oder erzeugte Inhalte einer Redaktion.
 
+**Kein mitgelieferter/geteilter KI-Zugang:** Die App enthält in der veröffentlichten Version keinen eingebauten oder versteckten Standard-API-Key. Eine Entwickler-Bequemlichkeit (Fallback auf einen lokal in der Entwicklungsumgebung hinterlegten Key) ist ausdrücklich auf die lokale Entwicklung (`npm run dev`) beschränkt und im gebauten/installierten Programm technisch deaktiviert (`NODE_ENV=production`). Jede Redaktion nutzt also zwingend und ausschließlich ihren eigenen, selbst eingetragenen Zugang — es fließen nie Daten oder Kosten über einen fremden Account.
+
 ## Worauf du selbst achten solltest
 
 - **Auftragsverarbeitung (Art. 28 DSGVO):** Wenn RSS-Meldungen personenbezogene Daten enthalten können (z. B. Namen in Lokalnachrichten), ist die Übermittlung an den KI-Anbieter eine Auftragsverarbeitung. Prüfe die Auftragsverarbeitungsbedingungen deines gewählten Anbieters (Anthropic, OpenAI, oder eines Drittanbieters bei „Custom"-Zugang).

@@ -21,6 +21,7 @@ Menü (☰ oben rechts) → **„Sendername & Region"**:
 Menü → **„KI-Zugänge"** → „Zugang hinzufügen":
 - **Anthropic (Claude)**, **OpenAI (GPT)** oder ein **eigener/lokaler Endpoint** (z. B. Ollama, LM Studio, Infomaniak)
 - API-Key bei `console.anthropic.com` bzw. `platform.openai.com` besorgen — **jede Redaktion braucht einen eigenen Account und eigenen Key.** Keys werden nur lokal auf diesem Rechner gespeichert (verschlüsselt über den Windows-Anmeldeinformationsspeicher), nie an Dritte übertragen.
+- **Das ist keine Empfehlung, sondern technisch erzwungen:** In der veröffentlichten/installierten Version gibt es keinerlei mitgelieferten oder versteckten Standard-Key — ohne eigenen Zugang funktionieren weder Sprechtext-Erzeugung noch „RSS-Quellen suchen". (Ein Entwickler-Fallback-Key existiert ausschließlich in der lokalen Entwicklungsumgebung des Projekts und ist im gebauten Programm deaktiviert.)
 - Danach **„Testlauf"** klicken, um zu prüfen, ob der Zugang funktioniert.
 - Es entstehen Kosten gemäß dem Tarif deines gewählten Anbieters — die App selbst verlangt kein Geld.
 
