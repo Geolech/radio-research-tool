@@ -38,6 +38,9 @@ const STORAGE_KEY = "radio-research-db-v2";
 
 type StoredResult = RadioResearchResult & { id: string };
 
+// Ergebnis des Quellenabgleichs (Variante 1: pro Meldung, vor Editor-Übergabe)
+type VerifyResult = { state: "running" } | { state: "ok"; issues: string[] } | { state: "err"; msg: string };
+
 // ── Kleine Hilfskomponenten ──────────────────────────────────────────────────
 
 function Spinner() {
@@ -218,6 +221,8 @@ function NewsCard({
   onGenerate,
   onSendToEditor,
   onOpenSource,
+  onVerify,
+  verifyResult,
 }: {
   item: NewsItem;
   rank: number;
@@ -225,6 +230,8 @@ function NewsCard({
   onGenerate?: () => void;
   onSendToEditor?: (text: string) => void;
   onOpenSource?: (url: string) => void;
+  onVerify?: () => void;
+  verifyResult?: VerifyResult;
 }) {
   const [copied, setCopied] = useState(false);
   function copy() {
@@ -274,6 +281,16 @@ function NewsCard({
               ✎ In Editor bearbeiten
             </button>
             <div className="flex items-center gap-3">
+              {onVerify && item.description && (
+                <button
+                  onClick={onVerify}
+                  disabled={verifyResult?.state === "running"}
+                  className="text-xs text-zinc-500 hover:text-blue-400 transition-colors flex items-center gap-1 disabled:opacity-40"
+                  title="Sprechtext gegen den RSS-Kurztext abgleichen"
+                >
+                  {verifyResult?.state === "running" ? "🔍 Prüfe …" : "🔍 Gegen Quelle prüfen"}
+                </button>
+              )}
               {onGenerate && (
                 <button onClick={onGenerate} className="text-xs text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1" title="Neuen Sprechtext aus der Quelle erzeugen">
                   ↻ Erneut generieren
@@ -284,6 +301,23 @@ function NewsCard({
               </button>
             </div>
           </div>
+          {verifyResult && verifyResult.state === "ok" && (
+            verifyResult.issues.length === 0 ? (
+              <p className="text-xs text-emerald-400 flex items-center gap-1.5">
+                ✓ Keine Abweichungen von der Quelle gefunden
+              </p>
+            ) : (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
+                <p className="text-xs font-semibold text-amber-400 mb-1">⚠ Mögliche Abweichungen von der Quelle:</p>
+                <ul className="text-xs text-amber-200/90 space-y-0.5 list-disc list-inside">
+                  {verifyResult.issues.map((issue, i) => <li key={i}>{issue}</li>)}
+                </ul>
+              </div>
+            )
+          )}
+          {verifyResult && verifyResult.state === "err" && (
+            <p className="text-xs text-red-400">✕ Prüfung fehlgeschlagen: {verifyResult.msg}</p>
+          )}
         </>
       ) : onGenerate ? (
         <button
@@ -361,6 +395,8 @@ function CategorySection({
   onGenerate,
   onSendToEditor,
   onOpenSource,
+  onVerify,
+  verifyResults,
 }: {
   title: string;
   items: NewsItem[];
@@ -369,6 +405,8 @@ function CategorySection({
   onGenerate?: (item: NewsItem, category: string) => void;
   onSendToEditor?: (text: string) => void;
   onOpenSource?: (url: string) => void;
+  onVerify?: (item: NewsItem) => void;
+  verifyResults?: Record<number, VerifyResult>;
 }) {
   if (items.length === 0) return null;
   return (
@@ -392,6 +430,8 @@ function CategorySection({
             }
             onSendToEditor={item.radio_text ? onSendToEditor : undefined}
             onOpenSource={onOpenSource}
+            onVerify={onVerify ? () => onVerify(item) : undefined}
+            verifyResult={verifyResults?.[item.rank]}
           />
         ))}
       </div>
@@ -1162,6 +1202,31 @@ export default function RadioResearchPage() {
   // Einzel-Sprechtext-Generierung
   const [generatingRanks, setGeneratingRanks] = useState<Set<number>>(new Set());
 
+  // Quellenabgleich pro Meldung (Rang → Prüfergebnis)
+  const [verifyResults, setVerifyResults] = useState<Record<number, VerifyResult>>({});
+
+  async function verifyItem(item: NewsItem) {
+    setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "running" } }));
+    try {
+      const r = await fetch("/api/radio-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...aiHeaders() },
+        body: JSON.stringify({
+          step: "verify",
+          verifyHeadline: item.headline,
+          verifySummary: item.description ?? "",
+          verifyRadioText: item.radio_text,
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? "Fehler");
+      const issues: string[] = Array.isArray(data.issues) ? data.issues : [];
+      setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "ok", issues } }));
+    } catch (e) {
+      setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
+    }
+  }
+
   // Editor
   const [editorText, setEditorText] = useState("");
 
@@ -1701,6 +1766,8 @@ export default function RadioResearchPage() {
                     onGenerate={generateSingleText}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
+                    onVerify={verifyItem}
+                    verifyResults={verifyResults}
                   />
                   <CategorySection
                     title="National"
@@ -1710,6 +1777,8 @@ export default function RadioResearchPage() {
                     onGenerate={generateSingleText}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
+                    onVerify={verifyItem}
+                    verifyResults={verifyResults}
                   />
                   <CategorySection
                     title="Regional"
@@ -1719,6 +1788,8 @@ export default function RadioResearchPage() {
                     onGenerate={generateSingleText}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
+                    onVerify={verifyItem}
+                    verifyResults={verifyResults}
                   />
                 </div>
               </div>

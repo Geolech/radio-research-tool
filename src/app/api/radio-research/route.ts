@@ -131,15 +131,53 @@ Format (nur JSON, radio_text nah am Kurztext):
   }
 }
 
+// ── Quellenabgleich: sucht Aussagen im Sprechtext ohne Deckung im Kurztext ────
+async function verifyAgainstSource(
+  cfg: AiProviderConfig,
+  headline: string,
+  summary: string,
+  radioText: string
+): Promise<string[]> {
+  const system = `Du bist Faktenprüfer für Radio-Nachrichten. Du vergleichst einen Sprechtext mit seiner Quelle und suchst NUR nach Aussagen im Sprechtext, die NICHT durch die Quelle gedeckt sind (erfundene Fakten, Zahlen, Namen, Orte, Zitate, Datumsangaben, Kausalitäten). Umformulierungen, Zusammenfassungen und Auslassungen sind KEIN Problem — nur inhaltliche Erfindungen/Abweichungen zählen.
+Antworte NUR mit validem JSON: {"issues": ["…", "…"]} — leeres Array, wenn alles durch die Quelle gedeckt ist.`;
+
+  const prompt = `QUELLE:
+Überschrift: "${headline}"
+Kurztext: ${summary || "(kein Kurztext vorhanden)"}
+
+SPRECHTEXT (zu prüfen):
+${radioText}
+
+Liste alle Aussagen im Sprechtext, die nicht durch die Quelle gedeckt sind.`;
+
+  const text = await callModel(cfg, system, prompt);
+  if (!text) return [];
+  const stripped = text.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
+  const objMatch = stripped.match(/\{[\s\S]*\}/) ?? text.match(/\{[\s\S]*\}/);
+  if (!objMatch) return [];
+  try {
+    const parsed = JSON.parse(objMatch[0]);
+    return Array.isArray(parsed.issues) ? parsed.issues.filter((x: unknown): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
     const {
       step = "texts",
       itemsForText = [],
+      verifyHeadline = "",
+      verifySummary = "",
+      verifyRadioText = "",
     }: {
       step?: string;
       itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>;
+      verifyHeadline?: string;
+      verifySummary?: string;
+      verifyRadioText?: string;
     } = await req.json();
 
     const cfg = getAiProviderFromRequest(req);
@@ -169,6 +207,13 @@ export async function POST(req: NextRequest) {
           texts = await generateTexts(cfg, itemsForText);
         }
         return NextResponse.json({ texts, step: "texts" });
+      }
+      if (step === "verify") {
+        if (!verifyRadioText.trim()) {
+          return NextResponse.json({ error: "Kein Sprechtext zum Prüfen übergeben." }, { status: 400 });
+        }
+        const issues = await verifyAgainstSource(cfg, verifyHeadline, verifySummary, verifyRadioText);
+        return NextResponse.json({ issues });
       }
       return NextResponse.json({ error: "Unbekannter step" }, { status: 400 });
     })();
