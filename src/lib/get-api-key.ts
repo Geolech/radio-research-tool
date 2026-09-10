@@ -11,11 +11,16 @@ function sanitizeKey(raw: string): string {
 
 // Der Env-/.env.local-Fallback ist NUR eine Entwickler-Bequemlichkeit für
 // `npm run dev` (dort setzt Next automatisch NODE_ENV=development). In der
-// gebauten/verteilten Version (gepackte Electron-App: NODE_ENV=production, siehe
-// electron/main.js; ebenso `next build && next start`) ist er bewusst deaktiviert
-// — jede Redaktion MUSS ihren eigenen Zugang in der App hinterlegen (Menü →
-// KI-Zugänge), nie den Key aus Franks lokaler Entwicklungsumgebung.
-const DEV_ENV_FALLBACK_ALLOWED = process.env.NODE_ENV !== "production";
+// gepackten Electron-App (NODE_ENV=production, siehe electron/main.js) ist er
+// bewusst deaktiviert — jede Redaktion MUSS ihren eigenen Zugang in der App
+// hinterlegen (Menü → KI-Zugänge), nie den Key aus Franks Entwicklungsumgebung.
+//
+// AUSNAHME Vercel: Dort ist NODE_ENV zwar "production", aber ANTHROPIC_API_KEY
+// ist eine bewusst gesetzte Server-Variable des Deployments (kein lokaler Key).
+// Vercel setzt automatisch process.env.VERCEL — daran erkennen wir diesen Fall.
+// So läuft die HiFi-App auf Vercel, während der Electron-Schutz erhalten bleibt.
+const DEV_ENV_FALLBACK_ALLOWED =
+  process.env.NODE_ENV !== "production" || !!process.env.VERCEL;
 
 export function getAnthropicApiKey(): string {
   if (!DEV_ENV_FALLBACK_ALLOWED) {
