@@ -32,22 +32,22 @@ const STATUS_BUTTONS: {
     value: "aktueller_bestand",
     icon: <IconCheck size={15} stroke={2.5} />,
     label: "Aktueller Bestand",
-    activeClass:   "bg-emerald-700 border-emerald-700 text-white",
-    inactiveClass: "border-zinc-700 text-zinc-600 hover:border-emerald-700/60 hover:text-emerald-600",
+    activeClass:   "bg-accent border-accent text-paper",
+    inactiveClass: "border-rule text-ink-soft hover:border-accent hover:text-accent",
   },
   {
     value: "ehemaliger_bestand",
     icon: MonitorSpeakerIcon,
     label: "Ehemaliger Bestand",
-    activeClass:   "bg-zinc-500 border-zinc-500 text-zinc-900",
-    inactiveClass: "border-zinc-700 text-zinc-600 hover:border-zinc-500/60 hover:text-zinc-400",
+    activeClass:   "bg-ink border-ink text-paper",
+    inactiveClass: "border-rule text-ink-soft hover:border-accent hover:text-accent",
   },
   {
     value: "wunschgeraet",
     icon: <IconStar size={14} stroke={2} />,
     label: "Wunschgerät",
-    activeClass:   "bg-amber-500 border-amber-500 text-zinc-900",
-    inactiveClass: "border-zinc-700 text-zinc-600 hover:border-amber-500/60 hover:text-amber-400",
+    activeClass:   "bg-accent border-accent text-paper",
+    inactiveClass: "border-rule text-ink-soft hover:border-accent hover:text-accent",
   },
 ];
 
@@ -96,77 +96,71 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
           ? "Wunsch"
           : null;
 
+  // Kartenvorschau: rohe Markdown-Überschrift/-Zeichen aus der Beschreibung entfernen
+  const preview = (device.description ?? "")
+    .replace(/^\s*#{1,6}\s+.*(?:\n|$)/, "")
+    .replace(/[#*_`>]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
   const badgeClass =
     status === "aktueller_bestand"
       ? device.anlageLocation === "defekt"
-        ? "bg-red-500/10 border-red-500/30 text-red-400"
-        : "bg-emerald-900/50 border-emerald-700/40 text-emerald-400"
+        ? "border-red-500/50 text-red-700"
+        : "border-accent/50 text-accent"
       : status === "wunschgeraet"
-        ? "bg-amber-500/10 border-amber-500/25 text-amber-400"
-        : "bg-zinc-800 border-zinc-700 text-zinc-500";
+        ? "border-ink/30 text-ink-soft"
+        : "border-rule text-ink-soft";
 
   return (
     <Link href={`/hifi/devices/${device.id}`} className="group block">
-      <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-zinc-800 transition-all duration-300 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10">
-
-        {/* Bild */}
-        <div className="relative aspect-[4/3] overflow-hidden bg-zinc-800">
-          {device.imageUrl ? (
-            <Image
-              src={device.imageUrl}
-              alt={`${device.brand} ${device.model}`}
-              fill
-              className="object-cover transition-transform duration-500 group-hover:scale-105"
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <IconPhotoOff size={36} className="text-zinc-600" stroke={1.5} />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-zinc-900/80 via-transparent to-transparent" />
-        </div>
-
-        {/* Info */}
-        <div className="p-4 pb-3">
-          {/* Kategorie + Bestands-Badge */}
-          <div className="flex items-start justify-between gap-2">
-            <span className="inline-block rounded-full bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-500 border border-amber-500/20">
-              {device.category}
-            </span>
-            {badgeLabel && (
-              <span className={`flex-shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium border ${badgeClass}`}>
-                {badgeLabel}
-              </span>
-            )}
+      {/* Foto im Rahmen */}
+      <div className="relative aspect-[4/3] overflow-hidden rounded-[3px] border border-rule bg-surface-2">
+        {device.imageUrl ? (
+          <Image
+            src={device.imageUrl}
+            alt={`${device.brand} ${device.model}`}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center">
+            <IconPhotoOff size={34} className="text-ink-soft/60" stroke={1.4} />
           </div>
+        )}
+      </div>
 
-          <h2 className="mt-2 text-base font-semibold text-zinc-100 leading-tight">
-            {device.brand}
-          </h2>
-          <p className="text-sm text-zinc-400">{device.model}</p>
-          {device.description && (
-            <p className="mt-2 text-xs text-zinc-500 line-clamp-2">
-              {device.description}
-            </p>
-          )}
-        </div>
-
-        {/* ── Status-Picker (unten rechts) — nur für Owner ─────────────── */}
-        {admin && (
-        <div className="flex items-center justify-between px-4 pb-3 pt-1">
-          {/* Spar-Feedback */}
-          <span className={`inline-flex items-center transition-opacity duration-300 ${
-            saving     ? "text-zinc-600 opacity-100" :
-            justSaved  ? "text-emerald-500 opacity-100" :
-                        "opacity-0"
-          }`}>
-            {saving
-              ? <span className="text-[10px]">…</span>
-              : <IconCheck size={13} stroke={2.5} />}
+      {/* Kopfzeile: Kategorie + Status */}
+      <div className="mt-3 flex items-baseline justify-between gap-2 pb-2 border-b border-rule">
+        <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-accent">
+          {device.category}
+        </span>
+        {badgeLabel && (
+          <span className={`flex-shrink-0 font-mono text-[9.5px] uppercase tracking-wider px-2 py-0.5 border rounded-[2px] ${badgeClass}`}>
+            {badgeLabel}
           </span>
+        )}
+      </div>
 
-          {/* Drei Häkchen-Buttons */}
+      {/* Name + Beschreibung */}
+      <h2 className="font-display font-bold text-lg leading-tight mt-2 text-ink group-hover:text-accent transition-colors">
+        {device.brand} <span className="italic font-medium text-ink-soft">{device.model}</span>
+      </h2>
+      {preview && (
+        <p className="mt-1.5 text-[13px] text-ink-soft leading-snug line-clamp-2">
+          {preview}
+        </p>
+      )}
+
+      {/* ── Status-Picker — nur für Owner ─────────────────────────────── */}
+      {admin && (
+        <div className="mt-3 flex items-center justify-between">
+          <span className={`inline-flex items-center text-accent transition-opacity duration-300 ${
+            saving ? "opacity-100" : justSaved ? "opacity-100" : "opacity-0"
+          }`}>
+            {saving ? <span className="text-[10px]">…</span> : <IconCheck size={13} stroke={2.5} />}
+          </span>
           <div className="flex items-center gap-1.5">
             {STATUS_BUTTONS.map((btn) => {
               const active = status === btn.value;
@@ -176,8 +170,8 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
                   onClick={(e) => handleStatus(e, btn.value)}
                   title={btn.label}
                   aria-label={btn.label}
-                  className={`w-7 h-7 rounded-lg border text-xs font-bold flex items-center justify-center
-                              transition-all duration-150 ${active ? btn.activeClass : btn.inactiveClass}`}
+                  className={`w-7 h-7 rounded-[3px] border flex items-center justify-center
+                              transition-colors duration-150 ${active ? btn.activeClass : btn.inactiveClass}`}
                 >
                   {btn.icon}
                 </button>
@@ -185,9 +179,7 @@ export default function DeviceCard({ device }: { device: HifiDevice }) {
             })}
           </div>
         </div>
-        )}
-
-      </div>
+      )}
     </Link>
   );
 }

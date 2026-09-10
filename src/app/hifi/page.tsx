@@ -12,68 +12,44 @@ export default async function Home() {
   const withPrices = devices.filter((d) => d.purchasePrice != null || d.currentValue != null).length;
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-8">
+    <main className="min-h-screen bg-paper text-ink px-6 sm:px-8 py-10">
       <div className="mx-auto max-w-6xl">
 
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <div className="mb-8 rounded-2xl overflow-hidden border border-zinc-800/80" style={{ background: "#1c1c1f" }}>
-          <div className="grid grid-cols-[1fr_auto]">
-
-            {/* Text + Stats */}
-            <div className="px-8 py-7 border-r border-zinc-800/60">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-500 mb-2">
-                Privatsammlung
-              </p>
-              <h1 className="text-3xl font-bold text-zinc-100 tracking-tight mb-6">
-                HiFi-Bibliothek
-              </h1>
-              <div className="flex gap-8">
-                <div>
-                  <div className="text-2xl font-bold text-zinc-200 tabular-nums">{devices.length}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-zinc-600 mt-0.5">Geräte</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-zinc-200 tabular-nums">{categories.length}</div>
-                  <div className="text-[10px] uppercase tracking-widest text-zinc-600 mt-0.5">Kategorien</div>
-                </div>
-                {withPrices > 0 && (
-                  <div>
-                    <div className="text-2xl font-bold text-zinc-200 tabular-nums">{withPrices}</div>
-                    <div className="text-[10px] uppercase tracking-widest text-zinc-600 mt-0.5">mit Preisangabe</div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Dekoratives Lautsprecher-Membran-Panel */}
-            <div className="flex items-center justify-center px-8 py-6" style={{ background: "#141416" }}>
-              <svg width="110" height="90" viewBox="0 0 110 90" fill="none" className="opacity-[0.18]">
-                <ellipse cx="55" cy="45" rx="50" ry="40" stroke="#f59e0b" strokeWidth="1"/>
-                <ellipse cx="55" cy="45" rx="37" ry="29" stroke="#f59e0b" strokeWidth="1"/>
-                <ellipse cx="55" cy="45" rx="24" ry="19" stroke="#f59e0b" strokeWidth="1"/>
-                <ellipse cx="55" cy="45" rx="12" ry="9"  stroke="#f59e0b" strokeWidth="1"/>
-                <circle  cx="55" cy="45" r="4"           stroke="#f59e0b" strokeWidth="1.5"/>
-                <circle  cx="55" cy="45" r="1.5"         fill="#f59e0b"/>
-              </svg>
-            </div>
-
+        {/* ── Masthead ────────────────────────────────────────────────────── */}
+        <header className="pt-4">
+          <div className="flex items-baseline justify-between flex-wrap gap-2">
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-accent">Privatsammlung</span>
+            <span className="font-mono text-[11px] tracking-[0.2em] uppercase text-accent">Vinylatlas</span>
           </div>
-          {/* Amber-Trennlinie unten */}
-          <div className="h-px bg-gradient-to-r from-amber-500/40 via-amber-500/15 to-transparent" />
-        </div>
 
-        {/* ── Export-Buttons ───────────────────────────────────────────────── */}
-        <div className="mb-6 flex flex-wrap gap-2 items-center">
+          <h1 className="font-display font-extrabold tracking-tight leading-[0.95] mt-4 text-[clamp(2.5rem,8vw,5rem)]">
+            HiFi&#8209;Bibliothek
+          </h1>
+
+          <div className="mt-5 flex items-end justify-between flex-wrap gap-x-8 gap-y-3 pb-3">
+            <p className="italic text-ink-soft text-lg max-w-[34ch] leading-snug">
+              Ein Katalog der eigenen Anlage – Gerät für Gerät, sachlich verzeichnet.
+            </p>
+            <p className="font-mono text-xs text-ink-soft tracking-wide sm:text-right">
+              <span className="text-ink font-semibold tabular-nums">{devices.length}</span>&nbsp;Geräte
+              &nbsp;·&nbsp;<span className="text-ink font-semibold tabular-nums">{categories.length}</span>&nbsp;Kategorien
+              {withPrices > 0 && (
+                <>&nbsp;·&nbsp;<span className="text-ink font-semibold tabular-nums">{withPrices}</span>&nbsp;mit&nbsp;Preis</>
+              )}
+            </p>
+          </div>
+
+          <div className="border-t border-rule" />
+          <div className="border-t-[3px] border-double border-rule mt-[2px]" />
+        </header>
+
+        {/* ── Export ──────────────────────────────────────────────────────── */}
+        <div className="mt-6 mb-8 flex flex-wrap gap-2 items-center">
           <ExcelExportButton devices={devices} />
           <PdfExportButton deviceCount={devices.length} />
-          <span className="text-xs text-zinc-600 ml-1">
-            {withPrices > 0
-              ? `${withPrices} von ${devices.length} Geräten mit Preisangabe`
-              : "Noch keine Preise eingetragen"}
-          </span>
         </div>
 
-        {/* ── Filterbare Geräteliste ───────────────────────────────────────── */}
+        {/* ── Filterbare Geräteliste ──────────────────────────────────────── */}
         <InventoryFilter devices={devices} />
       </div>
     </main>

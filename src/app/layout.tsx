@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Mulish } from "next/font/google";
 import "./globals.css";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import AdminProvider from "@/components/AdminProvider";
@@ -9,18 +9,19 @@ import { isAdmin } from "@/lib/admin";
 export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
-  colorScheme: "dark",
-  themeColor: "#09090b",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#eceae3" },
+    { media: "(prefers-color-scheme: dark)", color: "#141309" },
+  ],
 };
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Selbst gehostete Avenir-Verwandte (Fallback zu „Avenir Next" auf Apple-Geräten).
+const mulish = Mulish({
+  variable: "--font-mulish",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -39,7 +40,7 @@ export default async function RootLayout({
     <html
       lang="de"
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${mulish.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: toleriert DOM-Injektionen von Browser-
           Erweiterungen (z. B. Synology Photos), die sonst im Dev-Modus die

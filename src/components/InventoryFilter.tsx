@@ -94,16 +94,16 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
             <button
               key={opt.value}
               onClick={() => handleStatusClick(opt.value)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-xs font-medium transition-colors ${
+              className={`inline-flex items-center gap-1.5 rounded-[3px] border px-3.5 py-1.5 text-xs font-medium transition-colors ${
                 active
-                  ? "border-zinc-400 bg-zinc-700 text-zinc-100"
-                  : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
+                  ? "border-accent bg-accent text-paper"
+                  : "border-rule bg-surface text-ink-soft hover:text-accent hover:border-accent"
               }`}
             >
               {opt.icon != null && <span className="flex items-center text-[11px]">{opt.icon}</span>}
               {opt.label}
               <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                active ? "bg-white/15 text-zinc-200" : "bg-zinc-900 text-zinc-600"
+                active ? "bg-paper/25 text-paper" : "bg-surface-2 text-ink-soft"
               }`}>
                 {count}
               </span>
@@ -114,7 +114,7 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
 
       {/* ── Anlage-Sub-Filter (nur bei "Aktueller Bestand") ──────────── */}
       {showAnlageFilter && (
-        <div className="mb-6 flex flex-wrap gap-2 pl-1 border-l-2 border-zinc-700">
+        <div className="mb-6 flex flex-wrap gap-2 pl-3 border-l-2 border-accent/40">
           {ANLAGE_OPTIONS.map((opt) => {
             const count  = countAnlage(devices, opt.value);
             const active = anlageFilter === opt.value;
@@ -123,16 +123,16 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
               <button
                 key={opt.value}
                 onClick={() => setAnlageFilter(opt.value)}
-                className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-[3px] border px-3 py-1 text-xs font-medium transition-colors ${
                   active
-                    ? "border-zinc-400 bg-zinc-700 text-zinc-100"
-                    : "border-zinc-700 bg-zinc-800/60 text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200"
+                    ? "border-accent bg-accent text-paper"
+                    : "border-rule bg-surface text-ink-soft hover:text-accent hover:border-accent"
                 }`}
               >
                 {opt.icon != null && <span className="flex items-center text-[11px]">{opt.icon}</span>}
                 {label}
                 <span className={`rounded-full px-1.5 py-0.5 text-[10px] tabular-nums ${
-                  active ? "bg-white/15 text-zinc-200" : "bg-zinc-900 text-zinc-600"
+                  active ? "bg-paper/25 text-paper" : "bg-surface-2 text-ink-soft"
                 }`}>
                   {count}
                 </span>
@@ -146,7 +146,7 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
 
       {/* ── Ergebnis-Kopfzeile ────────────────────────────────────────── */}
       {statusFilter !== "all" && (
-        <p className="text-xs text-zinc-600 mb-4">
+        <p className="font-mono text-[11px] uppercase tracking-wider text-ink-soft mb-4">
           {filtered.length === 0
             ? "Keine Geräte in dieser Kategorie"
             : `${filtered.length} Gerät${filtered.length !== 1 ? "e" : ""}`}
@@ -162,10 +162,10 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
         {/* Gerät hinzufügen — nur für Owner, bei "Alle" oder "Aktueller Bestand" */}
         {admin && (statusFilter === "all" || statusFilter === "aktueller_bestand") && (
           <Link href="/hifi/devices/new" className="group block">
-            <div className="relative overflow-hidden rounded-2xl bg-zinc-900 border-2 border-dashed border-zinc-800 transition-all duration-300 hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/10">
-              <div className="flex flex-col items-center justify-center gap-3 p-8 text-zinc-700 group-hover:text-zinc-400 transition-colors min-h-[200px]">
-                <span className="text-4xl">+</span>
-                <p className="text-sm font-medium text-center leading-snug">
+            <div className="relative overflow-hidden rounded-[4px] bg-surface border border-dashed border-rule transition-colors duration-300 hover:border-accent">
+              <div className="flex flex-col items-center justify-center gap-2 p-8 text-ink-soft group-hover:text-accent transition-colors min-h-[200px]">
+                <span className="text-3xl font-light leading-none">+</span>
+                <p className="font-mono text-[11px] uppercase tracking-wider text-center leading-snug">
                   Gerät hinzufügen
                 </p>
               </div>
@@ -175,12 +175,12 @@ export default function InventoryFilter({ devices }: { devices: HifiDevice[] }) 
 
         {/* Leer-Zustand */}
         {filtered.length === 0 && (
-          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 py-16 flex flex-col items-center gap-3 text-zinc-700">
+          <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4 py-16 flex flex-col items-center gap-3 text-ink-soft">
             <IconInbox size={40} stroke={1.3} />
             <p className="text-sm">Keine Geräte in dieser Kategorie</p>
             <button
               onClick={() => handleStatusClick("all")}
-              className="text-xs text-amber-500 hover:text-amber-400 transition-colors mt-1"
+              className="font-mono text-[11px] uppercase tracking-wider text-accent hover:text-accent-2 transition-colors mt-1"
             >
               Filter zurücksetzen
             </button>

@@ -99,7 +99,7 @@ export default function ExcelExportButton({ devices }: ExcelExportButtonProps) {
     <button
       onClick={handleExport}
       disabled={generating}
-      className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/60 px-4 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 transition-colors disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-[3px] border border-rule bg-surface px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-wider text-ink-soft hover:text-accent hover:border-accent transition-colors disabled:opacity-50"
     >
       {generating
         ? <><IconLoader2 size={13} className="animate-spin" /> Erstelle …</>

@@ -35,7 +35,7 @@ export default function PdfExportButton({ deviceCount }: { deviceCount: number }
       <button
         onClick={handleDownload}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800/60 px-4 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700/60 hover:text-zinc-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-2 rounded-[3px] border border-rule bg-surface px-3.5 py-1.5 font-mono text-[11px] uppercase tracking-wider text-ink-soft hover:text-accent hover:border-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         title={`DIN A5 PDF · Titelseite, Inhaltsverzeichnis, ${deviceCount} Geräte, Versicherungsübersicht`}
       >
         {loading
