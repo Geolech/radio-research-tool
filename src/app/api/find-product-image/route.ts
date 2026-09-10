@@ -55,13 +55,20 @@ async function searchWikimediaCommons(brand: string, model: string): Promise<Off
     const results: WikiSearchResult[] = searchData?.query?.search ?? [];
     if (results.length === 0) return null;
 
-    // Find the most relevant result (title should contain brand or model)
+    // Nur echte Bilddateien akzeptieren (keine PDF/DJVU-Dokumente, deren erste
+    // Seite Wikimedia nur als Vorschaubild rendert).
+    const IMAGE_RE = /\.(jpe?g|png|webp|gif|tiff?|svg)$/i;
     const brandLower = brand.toLowerCase();
-    const modelLower = model.toLowerCase();
+    const modelFirst = model.toLowerCase().split(/\s+/)[0] ?? "";
+
+    // Nur ein Treffer, dessen Titel Marke oder (distinktives) Modell enthält.
+    // KEIN Fallback auf results[0] — sonst käme ein völlig unpassendes Bild.
     const best = results.find((r) => {
+      if (!IMAGE_RE.test(r.title)) return false;
       const t = r.title.toLowerCase();
-      return t.includes(brandLower) || t.includes(modelLower.split(" ")[0]);
-    }) ?? results[0];
+      return t.includes(brandLower) || (modelFirst.length >= 3 && t.includes(modelFirst));
+    });
+    if (!best) return null; // nichts Passendes → Phase 2 (KI-Websuche) übernimmt
 
     // Get image info including direct URL and license
     const infoUrl =
