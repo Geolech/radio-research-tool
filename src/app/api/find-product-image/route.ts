@@ -3,7 +3,7 @@ import { serverError } from "@/lib/security";
 import Anthropic from "@anthropic-ai/sdk";
 import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
-export const maxDuration = 30; // 30s max for this route
+export const maxDuration = 45; // KI-Websuche braucht ggf. länger
 
 export interface OfficialImage {
   url: string;
@@ -118,7 +118,7 @@ async function searchWikimediaCommons(brand: string, model: string): Promise<Off
 // ─── Phase 2: Claude web search for press/manufacturer images ─────────────────
 
 async function searchPressImage(brand: string, model: string, apiKey: string): Promise<OfficialImage | null> {
-  const client = new Anthropic({ apiKey, timeout: 20000 });
+  const client = new Anthropic({ apiKey, timeout: 40000 });
 
   const messages: Anthropic.Messages.MessageParam[] = [
     {
@@ -153,7 +153,7 @@ Wichtig:
     });
 
     let rounds = 0;
-    while (response.stop_reason === "tool_use" && rounds < 2) {
+    while (response.stop_reason === "tool_use" && rounds < 1) {
       rounds++;
       const assistantContent = response.content;
       const toolResults = assistantContent

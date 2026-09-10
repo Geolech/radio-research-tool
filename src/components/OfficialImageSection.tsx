@@ -54,7 +54,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
     setSearchAttempted(true);
     setImage(null);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 28000);
+    const timeout = setTimeout(() => controller.abort(), 42000);
     try {
       const res = await fetch("/api/find-product-image", {
         method: "POST",
@@ -68,7 +68,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
       setError(null);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
-        setError("Suche hat zu lange gedauert.");
+        setError("Suche hat zu lange gedauert – bitte erneut versuchen oder eigenes Foto hochladen.");
       } else {
         setError(e instanceof Error ? e.message : "Fehler");
       }
