@@ -3,7 +3,7 @@ import { serverError } from "@/lib/security";
 import Anthropic from "@anthropic-ai/sdk";
 import { getAnthropicApiKeyFromRequest } from "@/lib/get-api-key";
 
-export const maxDuration = 45; // KI-Websuche braucht ggf. länger
+export const maxDuration = 30;
 
 export interface OfficialImage {
   url: string;
@@ -118,7 +118,10 @@ async function searchWikimediaCommons(brand: string, model: string): Promise<Off
 // ─── Phase 2: Claude web search for press/manufacturer images ─────────────────
 
 async function searchPressImage(brand: string, model: string, apiKey: string): Promise<OfficialImage | null> {
-  const client = new Anthropic({ apiKey, timeout: 40000 });
+  // Websuche zeitlich begrenzen: kommt sie nicht rechtzeitig zu einem
+  // verwertbaren Ergebnis, gilt das als "kein frei nutzbares Bild" (→ null),
+  // und die UI zeigt den Upload-Hinweis statt eines Timeout-Fehlers.
+  const client = new Anthropic({ apiKey, timeout: 22000, maxRetries: 0 });
 
   const messages: Anthropic.Messages.MessageParam[] = [
     {

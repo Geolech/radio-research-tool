@@ -54,7 +54,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
     setSearchAttempted(true);
     setImage(null);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 42000);
+    const timeout = setTimeout(() => controller.abort(), 25000);
     try {
       const res = await fetch("/api/find-product-image", {
         method: "POST",
@@ -62,13 +62,25 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
         body: JSON.stringify({ brand: device.brand, model: device.model }),
         signal: controller.signal,
       });
+      if (res.status === 404) {
+        // Kein frei nutzbares Bild gefunden — kein Fehler, sondern der normale
+        // Fall bei Nischengeräten. Zeigt den "Kein rechtegeklärtes Bild
+        // gefunden"-Hinweis mit Upload-Option.
+        setImage(null);
+        setError(null);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Kein Bild gefunden");
+      if (!res.ok) throw new Error(data.error ?? "Fehler bei der Bildersuche");
       setImage(data.image);
       setError(null);
     } catch (e) {
       if (e instanceof DOMException && e.name === "AbortError") {
-        setError("Suche hat zu lange gedauert – bitte erneut versuchen oder eigenes Foto hochladen.");
+        // Ein Timeout bedeutet hier praktisch: kein frei nutzbares Bild verfügbar.
+        // Deshalb wie "nichts gefunden" behandeln (zeigt den Upload-Hinweis) statt
+        // einer technischen Fehlermeldung.
+        setImage(null);
+        setError(null);
       } else {
         setError(e instanceof Error ? e.message : "Fehler");
       }
