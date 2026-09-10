@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { IconPhotoOff } from "@tabler/icons-react";
+import { IconPhotoOff, IconArrowLeft } from "@tabler/icons-react";
 import { devices, getAllDevicesWithOverrides } from "@/lib/devices";
 import { isAdmin } from "@/lib/admin";
 import EnrichButton from "@/components/EnrichButton";
@@ -47,46 +47,44 @@ export default async function DevicePage({ params }: PageProps) {
   const hasOfficialImage = !!device.officialImageUrl;
 
   return (
-    <main className="min-h-screen bg-zinc-950 px-6 py-12">
+    <main className="min-h-screen bg-paper text-ink px-6 sm:px-8 py-10">
       <div className="mx-auto max-w-4xl">
         {/* Back */}
         <Link
           href="/hifi"
-          className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-amber-400 transition-colors mb-8"
+          className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-wider text-ink-soft hover:text-accent transition-colors mb-8"
         >
-          ← Zurück zur Sammlung
+          <IconArrowLeft size={14} stroke={1.8} /> Zurück zur Sammlung
         </Link>
 
         {/* Hero */}
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Images: own photo + optional official image side by side */}
-          <div className="space-y-2">
-            {/* Own photo - Upload nur für Owner, sonst read-only Bild */}
+        <div className="grid gap-8 md:grid-cols-2 md:items-start">
+          {/* Bilder: eigenes Foto + optionales Pressebild */}
+          <div className="space-y-3">
             {admin ? (
               <HeroPhotoUpload deviceId={device.id} currentImageUrl={device.imageUrl} />
             ) : (
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[3px] border border-rule bg-surface-2">
                 {device.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={device.imageUrl} alt={`${device.brand} ${device.model}`} className="w-full h-full object-cover" />
                 ) : (
                   <div className="flex h-full items-center justify-center">
-                    <IconPhotoOff size={48} className="text-zinc-700" stroke={1.3} />
+                    <IconPhotoOff size={44} className="text-ink-soft/60" stroke={1.3} />
                   </div>
                 )}
               </div>
             )}
 
-            {/* Official image (if saved) */}
             {hasOfficialImage && (
-              <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-zinc-900">
+              <div className="relative aspect-[4/3] overflow-hidden rounded-[3px] border border-rule bg-surface-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={device.officialImageUrl}
                   alt={`${device.brand} ${device.model} - offizielles Bild`}
                   className="w-full h-full object-contain"
                 />
-                <span className="absolute bottom-2 left-2 text-xs px-2 py-0.5 rounded-full bg-zinc-900/80 text-emerald-400 border border-emerald-500/30">
+                <span className="absolute bottom-2 left-2 font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-paper/85 text-accent border border-rule">
                   Pressebild
                 </span>
                 {device.officialImagePageUrl && (
@@ -94,7 +92,7 @@ export default async function DevicePage({ params }: PageProps) {
                     href={device.officialImagePageUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="absolute bottom-2 right-2 text-xs px-2 py-0.5 rounded-full bg-zinc-900/80 text-zinc-500 hover:text-amber-400 border border-zinc-700 transition-colors"
+                    className="absolute bottom-2 right-2 font-mono text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-[2px] bg-paper/85 text-ink-soft hover:text-accent border border-rule transition-colors"
                   >
                     Quelle ↗
                   </a>
@@ -102,23 +100,24 @@ export default async function DevicePage({ params }: PageProps) {
               </div>
             )}
 
-            {/* Attribution for official image */}
             {hasOfficialImage && device.officialImageAttribution && (
-              <p className="text-xs text-zinc-600 px-1">
+              <p className="text-xs text-ink-soft px-1">
                 © {device.officialImageAttribution}
               </p>
             )}
           </div>
 
-          <div className="flex flex-col justify-center">
-            <span className="inline-block w-fit rounded-full bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 border border-amber-500/20 mb-4">
+          <div className="md:pt-2">
+            <span className="font-mono text-[11px] uppercase tracking-[0.16em] text-accent">
               {device.category}
             </span>
-            <h1 className="text-3xl font-bold text-zinc-100">{device.brand}</h1>
-            <p className="text-xl text-zinc-400 mt-1">{device.model}</p>
+            <h1 className="font-display font-extrabold text-4xl leading-[1.05] tracking-tight mt-2 text-ink">
+              {device.brand} <span className="italic font-semibold text-ink-soft">{device.model}</span>
+            </h1>
             {device.year && (
-              <p className="mt-2 text-sm text-zinc-500">{device.year}</p>
+              <p className="mt-2 font-mono text-xs text-ink-soft tabular-nums">{device.year}</p>
             )}
+            <div className="border-t border-rule mt-4" />
             {device.description && (
               <MarkdownDescription text={device.description} className="mt-4" />
             )}

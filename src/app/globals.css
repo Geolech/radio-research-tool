@@ -61,6 +61,27 @@
   --font-display: var(--font-display-stack);
   --font-sans:    var(--font-sans-stack);
   --font-mono:    var(--font-mono-stack);
+
+  /* ── Alt-Paletten auf Fidelity umleiten ───────────────────────────────────
+     Bestehende Komponenten nutzen die zinc- und amber-Utilities. Statt jede
+     Klasse einzeln zu aendern, zeigen diese Toene jetzt auf die Fidelity-Tokens
+     und sind damit automatisch hell/dunkel-faehig (Dunkelskala nach hell). */
+  --color-zinc-950: var(--paper);
+  --color-zinc-900: var(--surface);
+  --color-zinc-800: var(--rule);
+  --color-zinc-700: var(--rule);
+  --color-zinc-600: var(--ink-soft);
+  --color-zinc-500: var(--ink-soft);
+  --color-zinc-400: var(--ink-soft);
+  --color-zinc-300: var(--ink);
+  --color-zinc-200: var(--ink);
+  --color-zinc-100: var(--ink);
+  --color-zinc-50:  var(--ink);
+
+  --color-amber-600: var(--accent);
+  --color-amber-500: var(--accent);
+  --color-amber-400: var(--accent-2);
+  --color-amber-300: var(--accent-2);
 }
 
 body {
