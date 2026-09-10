@@ -59,11 +59,11 @@ const ANLAGE_ICONS: Record<AnlageLocation, React.ReactNode> = {
 
 function statusClasses(color: string, active: boolean) {
   if (!active) {
-    return "border-zinc-700 bg-zinc-900 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300";
+    return "border-rule bg-surface text-ink-soft hover:border-ink/40 hover:text-ink";
   }
-  if (color === "emerald") return "border-emerald-500/60 bg-emerald-500/10 text-emerald-400";
-  if (color === "amber")   return "border-amber-500/60  bg-amber-500/10  text-amber-400";
-  return "border-zinc-500/60 bg-zinc-800 text-zinc-300";
+  // Ruhige Tintenblau-Palette statt bunter Status-Farben
+  if (color === "zinc") return "border-ink/40 bg-surface-2 text-ink";
+  return "border-accent bg-accent/10 text-accent";
 }
 
 // ─── Komponente ───────────────────────────────────────────────────────────────
@@ -128,7 +128,7 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
           <span className="text-xs text-zinc-600 animate-pulse">Speichern …</span>
         )}
         {saved && !saving && (
-          <span className="inline-flex items-center gap-1 text-xs text-emerald-500"><IconCheck size={13} stroke={2.5} /> Gespeichert</span>
+          <span className="inline-flex items-center gap-1 text-xs text-accent"><IconCheck size={13} stroke={2.5} /> Gespeichert</span>
         )}
       </div>
 
@@ -146,12 +146,10 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
               <span
                 className={`w-4 h-4 rounded flex items-center justify-center border flex-shrink-0 text-[10px] transition-colors ${
                   active
-                    ? opt.color === "emerald"
-                      ? "border-emerald-500 bg-emerald-500 text-zinc-900"
-                      : opt.color === "amber"
-                        ? "border-amber-500 bg-amber-500 text-zinc-900"
-                        : "border-zinc-400 bg-zinc-400 text-zinc-900"
-                    : "border-zinc-600 bg-transparent"
+                    ? opt.color === "zinc"
+                      ? "border-ink bg-ink text-paper"
+                      : "border-accent bg-accent text-paper"
+                    : "border-rule bg-transparent"
                 }`}
               >
                 {active && opt.icon}
@@ -179,22 +177,18 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-medium transition-all duration-150 ${
                     active
                       ? isDefekt
-                        ? "border-red-500/60 bg-red-500/10 text-red-400"
-                        : loc === "lagerbestand"
-                          ? "border-blue-500/40 bg-blue-500/10 text-blue-400"
-                          : "border-emerald-500/50 bg-emerald-500/10 text-emerald-400"
-                      : "border-zinc-700 bg-zinc-900/50 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300"
+                        ? "border-red-500/50 bg-red-500/10 text-red-700"
+                        : "border-accent bg-accent/10 text-accent"
+                      : "border-rule bg-surface text-ink-soft hover:border-ink/40 hover:text-ink"
                   }`}
                 >
                   <span
                     className={`w-3.5 h-3.5 rounded flex items-center justify-center border flex-shrink-0 ${
                       active
                         ? isDefekt
-                          ? "border-red-500 bg-red-500 text-zinc-900"
-                          : loc === "lagerbestand"
-                            ? "border-blue-400 bg-blue-400 text-zinc-900"
-                            : "border-emerald-500 bg-emerald-500 text-zinc-900"
-                        : "border-zinc-600"
+                          ? "border-red-500 bg-red-500 text-paper"
+                          : "border-accent bg-accent text-paper"
+                        : "border-rule"
                     }`}
                   >
                     {active && <IconCheck size={11} stroke={3} />}
@@ -215,7 +209,7 @@ export default function InventorySelector({ device }: { device: HifiDevice }) {
         </p>
       )}
       {status === "wunschgeraet" && (
-        <p className="text-xs text-zinc-600 border border-amber-900/30 bg-amber-500/5 rounded-lg px-3 py-2">
+        <p className="text-xs text-ink-soft border border-rule bg-surface rounded-lg px-3 py-2">
           Auf der Wunschliste - noch nicht im Besitz.
         </p>
       )}

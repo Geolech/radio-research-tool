@@ -141,7 +141,7 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
         <button
           onClick={handleEnrichWikipedia}
           disabled={isLoading}
-          className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-500/10 px-4 py-2 text-sm font-medium text-blue-400 hover:bg-blue-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2 text-sm font-medium text-accent hover:bg-accent/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loadingWiki
             ? <><IconLoader2 size={14} className="animate-spin" /> Wikipedia …</>
@@ -157,17 +157,17 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
           {/* Source badge */}
           <div className="flex items-center gap-2 flex-wrap">
             {source === "wikipedia" && (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
                 <IconBook size={12} stroke={1.8} /> Wikipedia · CC BY-SA
               </span>
             )}
             {source === "model" && (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
                 <IconRobot size={12} stroke={1.8} /> KI-Modellwissen · ohne Gewähr
               </span>
             )}
             {source === "combined" && (
-              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-400 border border-teal-500/20 font-medium">
+              <span className="inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20 font-medium">
                 <IconRobot size={12} stroke={1.8} /><IconBook size={12} stroke={1.8} /> Web & Wikipedia · ohne Gewähr
               </span>
             )}
@@ -176,7 +176,7 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
                 href={articleUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-xs text-zinc-500 hover:text-blue-400 transition-colors truncate max-w-xs"
+                className="text-xs text-zinc-500 hover:text-accent transition-colors truncate max-w-xs"
               >
                 {articleTitle} ↗
               </a>
@@ -239,7 +239,7 @@ export default function EnrichButton({ device }: EnrichButtonProps) {
             <p className="text-xs text-zinc-600 leading-relaxed border-t border-zinc-800 pt-3">
               Quelle: Wikipedia, lizenziert unter{" "}
               <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener noreferrer"
-                className="text-blue-400 hover:underline">CC BY-SA 4.0</a>.
+                className="text-accent hover:underline">CC BY-SA 4.0</a>.
               Bitte bei Weitergabe Quelle und Lizenz angeben.
             </p>
           )}

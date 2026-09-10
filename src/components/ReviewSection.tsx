@@ -1,4 +1,5 @@
 "use client";
+import { IconCheck, IconDeviceFloppy, IconLoader2, IconRefresh, IconRobot, IconSparkles } from "@tabler/icons-react";
 
 import { useState } from "react";
 import { HifiDevice } from "@/lib/types";
@@ -164,7 +165,7 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
               onClick={() => handleSearch(true)}
               className="inline-flex items-center gap-1 rounded-full border border-zinc-600 bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-700 transition-colors"
             >
-              ↺ Im Web aktualisieren
+              <IconRefresh size={13} stroke={1.8} /> Im Web aktualisieren
             </button>
           )}
           <button
@@ -172,7 +173,7 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
             disabled={loading}
             className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? <><span className="animate-spin">⟳</span> Suche …</> : <>✦ Suchen</>}
+            {loading ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Suche …</> : <><IconSparkles size={13} stroke={1.8} /> Suchen</>}
           </button>
         </div>
       </div>
@@ -228,14 +229,14 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
 
           <div className="pt-3 border-t border-zinc-800 flex items-center gap-3">
             {saved ? (
-              <p className="text-xs text-emerald-400 font-medium">✓ Gespeichert</p>
+              <p className="text-xs text-emerald-400 font-medium"><IconCheck size={13} stroke={2.5} /> Gespeichert</p>
             ) : (
               <button
                 onClick={handleSave}
                 disabled={saving || selectedCount === 0}
                 className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {saving ? "Speichere …" : `↓ ${selectedCount} übernehmen`}
+                {saving ? "Speichere …" : `<IconDeviceFloppy size={13} stroke={1.8} /> ${selectedCount} übernehmen`}
               </button>
             )}
             <p className="text-xs text-zinc-600">{selectedCount} von {reviews.length} ausgewählt</p>
@@ -256,7 +257,7 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
                 Beschreibung aus Testberichten
               </p>
               <span className="text-xs px-2 py-0.5 rounded-full bg-zinc-700/60 text-zinc-400 border border-zinc-600">
-                🤖 KI-Auswertung · ohne Gewähr
+                <IconRobot size={13} stroke={1.8} /> KI-Auswertung · ohne Gewähr
               </span>
             </div>
             <button
@@ -264,7 +265,7 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
               disabled={summarizing}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {summarizing ? <><span className="animate-spin">⟳</span> Lese Berichte …</> : <>✦ Zusammenfassen</>}
+              {summarizing ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Lese Berichte …</> : <><IconSparkles size={13} stroke={1.8} /> Zusammenfassen</>}
             </button>
           </div>
 
@@ -284,14 +285,14 @@ export default function ReviewSection({ device, savedReviews }: ReviewSectionPro
               />
               <div className="flex items-center gap-3">
                 {summarySaved ? (
-                  <p className="text-xs text-emerald-400 font-medium">✓ Beschreibung gespeichert</p>
+                  <p className="text-xs text-emerald-400 font-medium"><IconCheck size={13} stroke={2.5} /> Beschreibung gespeichert</p>
                 ) : (
                   <button
                     onClick={handleSaveSummary}
                     disabled={summarySaving}
                     className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
                   >
-                    {summarySaving ? "Speichere …" : "↓ Als Beschreibung übernehmen"}
+                    {summarySaving ? "Speichere …" : "<IconDeviceFloppy size={13} stroke={1.8} /> Als Beschreibung übernehmen"}
                   </button>
                 )}
                 {summaryEdited && !summarySaved && (

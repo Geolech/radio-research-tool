@@ -1,4 +1,5 @@
 "use client";
+import { IconSearch, IconTool } from "@tabler/icons-react";
 
 import { useState, useEffect } from "react";
 import { HifiDevice } from "@/lib/types";
@@ -47,7 +48,7 @@ export default function RepairSection({ device }: RepairSectionProps) {
         : null,
       badge: "Google",
       badgeColor: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-      icon: "🔍",
+      icon: "<IconSearch size={13} stroke={1.8} />",
     },
     {
       label: `${device.brand} Hersteller`,
@@ -63,7 +64,7 @@ export default function RepairSection({ device }: RepairSectionProps) {
     <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-5 space-y-4">
       {/* Header */}
       <div className="flex items-center gap-2">
-        <span className="text-lg">🔧</span>
+        <span className="text-lg"><IconTool size={16} stroke={1.8} /></span>
         <h3 className="text-sm font-semibold text-zinc-200">Reparaturbetriebe</h3>
       </div>
 

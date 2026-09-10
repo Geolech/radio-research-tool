@@ -1,8 +1,8 @@
 "use client";
+import { IconAlertTriangle, IconCheck, IconDeviceFloppy, IconDownload, IconLoader2, IconPhoto, IconRefresh, IconSparkles, IconX } from "@tabler/icons-react";
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { IconX } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 import type { OfficialImage } from "@/app/api/find-product-image/route";
 
@@ -17,9 +17,9 @@ const SOURCE_LABEL: Record<OfficialImage["source"], string> = {
 };
 
 const SOURCE_COLOR: Record<OfficialImage["source"], string> = {
-  wikimedia: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  press: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-  manufacturer: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  wikimedia: "bg-accent/10 text-accent border-accent/25",
+  press: "bg-accent/10 text-accent border-accent/25",
+  manufacturer: "bg-accent/10 text-accent border-accent/25",
 };
 
 export default function OfficialImageSection({ device }: OfficialImageSectionProps) {
@@ -197,10 +197,10 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="text-lg">🖼</span>
+          <span className="text-lg"><IconPhoto size={16} stroke={1.8} /></span>
           <h3 className="text-sm font-semibold text-zinc-200">Offizielles Produktbild</h3>
           {saved && collapsed && (
-            <span className="text-xs text-emerald-400 font-medium">✓ Gespeichert</span>
+            <span className="text-xs text-accent font-medium"><IconCheck size={13} stroke={2.5} /> Gespeichert</span>
           )}
           {image && !collapsed && (
             <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${SOURCE_COLOR[sourceKey]}`}>
@@ -214,7 +214,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
               onClick={() => setCollapsed(false)}
               className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-700 transition-colors"
             >
-              ↺ Ändern
+              <IconRefresh size={13} stroke={1.8} /> Ändern
             </button>
           )}
           {!collapsed && (
@@ -223,7 +223,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
               disabled={loading || uploading}
               className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-400 hover:bg-amber-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? <><span className="animate-spin">⟳</span> Suche …</> : <>✦ Pressebild suchen</>}
+              {loading ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Suche …</> : <><IconSparkles size={13} stroke={1.8} /> Pressebild suchen</>}
             </button>
           )}
         </div>
@@ -250,7 +250,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                 disabled={uploading}
                 className="shrink-0 inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1 text-xs font-medium text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors disabled:opacity-50"
               >
-                {uploading ? <span className="animate-spin">⟳</span> : <>📁 Hochladen</>}
+                {uploading ? <span className="animate-spin"><IconLoader2 size={14} /></span> : <>📁 Hochladen</>}
               </button>
             </div>
           )}
@@ -259,7 +259,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
           {isCopyrightBlocked && (
             <div className="rounded-xl border border-zinc-700 bg-zinc-800/50 px-4 py-4 space-y-3 text-center">
               <p className="text-xs text-zinc-400 leading-relaxed">
-                <span className="text-amber-400 font-medium">⚠ Kein rechtegeklärtes Bild verfügbar.</span><br />
+                <span className="text-amber-400 font-medium"><IconAlertTriangle size={13} stroke={1.8} /> Kein rechtegeklärtes Bild verfügbar.</span><br />
                 Das gefundene Pressebild steht nicht zur freien Nutzung bereit
                 und kann aus Copyright-Gründen nicht gespeichert werden.<br />
                 Bitte lade ein eigenes Foto hoch.
@@ -270,7 +270,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                   disabled={uploading}
                   className="inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50"
                 >
-                  {uploading ? <><span className="animate-spin">⟳</span> Lade hoch …</> : <>📁 Eigenes Foto hochladen</>}
+                  {uploading ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Lade hoch …</> : <>📁 Eigenes Foto hochladen</>}
                 </button>
                 <button
                   onClick={handleDiscard}
@@ -300,7 +300,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                 disabled={uploading}
                 className="inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50"
               >
-                {uploading ? <><span className="animate-spin">⟳</span> Lade hoch …</> : <>📁 Bild hochladen</>}
+                {uploading ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Lade hoch …</> : <>📁 Bild hochladen</>}
               </button>
               <p className="text-xs text-zinc-600">JPEG, PNG oder WebP · max. 10 MB</p>
             </div>
@@ -331,8 +331,8 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                       className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50"
                     >
                       {fetching
-                        ? <><span className="animate-spin">⟳</span> Lade herunter …</>
-                        : <>⬇ Lokal speichern</>}
+                        ? <><span className="animate-spin"><IconLoader2 size={14} /></span> Lade herunter …</>
+                        : <><IconDownload size={14} stroke={1.8} /> Lokal speichern</>}
                     </button>
                   </div>
                 ) : null /* copyright-blocked case handled above */}
@@ -363,11 +363,11 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                     className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-400 hover:bg-zinc-700 transition-colors disabled:opacity-50"
                     title="Eigenes Foto hochladen"
                   >
-                    {uploading ? <span className="animate-spin">⟳</span> : <>📁</>}
+                    {uploading ? <span className="animate-spin"><IconLoader2 size={14} /></span> : <>📁</>}
                   </button>
 
                   {saved ? (
-                    <p className="text-xs text-emerald-400 font-medium">✓ Gespeichert</p>
+                    <p className="text-xs text-accent font-medium"><IconCheck size={13} stroke={2.5} /> Gespeichert</p>
                   ) : (
                     <>
                       <button
@@ -383,7 +383,7 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                         disabled={saving || (imgError && !isWikimedia)}
                         className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {saving ? "Speichere …" : "↓ Übernehmen"}
+                        {saving ? "Speichere …" : "<IconDeviceFloppy size={13} stroke={1.8} /> Übernehmen"}
                       </button>
                     </>
                   )}

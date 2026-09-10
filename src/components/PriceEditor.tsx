@@ -1,7 +1,7 @@
 "use client";
+import { IconCheck, IconCoins, IconDeviceFloppy, IconLoader2, IconRobot, IconSearch } from "@tabler/icons-react";
 
 import { useState } from "react";
-import { IconCheck, IconLoader2, IconRobot, IconDeviceFloppy, IconCoins } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 
 interface PriceEditorProps {
@@ -190,7 +190,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
         <button
           onClick={handleResearch}
           disabled={researching}
-          className="inline-flex items-center gap-1.5 rounded-full border border-violet-500/30 bg-violet-500/10 px-3 py-2 text-xs font-medium text-violet-400 hover:bg-violet-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 rounded-full border border-accent/30 bg-accent/10 px-3 py-2 text-xs font-medium text-accent hover:bg-accent/15 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           title="Claude recherchiert aktuellen Marktpreis via Websuche (~15 Sek.)"
         >
           {researching
@@ -205,7 +205,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
         >
-          🔍 Google
+          <IconSearch size={13} stroke={1.8} /> Google
         </a>
         <a
           href={idealoSearchUrl}
@@ -213,7 +213,7 @@ export default function PriceEditor({ device }: PriceEditorProps) {
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 hover:text-zinc-200 hover:bg-zinc-700 transition-colors"
         >
-          🔍 Idealo
+          <IconSearch size={13} stroke={1.8} /> Idealo
         </a>
       </div>
     </div>
