@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
+import { IconX } from "@tabler/icons-react";
 import { HifiDevice } from "@/lib/types";
 import type { OfficialImage } from "@/app/api/find-product-image/route";
 
@@ -154,6 +155,16 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
     }
   }
 
+  // Gefundenes (noch nicht gespeichertes) Bild ablehnen → zurück zur Suche
+  function handleDiscard() {
+    setImage(null);
+    setSaved(false);
+    setImgError(false);
+    setError(null);
+    setFetching(false);
+    setSearchAttempted(false);
+  }
+
   const sourceKey = image?.source ?? "press";
   const isWikimedia = image?.source === "wikimedia";
 
@@ -241,13 +252,22 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                 und kann aus Copyright-Gründen nicht gespeichert werden.<br />
                 Bitte lade ein eigenes Foto hoch.
               </p>
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50"
-              >
-                {uploading ? <><span className="animate-spin">⟳</span> Lade hoch …</> : <>📁 Eigenes Foto hochladen</>}
-              </button>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  className="inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-700 px-4 py-2 text-sm font-medium text-zinc-200 hover:bg-zinc-600 transition-colors disabled:opacity-50"
+                >
+                  {uploading ? <><span className="animate-spin">⟳</span> Lade hoch …</> : <>📁 Eigenes Foto hochladen</>}
+                </button>
+                <button
+                  onClick={handleDiscard}
+                  title="Bild verwerfen"
+                  className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors"
+                >
+                  <IconX size={13} stroke={2} /> Verwerfen
+                </button>
+              </div>
               {image.pageUrl && (
                 <a href={image.pageUrl} target="_blank" rel="noopener noreferrer"
                   className="block text-xs text-zinc-600 hover:text-amber-400 transition-colors">
@@ -337,13 +357,23 @@ export default function OfficialImageSection({ device }: OfficialImageSectionPro
                   {saved ? (
                     <p className="text-xs text-emerald-400 font-medium">✓ Gespeichert</p>
                   ) : (
-                    <button
-                      onClick={handleSave}
-                      disabled={saving || (imgError && !isWikimedia)}
-                      className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {saving ? "Speichere …" : "↓ Übernehmen"}
-                    </button>
+                    <>
+                      <button
+                        onClick={handleDiscard}
+                        disabled={saving}
+                        title="Bild verwerfen"
+                        className="inline-flex items-center gap-1 rounded-full border border-zinc-700 bg-zinc-800 px-3 py-2 text-xs font-medium text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200 transition-colors disabled:opacity-50"
+                      >
+                        <IconX size={13} stroke={2} /> Verwerfen
+                      </button>
+                      <button
+                        onClick={handleSave}
+                        disabled={saving || (imgError && !isWikimedia)}
+                        className="inline-flex items-center gap-2 rounded-full bg-amber-500 px-4 py-2 text-sm font-semibold text-zinc-900 hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {saving ? "Speichere …" : "↓ Übernehmen"}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>
