@@ -22,6 +22,19 @@ async function withRetry<T>(fn: () => Promise<T>, maxAttempts = 4, baseDelayMs =
   throw new Error("Max retries exceeded");
 }
 
+// ── Herkunftsnachweis ("Content Credentials", C2PA-inspiriert) ────────────────
+// Kein echtes C2PA (das ist für Bild/Video/Audio-Container gebaut — unser
+// Endprodukt ist gesprochener/gedruckter Text). Stattdessen ein eigenes,
+// leichtgewichtiges Schema mit demselben Ziel: Nachvollziehbarkeit, welches
+// Modell wann aus welcher Quelle erzeugt hat und ob der Quellenabgleich lief.
+export type Provenance = {
+  provider: "anthropic" | "openai" | "custom";
+  model: string;
+  generatedAt: string; // ISO-Zeitstempel
+  verifyStatus: "unchecked" | "clean" | "issues" | "error";
+  verifyIssues?: string[];
+};
+
 // ── Shared types ─────────────────────────────────────────────────────────────
 export type NewsItem = {
   rank: number;
@@ -33,6 +46,7 @@ export type NewsItem = {
   source_type: "rss" | "web" | "verified";
   url?: string;
   description?: string; // RSS-Kurztext als inhaltliche Grundlage der Sprechtext-Erzeugung
+  provenance?: Provenance;
 };
 
 export type RadioResearchResult = {

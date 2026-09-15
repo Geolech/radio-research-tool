@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { RadioResearchResult, NewsItem } from "@/app/api/radio-research/route";
+import type { RadioResearchResult, NewsItem, Provenance } from "@/app/api/radio-research/route";
 import type { RSSItem, FeedResult } from "@/app/api/fetch-rss/route";
 import { rankRSSItems, rssToNewsItems } from "@/lib/rank-rss";
 import RadioHamburgerMenu from "@/components/RadioHamburgerMenu";
@@ -317,6 +317,14 @@ function NewsCard({
           )}
           {verifyResult && verifyResult.state === "err" && (
             <p className="text-xs text-red-400">✕ Prüfung fehlgeschlagen: {verifyResult.msg}</p>
+          )}
+          {item.provenance && (
+            <p className="text-[11px] text-zinc-600 flex items-center gap-1.5" title={`Erzeugt am ${formatDate(item.provenance.generatedAt)}`}>
+              <span>ℹ Erzeugt: {PROVIDER_LABELS[item.provenance.provider]} · {item.provenance.model}</span>
+              {item.provenance.verifyStatus === "clean" && <span className="text-emerald-500">· Quelle geprüft ✓</span>}
+              {item.provenance.verifyStatus === "issues" && <span className="text-amber-500">· Quelle geprüft ⚠</span>}
+              {item.provenance.verifyStatus === "error" && <span className="text-red-500">· Prüfung fehlgeschlagen</span>}
+            </p>
           )}
         </>
       ) : onGenerate ? (
@@ -1205,8 +1213,26 @@ export default function RadioResearchPage() {
   // Quellenabgleich pro Meldung (Rang → Prüfergebnis)
   const [verifyResults, setVerifyResults] = useState<Record<number, VerifyResult>>({});
 
+  // Schreibt einen neuen Provenance-Stand in die Live-Ansicht UND ins Archiv
+  // (Quellenabgleich läuft immer erst NACH dem Speichern des Bulletins, daher
+  // ist patchDbItem hier — anders als in generateSingleText — immer sicher).
+  function applyProvenance(rank: number, provenance: Provenance) {
+    setResult(prev => {
+      if (!prev) return prev;
+      const patchArr = (arr: NewsItem[]) => arr.map(i => (i.rank === rank ? { ...i, provenance } : i));
+      return { ...prev, welt: patchArr(prev.welt), national: patchArr(prev.national), regional: patchArr(prev.regional) };
+    });
+    patchDbItem(rank, { provenance });
+  }
+
   async function verifyItem(item: NewsItem) {
     setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "running" } }));
+    const baseProvenance: Provenance = item.provenance ?? {
+      provider: activeProfile?.provider ?? "anthropic",
+      model: activeProfile?.model ?? "",
+      generatedAt: new Date().toISOString(),
+      verifyStatus: "unchecked",
+    };
     try {
       const r = await fetch("/api/radio-research", {
         method: "POST",
@@ -1222,8 +1248,14 @@ export default function RadioResearchPage() {
       if (!r.ok) throw new Error(data.error ?? "Fehler");
       const issues: string[] = Array.isArray(data.issues) ? data.issues : [];
       setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "ok", issues } }));
+      applyProvenance(item.rank, {
+        ...baseProvenance,
+        verifyStatus: issues.length === 0 ? "clean" : "issues",
+        verifyIssues: issues.length > 0 ? issues : undefined,
+      });
     } catch (e) {
       setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
+      applyProvenance(item.rank, { ...baseProvenance, verifyStatus: "error" });
     }
   }
 
@@ -1295,14 +1327,50 @@ export default function RadioResearchPage() {
     handleSaveFeeds([...feeds, ...additions]);
   }
 
+  // Merkt sich das zuletzt archivierte Bulletin, damit spätere Aktionen (Einzel-
+  // Generierung ab Rang 6, Quellenabgleich) den Herkunftsnachweis auch im Archiv
+  // nachtragen können — nicht nur in der aktuellen Live-Ansicht.
+  const currentDbIdRef = useRef<string | null>(null);
+
   const saveToDb = useCallback((r: RadioResearchResult) => {
-    const entry: StoredResult = { ...r, id: crypto.randomUUID() };
+    const id = crypto.randomUUID();
+    currentDbIdRef.current = id;
+    const entry: StoredResult = { ...r, id };
     setDb((prev) => {
       const next = [entry, ...prev].slice(0, 100);
       try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
       return next;
     });
   }, []);
+
+  // Trägt eine Teiländerung (z. B. Herkunftsnachweis) in die Meldung mit
+  // gegebenem Rang im zuletzt archivierten Bulletin nach.
+  function patchDbItem(rank: number, patch: Partial<NewsItem>) {
+    const id = currentDbIdRef.current;
+    if (!id) return;
+    setDb((prev) => {
+      const patchArr = (arr: NewsItem[]) => arr.map((i) => (i.rank === rank ? { ...i, ...patch } : i));
+      const next = prev.map((entry) =>
+        entry.id === id
+          ? { ...entry, welt: patchArr(entry.welt), national: patchArr(entry.national), regional: patchArr(entry.regional) }
+          : entry
+      );
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }
+
+  // Herkunftsnachweis für einen frisch erzeugten Sprechtext, basierend auf dem
+  // gerade aktiven KI-Zugang.
+  function makeProvenance(): Provenance | undefined {
+    if (!activeProfile) return undefined;
+    return {
+      provider: activeProfile.provider,
+      model: activeProfile.model,
+      generatedAt: new Date().toISOString(),
+      verifyStatus: "unchecked",
+    };
+  }
 
   function handleSendToEditor(text: string) {
     setEditorText((prev) => prev ? prev + "\n\n" + text : text);
@@ -1378,15 +1446,22 @@ export default function RadioResearchPage() {
         // Texte je Rang sammeln (Batch + ggf. Einzel-Fallback), Endstand lokal bauen —
         // saveToDb NICHT in einem setState-Updater aufrufen (unpur → doppelte
         // Archiv-Einträge im Dev-StrictMode).
+        // Herkunftsnachweis: alle Batch-Texte teilen sich einen Zeitstempel (ein
+        // gemeinsamer API-Aufruf), Einzel-Fallbacks bekommen ihren eigenen.
+        const batchProvenance = makeProvenance();
         const batchTexts = new Map<number, string>();
-        for (const t of texts) if (t.radio_text?.trim()) batchTexts.set(t.rank, t.radio_text);
+        const provenanceByRank = new Map<number, Provenance | undefined>();
+        for (const t of texts) if (t.radio_text?.trim()) {
+          batchTexts.set(t.rank, t.radio_text);
+          provenanceByRank.set(t.rank, batchProvenance);
+        }
 
         setResult(prev => {
           if (!prev) return prev;
           return {
             ...prev,
             regional: prev.regional.map(item =>
-              batchTexts.has(item.rank) ? { ...item, radio_text: batchTexts.get(item.rank)! } : item
+              batchTexts.has(item.rank) ? { ...item, radio_text: batchTexts.get(item.rank)!, provenance: batchProvenance } : item
             ),
           };
         });
@@ -1398,14 +1473,19 @@ export default function RadioResearchPage() {
         const missing = top5.filter(i => !allTexts.has(i.rank));
         for (const item of missing) {
           const single = await generateSingleText(item, "Regional");
-          if (single) allTexts.set(item.rank, single);
+          if (single) {
+            allTexts.set(item.rank, single.text);
+            provenanceByRank.set(item.rank, single.provenance);
+          }
         }
 
         // Endstand aus lokalen Daten bauen und einmal speichern
         const finalResult: RadioResearchResult = {
           ...initialResult,
           regional: newsItems.map(item =>
-            allTexts.has(item.rank) ? { ...item, radio_text: allTexts.get(item.rank)! } : item
+            allTexts.has(item.rank)
+              ? { ...item, radio_text: allTexts.get(item.rank)!, provenance: provenanceByRank.get(item.rank) }
+              : item
           ),
         };
         setResult(finalResult);
@@ -1420,9 +1500,13 @@ export default function RadioResearchPage() {
 
   useEffect(() => () => { if (timerRef.current) clearInterval(timerRef.current); }, []);
 
-  // Liefert den erzeugten Text zurück (oder null), damit Aufrufer den Endstand
-  // lokal weiterverwenden können; aktualisiert zusätzlich selbst das result-State.
-  async function generateSingleText(item: NewsItem, category: string): Promise<string | null> {
+  // Liefert Text + Herkunftsnachweis zurück (oder null), damit Aufrufer den
+  // Endstand lokal weiterverwenden können; aktualisiert zusätzlich selbst das
+  // result-State. Patcht bewusst NICHT das Archiv (siehe handleGenerateFromUI) —
+  // wird auch aus dem Vorab-Fallback in handleResearch aufgerufen, BEVOR das
+  // aktuelle Bulletin überhaupt gespeichert ist (currentDbIdRef zeigt dort noch
+  // auf das vorherige Bulletin).
+  async function generateSingleText(item: NewsItem, category: string): Promise<{ text: string; provenance?: Provenance } | null> {
     setGeneratingRanks(prev => new Set(prev).add(item.rank));
     try {
       const r = await fetch("/api/radio-research", {
@@ -1438,16 +1522,17 @@ export default function RadioResearchPage() {
       if (!r.ok) throw new Error(data.error ?? "Fehler");
       const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
       if (texts.length > 0 && texts[0].radio_text?.trim()) {
+        const provenance = makeProvenance();
         setResult(prev => {
           if (!prev) return prev;
           return {
             ...prev,
             regional: prev.regional.map(i =>
-              i.rank === item.rank ? { ...i, radio_text: texts[0].radio_text } : i
+              i.rank === item.rank ? { ...i, radio_text: texts[0].radio_text, provenance } : i
             ),
           };
         });
-        return texts[0].radio_text;
+        return { text: texts[0].radio_text, provenance };
       }
       return null;
     } catch {
@@ -1458,8 +1543,25 @@ export default function RadioResearchPage() {
     }
   }
 
+  // Wrapper für UI-ausgelöste Einzel-Generierung ("Sprechtext generieren" ab
+  // Rang 6, "↻ Erneut generieren"): Hier ist das Bulletin bereits archiviert,
+  // also den Herkunftsnachweis auch im Archiv nachtragen.
+  async function handleGenerateFromUI(item: NewsItem, category: string) {
+    const res = await generateSingleText(item, category);
+    if (res) patchDbItem(item.rank, { radio_text: res.text, provenance: res.provenance });
+  }
+
   function exportCsv() {
-    const rows = [["Datum", "Region", "Kategorie", "Rang", "Meldung", "Quellen", "Verifiziert", "Sprechtext"]];
+    const verifyLabel: Record<Provenance["verifyStatus"], string> = {
+      unchecked: "nicht geprüft",
+      clean: "keine Abweichung",
+      issues: "Abweichungen gefunden",
+      error: "Prüfung fehlgeschlagen",
+    };
+    const rows = [[
+      "Datum", "Region", "Kategorie", "Rang", "Meldung", "Quellen", "Verifiziert", "Sprechtext",
+      "KI-Anbieter", "KI-Modell", "Erzeugt am", "Quellenabgleich",
+    ]];
     for (const r of db) {
       for (const [cat, items] of [
         ["Welt", r.welt],
@@ -1476,6 +1578,10 @@ export default function RadioResearchPage() {
             item.sources.join("; "),
             item.validated ? "ja" : "nein",
             item.radio_text,
+            item.provenance ? PROVIDER_LABELS[item.provenance.provider] : "",
+            item.provenance?.model ?? "",
+            item.provenance ? formatDate(item.provenance.generatedAt) : "",
+            item.provenance ? verifyLabel[item.provenance.verifyStatus] : "",
           ]);
         }
       }
@@ -1763,7 +1869,7 @@ export default function RadioResearchPage() {
                     items={result.welt}
                     color="bg-blue-500/20"
                     generatingRanks={generatingRanks}
-                    onGenerate={generateSingleText}
+                    onGenerate={handleGenerateFromUI}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
@@ -1774,7 +1880,7 @@ export default function RadioResearchPage() {
                     items={result.national}
                     color="bg-purple-500/20"
                     generatingRanks={generatingRanks}
-                    onGenerate={generateSingleText}
+                    onGenerate={handleGenerateFromUI}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
@@ -1785,7 +1891,7 @@ export default function RadioResearchPage() {
                     items={result.regional}
                     color="bg-green-500/20"
                     generatingRanks={generatingRanks}
-                    onGenerate={generateSingleText}
+                    onGenerate={handleGenerateFromUI}
                     onSendToEditor={handleSendToEditor}
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
