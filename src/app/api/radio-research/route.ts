@@ -36,6 +36,13 @@ export type Provenance = {
 };
 
 // ── Shared types ─────────────────────────────────────────────────────────────
+export type ClusterSource = {
+  feedName: string;
+  feedCategory: string;
+  description: string;
+  link: string;
+};
+
 export type NewsItem = {
   rank: number;
   headline: string;
@@ -47,7 +54,14 @@ export type NewsItem = {
   url?: string;
   description?: string; // RSS-Kurztext als inhaltliche Grundlage der Sprechtext-Erzeugung
   provenance?: Provenance;
+  clusterSources?: ClusterSource[]; // Alle Quellen aus dem Event-Cluster (nur wenn > 1)
+  divergenceResult?: DivergenceResult; // Ergebnis des Quellenvergleichs (optional, nach Prüfung)
 };
+
+export type DivergenceResult =
+  | { state: "clean" }
+  | { state: "diverges"; points: string[] }
+  | { state: "error"; msg: string };
 
 export type RadioResearchResult = {
   welt: NewsItem[];
@@ -60,12 +74,18 @@ export type RadioResearchResult = {
 
 // ── Sprechtext-Regeln ─────────────────────────────────────────────────────────
 const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
-- QUELLENTREUE (WICHTIGSTE REGEL): Nutze AUSSCHLIESSLICH die zur jeweiligen Meldung gegebenen Informationen (Überschrift + Kurztext). Erfinde KEINE Fakten, Zahlen, Namen, Orte, Zitate oder Details, die dort nicht stehen. Wenn Informationen fehlen, formuliere allgemeiner oder lass den Punkt weg — niemals dazudichten. Nicht spekulieren, nicht abstrahieren.
+- QUELLENTREUE (WICHTIGSTE REGEL): Nutze AUSSCHLIESSLICH die gegebenen Informationen (Überschrift + Kurztext/e). Erfinde KEINE Fakten, Zahlen, Namen, Orte, Zitate oder Details, die dort nicht stehen. Wenn Informationen fehlen, formuliere allgemeiner oder lass den Punkt weg — niemals dazudichten.
+- STRUKTUR — 5W1H: Beantworte im Text so viele dieser Fragen wie die Quelle hergibt:
+    Satz 1: WAS ist passiert (Kern-Ereignis)?
+    Satz 2: WER ist beteiligt / WO passiert es?
+    Satz 3: WANN / WARUM / WIE (Hintergrund, Kontext)?
+    Satz 4: Was bedeutet das / wie geht es weiter (soweit aus der Quelle ableitbar)?
+  Gibt die Quelle nicht genug für 4 Sätze her: lieber 2–3 präzise Sätze als erfundene Inhalte.
 - Gesprochene Sprache, keine Abkürzungen
 - Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
-- In der Regel 4 vollständige Sätze; schöpfe die im Kurztext genannten Details voll aus (Satz 1: Kern · Satz 2: Kontext · Satz 3: Hintergrund · Satz 4: weiteres Detail/Einordnung). Erfinde dabei nichts dazu — wenn der Kurztext für 4 Sätze nicht genug hergibt, lieber weniger Sätze als erfundene Inhalte. KEIN Quellenhinweis (die Quelle wird separat angezeigt).
 - Präsens oder Perfekt, nie Futur für Vergangenes
-- Neutral und sachlich, nah am Wortlaut der Quelle`;
+- Neutral und sachlich, nah am Wortlaut der Quelle
+- KEIN Quellenhinweis im Text (die Quelle wird separat angezeigt)`;
 
 // ── Modellaufruf je Anbieter → liefert reinen Text ────────────────────────────
 async function callModel(cfg: AiProviderConfig, system: string, prompt: string): Promise<string> {
@@ -107,19 +127,41 @@ async function callModel(cfg: AiProviderConfig, system: string, prompt: string):
 // ── Sprechtexte für übergebene Items generieren ───────────────────────────────
 async function generateTexts(
   cfg: AiProviderConfig,
-  items: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>
+  items: Array<{
+    category: string;
+    rank: number;
+    headline: string;
+    sources: string[];
+    summary?: string;
+    clusterSources?: Array<{ feedName: string; description: string }>;
+  }>
 ): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
 
   const system = `Du bist Radiosprecher-Texter. Du formulierst gegebene Meldungen in Radiosprache um — du recherchierst NICHT und fügst NICHTS hinzu.
 ${SPEECH_RULES}
 Antworte NUR mit validem JSON-Array.`;
 
-  const itemList = items.map((it, i) =>
-    `${i + 1}. [${it.category}] Rang ${it.rank}\n   Überschrift: "${it.headline}"\n   Quelle: ${it.sources.join(", ")}` +
-    (it.summary && it.summary.trim()
-      ? `\n   Kurztext (einzige inhaltliche Grundlage): ${it.summary.trim()}`
-      : `\n   Kurztext: (keiner — nur die Überschrift verwenden, nichts ergänzen)`)
-  ).join("\n\n");
+  const itemList = items.map((it, i) => {
+    let entry = `${i + 1}. [${it.category}] Rang ${it.rank}\n   Überschrift: "${it.headline}"\n   Quelle: ${it.sources.join(", ")}`;
+    if (it.summary && it.summary.trim()) {
+      entry += `\n   Kurztext (einzige inhaltliche Grundlage): ${it.summary.trim()}`;
+    } else {
+      entry += `\n   Kurztext: (keiner — nur die Überschrift verwenden, nichts ergänzen)`;
+    }
+    // Wenn mehrere Quellen im Cluster: weitere Kurztexte als zusätzliche Informationsquellen
+    if (it.clusterSources && it.clusterSources.length > 1) {
+      const extras = it.clusterSources
+        .filter((s) => s.description && s.description.trim() && s.description !== it.summary)
+        .slice(0, 3); // max. 3 weitere, um den Prompt nicht zu überlasten
+      if (extras.length > 0) {
+        entry += `\n   Weitere Quellen zum selben Ereignis (nur zur Ergänzung, keine Widersprüche erfinden):`;
+        for (const s of extras) {
+          entry += `\n     - ${s.feedName}: ${s.description.trim()}`;
+        }
+      }
+    }
+    return entry;
+  }).join("\n\n");
 
   const prompt = `Formuliere für jede der folgenden Meldungen einen fertigen Radio-Sprechtext — ausschließlich auf Basis von Überschrift und Kurztext. Nichts hinzuerfinden.
 
@@ -177,6 +219,45 @@ Liste alle Aussagen im Sprechtext, die nicht durch die Quelle gedeckt sind.`;
   }
 }
 
+// ── Source Divergence: vergleicht mehrere Quellen desselben Events ────────────
+// Anders als verifyAgainstSource (Sprechtext vs. Quelle) vergleicht diese Funktion
+// die Kurztexte der verschiedenen Outlets untereinander und zeigt, wo sie inhaltlich
+// voneinander abweichen — das sind journalistisch besonders interessante Punkte.
+async function checkSourceDivergence(
+  cfg: AiProviderConfig,
+  headline: string,
+  sources: Array<{ feedName: string; description: string }>
+): Promise<string[]> {
+  if (sources.length < 2) return [];
+
+  const system = `Du bist Faktenredakteur in einer Nachrichtenredaktion. Du erhältst mehrere Kurztexte verschiedener Quellen über dasselbe Ereignis und suchst nach inhaltlichen Abweichungen: verschiedene Zahlen, Namen, Daten, Aussagen oder Einordnungen. Unterschiedliche Formulierungen ohne inhaltlichen Unterschied sind KEIN Fund. Nur echte inhaltliche Widersprüche oder Ergänzungen, die andere Quellen nicht nennen, zählen.
+Antworte NUR mit validem JSON: {"divergences": ["…"]} — leeres Array wenn alle Quellen inhaltlich übereinstimmen.`;
+
+  const sourceList = sources
+    .map((s, i) => `Quelle ${i + 1} (${s.feedName}):\n${s.description || "(kein Kurztext)"}`)
+    .join("\n\n");
+
+  const prompt = `Ereignis: "${headline}"
+
+${sourceList}
+
+Welche inhaltlichen Abweichungen gibt es zwischen den Quellen?`;
+
+  const text = await callModel(cfg, system, prompt);
+  if (!text) return [];
+  const stripped = text.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
+  const objMatch = stripped.match(/\{[\s\S]*\}/) ?? text.match(/\{[\s\S]*\}/);
+  if (!objMatch) return [];
+  try {
+    const parsed = JSON.parse(objMatch[0]);
+    return Array.isArray(parsed.divergences)
+      ? parsed.divergences.filter((x: unknown): x is string => typeof x === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
 // ── Route handler ─────────────────────────────────────────────────────────────
 export async function POST(req: NextRequest) {
   try {
@@ -186,12 +267,16 @@ export async function POST(req: NextRequest) {
       verifyHeadline = "",
       verifySummary = "",
       verifyRadioText = "",
+      divergeHeadline = "",
+      divergeSources = [],
     }: {
       step?: string;
       itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>;
       verifyHeadline?: string;
       verifySummary?: string;
       verifyRadioText?: string;
+      divergeHeadline?: string;
+      divergeSources?: Array<{ feedName: string; description: string }>;
     } = await req.json();
 
     const cfg = getAiProviderFromRequest(req);
@@ -228,6 +313,13 @@ export async function POST(req: NextRequest) {
         }
         const issues = await verifyAgainstSource(cfg, verifyHeadline, verifySummary, verifyRadioText);
         return NextResponse.json({ issues });
+      }
+      if (step === "diverge") {
+        if (divergeSources.length < 2) {
+          return NextResponse.json({ divergences: [] });
+        }
+        const divergences = await checkSourceDivergence(cfg, divergeHeadline, divergeSources);
+        return NextResponse.json({ divergences });
       }
       return NextResponse.json({ error: "Unbekannter step" }, { status: 400 });
     })();

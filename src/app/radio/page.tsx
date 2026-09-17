@@ -67,16 +67,30 @@ function RadioLogo({ className }: { className?: string }) {
 }
 
 function SourceBadge({ sourceType, validated, count }: { sourceType: string; validated: boolean; count: number }) {
+  const multiLabel = count > 1 ? `${count} Quellen` : "1 Quelle";
+
   if (sourceType === "verified") return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-      {count} Quellen · web-verifiziert
+      {multiLabel} · web-verifiziert
+    </span>
+  );
+  if (sourceType === "rss" && validated && count > 1) return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
+      {multiLabel} · offizielle Quelle
     </span>
   );
   if (sourceType === "rss" && validated) return (
     <span className="inline-flex items-center gap-1 rounded-full border border-blue-500/30 bg-blue-500/10 px-2 py-0.5 text-xs text-blue-400">
       <span className="h-1.5 w-1.5 rounded-full bg-blue-400" />
       RSS · offizielle Quelle
+    </span>
+  );
+  if (sourceType === "rss" && count > 1) return (
+    <span className="inline-flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-xs text-violet-400">
+      <span className="h-1.5 w-1.5 rounded-full bg-violet-400" />
+      {multiLabel} · RSS
     </span>
   );
   if (sourceType === "rss") return (
@@ -88,13 +102,13 @@ function SourceBadge({ sourceType, validated, count }: { sourceType: string; val
   if (validated) return (
     <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-400">
       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-      {count} Quellen · verifiziert
+      {multiLabel} · verifiziert
     </span>
   );
   return (
     <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-xs text-amber-400">
       <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />
-      1 Quelle
+      {multiLabel}
     </span>
   );
 }
@@ -214,6 +228,8 @@ function ProgressStepper({
   );
 }
 
+type DivState = { state: "running" } | { state: "ok"; points: string[] } | { state: "err"; msg: string };
+
 function NewsCard({
   item,
   rank,
@@ -223,6 +239,8 @@ function NewsCard({
   onOpenSource,
   onVerify,
   verifyResult,
+  onDiverge,
+  divergeResult,
 }: {
   item: NewsItem;
   rank: number;
@@ -232,6 +250,8 @@ function NewsCard({
   onOpenSource?: (url: string) => void;
   onVerify?: () => void;
   verifyResult?: VerifyResult;
+  onDiverge?: () => void;
+  divergeResult?: DivState;
 }) {
   const [copied, setCopied] = useState(false);
   function copy() {
@@ -280,7 +300,7 @@ function NewsCard({
             >
               ✎ In Editor bearbeiten
             </button>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {onVerify && item.description && (
                 <button
                   onClick={onVerify}
@@ -289,6 +309,16 @@ function NewsCard({
                   title="Sprechtext gegen den RSS-Kurztext abgleichen"
                 >
                   {verifyResult?.state === "running" ? "🔍 Prüfe …" : "🔍 Gegen Quelle prüfen"}
+                </button>
+              )}
+              {onDiverge && item.clusterSources && item.clusterSources.length >= 2 && (
+                <button
+                  onClick={onDiverge}
+                  disabled={divergeResult?.state === "running"}
+                  className="text-xs text-zinc-500 hover:text-violet-400 transition-colors flex items-center gap-1 disabled:opacity-40"
+                  title={`${item.clusterSources.length} Quellen zu diesem Ereignis vergleichen`}
+                >
+                  {divergeResult?.state === "running" ? "⇄ Vergleiche …" : `⇄ ${item.clusterSources.length} Quellen vergleichen`}
                 </button>
               )}
               {onGenerate && (
@@ -317,6 +347,23 @@ function NewsCard({
           )}
           {verifyResult && verifyResult.state === "err" && (
             <p className="text-xs text-red-400">✕ Prüfung fehlgeschlagen: {verifyResult.msg}</p>
+          )}
+          {divergeResult && divergeResult.state === "ok" && (
+            divergeResult.points.length === 0 ? (
+              <p className="text-xs text-violet-400 flex items-center gap-1.5">
+                ✓ Alle Quellen stimmen inhaltlich überein
+              </p>
+            ) : (
+              <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 px-3 py-2">
+                <p className="text-xs font-semibold text-violet-300 mb-1">⇄ Unterschiede zwischen den Quellen:</p>
+                <ul className="text-xs text-violet-200/90 space-y-0.5 list-disc list-inside">
+                  {divergeResult.points.map((p, i) => <li key={i}>{p}</li>)}
+                </ul>
+              </div>
+            )
+          )}
+          {divergeResult && divergeResult.state === "err" && (
+            <p className="text-xs text-red-400">✕ Quellenvergleich fehlgeschlagen: {divergeResult.msg}</p>
           )}
           {item.provenance && (
             <p className="text-[11px] text-zinc-600 flex items-center gap-1.5" title={`Erzeugt am ${formatDate(item.provenance.generatedAt)}`}>
@@ -405,6 +452,8 @@ function CategorySection({
   onOpenSource,
   onVerify,
   verifyResults,
+  onDiverge,
+  divergeResults,
 }: {
   title: string;
   items: NewsItem[];
@@ -415,6 +464,8 @@ function CategorySection({
   onOpenSource?: (url: string) => void;
   onVerify?: (item: NewsItem) => void;
   verifyResults?: Record<number, VerifyResult>;
+  onDiverge?: (item: NewsItem) => void;
+  divergeResults?: Record<number, DivState>;
 }) {
   if (items.length === 0) return null;
   return (
@@ -440,6 +491,8 @@ function CategorySection({
             onOpenSource={onOpenSource}
             onVerify={onVerify ? () => onVerify(item) : undefined}
             verifyResult={verifyResults?.[item.rank]}
+            onDiverge={onDiverge ? () => onDiverge(item) : undefined}
+            divergeResult={divergeResults?.[item.rank]}
           />
         ))}
       </div>
@@ -1213,6 +1266,9 @@ export default function RadioResearchPage() {
   // Quellenabgleich pro Meldung (Rang → Prüfergebnis)
   const [verifyResults, setVerifyResults] = useState<Record<number, VerifyResult>>({});
 
+  // Source-Divergence pro Meldung (Rang → laufend/Ergebnis)
+  const [divergeResults, setDivergeResults] = useState<Record<number, DivState>>({});
+
   // Schreibt einen neuen Provenance-Stand in die Live-Ansicht UND ins Archiv
   // (Quellenabgleich läuft immer erst NACH dem Speichern des Bulletins, daher
   // ist patchDbItem hier — anders als in generateSingleText — immer sicher).
@@ -1256,6 +1312,28 @@ export default function RadioResearchPage() {
     } catch (e) {
       setVerifyResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
       applyProvenance(item.rank, { ...baseProvenance, verifyStatus: "error" });
+    }
+  }
+
+  async function checkDivergence(item: NewsItem) {
+    if (!item.clusterSources || item.clusterSources.length < 2) return;
+    setDivergeResults(prev => ({ ...prev, [item.rank]: { state: "running" } }));
+    try {
+      const r = await fetch("/api/radio-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...aiHeaders() },
+        body: JSON.stringify({
+          step: "diverge",
+          divergeHeadline: item.headline,
+          divergeSources: item.clusterSources.map(s => ({ feedName: s.feedName, description: s.description })),
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error ?? "Fehler");
+      const points: string[] = Array.isArray(data.divergences) ? data.divergences : [];
+      setDivergeResults(prev => ({ ...prev, [item.rank]: { state: "ok", points } }));
+    } catch (e) {
+      setDivergeResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
     }
   }
 
@@ -1433,6 +1511,7 @@ export default function RadioResearchPage() {
       try {
         const itemsForText = top5.map(i => ({
           category: "Regional", rank: i.rank, headline: i.headline, sources: i.sources, summary: i.description,
+          clusterSources: i.clusterSources?.map(s => ({ feedName: s.feedName, description: s.description })),
         }));
         const r = await fetch("/api/radio-research", {
           method: "POST",
@@ -1874,6 +1953,8 @@ export default function RadioResearchPage() {
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
                     verifyResults={verifyResults}
+                    onDiverge={checkDivergence}
+                    divergeResults={divergeResults}
                   />
                   <CategorySection
                     title="National"
@@ -1885,6 +1966,8 @@ export default function RadioResearchPage() {
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
                     verifyResults={verifyResults}
+                    onDiverge={checkDivergence}
+                    divergeResults={divergeResults}
                   />
                   <CategorySection
                     title="Regional"
@@ -1896,6 +1979,8 @@ export default function RadioResearchPage() {
                     onOpenSource={setOverlayUrl}
                     onVerify={verifyItem}
                     verifyResults={verifyResults}
+                    onDiverge={checkDivergence}
+                    divergeResults={divergeResults}
                   />
                 </div>
               </div>
