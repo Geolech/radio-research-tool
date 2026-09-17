@@ -75,12 +75,13 @@ export type RadioResearchResult = {
 // ── Sprechtext-Regeln ─────────────────────────────────────────────────────────
 const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
 - QUELLENTREUE (WICHTIGSTE REGEL): Nutze AUSSCHLIESSLICH die gegebenen Informationen (Überschrift + Kurztext/e). Erfinde KEINE Fakten, Zahlen, Namen, Orte, Zitate oder Details, die dort nicht stehen. Wenn Informationen fehlen, formuliere allgemeiner oder lass den Punkt weg — niemals dazudichten.
-- STRUKTUR — 5W1H: Beantworte im Text so viele dieser Fragen wie die Quelle hergibt:
-    Satz 1: WAS ist passiert (Kern-Ereignis)?
-    Satz 2: WER ist beteiligt / WO passiert es?
-    Satz 3: WANN / WARUM / WIE (Hintergrund, Kontext)?
-    Satz 4: Was bedeutet das / wie geht es weiter (soweit aus der Quelle ableitbar)?
-  Gibt die Quelle nicht genug für 4 Sätze her: lieber 2–3 präzise Sätze als erfundene Inhalte.
+- STRUKTUR — GENAU 4 SÄTZE (Pflicht, solange der Kurztext ausreichend lang ist):
+    Satz 1: WAS ist passiert (Kern-Ereignis, konkret und präzise)?
+    Satz 2: WER ist beteiligt / WO passiert es (Personen, Institutionen, Ort)?
+    Satz 3: WANN / WARUM / WIE (Hintergrund, Kontext, Umstände)?
+    Satz 4: Was bedeutet das / wie geht es weiter (Einordnung, Ausblick)?
+  Schöpfe den Kurztext vollständig aus — wenn er lang ist, gibt es immer genug für 4 Sätze.
+  Nur wenn der Kurztext wirklich zu knapp ist (unter 3 kurzen Zeilen): dann 3 Sätze, aber niemals erfinden.
 - Gesprochene Sprache, keine Abkürzungen
 - Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
 - Präsens oder Perfekt, nie Futur für Vergangenes
@@ -167,7 +168,8 @@ Antworte NUR mit validem JSON-Array.`;
 
 ${itemList}
 
-Format (nur JSON, radio_text nah am Kurztext):
+WICHTIG: Antworte NUR mit dem JSON-Array, ohne Einleitung, ohne Erklärung, ohne Markdown-Codeblock. Beginne direkt mit [ und ende mit ].
+
 [
   {"category":"Regional","rank":1,"radio_text":"…"},
   ...
@@ -300,9 +302,9 @@ export async function POST(req: NextRequest) {
       }
       if (step === "texts") {
         let texts = await generateTexts(cfg, itemsForText);
-        // Kleine Modelle liefern nicht immer sauberes JSON → ein Nachversuch,
-        // wenn die erste Antwort leer geparst wurde.
-        if (texts.length === 0 && itemsForText.length > 0) {
+        // Kleine Modelle (Llama 3.1 etc.) liefern nicht immer sauberes JSON im
+        // ersten Anlauf → bis zu 2 Nachversuche, dann aufgeben.
+        for (let retry = 0; retry < 2 && texts.length === 0 && itemsForText.length > 0; retry++) {
           texts = await generateTexts(cfg, itemsForText);
         }
         return NextResponse.json({ texts, step: "texts" });

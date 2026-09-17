@@ -557,17 +557,18 @@ function EditorPanel({
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl border border-zinc-300 overflow-hidden">
+    <div className="flex flex-col h-full rounded-xl border border-zinc-300 overflow-hidden" style={{ colorScheme: "light", backgroundColor: "#ffffff" }}>
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 bg-zinc-50 flex-shrink-0">
-        <span className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+      <div className="flex items-center justify-between px-4 py-2 border-b border-zinc-200 flex-shrink-0" style={{ backgroundColor: "#f9fafb" }}>
+        <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: "#71717a" }}>
           Editor
         </span>
         <div className="flex items-center gap-3">
           {value && (
             <button
               onClick={handleClear}
-              className="text-xs text-zinc-400 hover:text-red-500 transition-colors"
+              className="text-xs transition-colors hover:text-red-500"
+              style={{ color: "#a1a1aa" }}
             >
               Leeren
             </button>
@@ -575,24 +576,26 @@ function EditorPanel({
           <button
             onClick={handlePrint}
             disabled={!value.trim()}
-            className="rounded-lg bg-zinc-800 px-4 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            className="rounded-lg px-4 py-1.5 text-xs font-semibold transition-colors flex items-center gap-1.5 disabled:opacity-30 disabled:cursor-not-allowed"
+            style={{ backgroundColor: "#27272a", color: "#ffffff" }}
           >
             🖨 Drucken
           </button>
         </div>
       </div>
 
-      {/* Sorgfaltspflicht-Hinweis: KI-Texte vor Sendung prüfen */}
-      <p className="flex-shrink-0 px-4 py-1.5 text-[11px] text-amber-700 bg-amber-50 border-b border-amber-200/70">
+      {/* Sorgfaltspflicht-Hinweis */}
+      <p className="flex-shrink-0 px-4 py-1.5 text-[11px] border-b" style={{ color: "#92400e", backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
         ⚠ KI-generierte Sprechtexte sind Entwürfe — vor der Sendung redaktionell prüfen.
       </p>
 
-      {/* Textbereich */}
+      {/* Textbereich — Inline-Styles wegen Dark-Mode-Override */}
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={"Wähle in einer Meldung „In Editor bearbeiten“ — der Sprechtext erscheint hier und kann bearbeitet werden."}
-        className="flex-1 resize-none px-5 py-4 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none bg-white leading-relaxed font-serif"
+        className="flex-1 resize-none px-5 py-4 text-sm leading-relaxed font-serif focus:outline-none"
+        style={{ backgroundColor: "#ffffff", color: "#18181b", colorScheme: "light" }}
         spellCheck
         lang="de"
       />
@@ -873,7 +876,7 @@ function AiAccessModal({
                 </button>
                 {t && t.state === "ok" && (
                   <span className="min-w-0 truncate text-xs text-emerald-400" title={t.sample}>
-                    {`✓ antwortet — „${t.sample}“`}
+                    {`✓ antwortet — „${t.sample}"`}
                   </span>
                 )}
                 {t && t.state === "err" && (

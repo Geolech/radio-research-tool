@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handbuch — Radio Research Tool</title>
+<style>
+  /* ── Basis ── */
+  @page {
+    size: A4;
+    margin: 18mm 16mm 20mm 16mm;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      font-size: 8pt;
+      color: #71717a;
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.6;
+    color: #18181b;
+    background: #ffffff;
+  }
+
+  /* ── Deckblatt ── */
+  .cover {
+    min-height: 240mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 20mm 0 16mm 0;
+    page-break-after: always;
+    border-bottom: 2px solid #e4e4e7;
+  }
+
+  .cover-eyebrow {
+    font-size: 7.5pt;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #d97706;
+    margin-bottom: 6mm;
+  }
+
+  .cover-logo {
+    display: flex;
+    align-items: center;
+    gap: 5mm;
+    margin-bottom: 8mm;
+  }
+
+  .cover-logo svg {
+    width: 18mm;
+    height: 18mm;
+    color: #d97706;
+    flex-shrink: 0;
+  }
+
+  .cover-title {
+    font-size: 28pt;
+    font-weight: 700;
+    color: #09090b;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .cover-subtitle {
+    font-size: 11pt;
+    color: #52525b;
+    margin-top: 4mm;
+    margin-bottom: 12mm;
+    line-height: 1.5;
+  }
+
+  .cover-rule {
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(to right, #d97706, transparent);
+    margin-bottom: 10mm;
+  }
+
+  .cover-meta {
+    font-size: 8pt;
+    color: #71717a;
+  }
+
+  /* ── Überschriften ── */
+  h2 {
+    font-size: 14pt;
+    font-weight: 700;
+    color: #09090b;
+    margin-top: 10mm;
+    margin-bottom: 4mm;
+    padding-bottom: 2mm;
+    border-bottom: 1.5px solid #d97706;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 10.5pt;
+    font-weight: 600;
+    color: #18181b;
+    margin-top: 7mm;
+    margin-bottom: 2.5mm;
+    page-break-after: avoid;
+  }
+
+  h2:first-of-type { margin-top: 0; }
+
+  /* ── Fließtext ── */
+  p {
+    margin-bottom: 2.5mm;
+    color: #3f3f46;
+  }
+
+  strong { color: #18181b; font-weight: 600; }
+  em { color: #52525b; font-style: italic; }
+
+  a { color: #d97706; text-decoration: none; }
+
+  /* ── Listen ── */
+  ul, ol {
+    margin: 2mm 0 3mm 5mm;
+    color: #3f3f46;
+  }
+
+  ul li, ol li {
+    margin-bottom: 1.5mm;
+    padding-left: 1.5mm;
+  }
+
+  ul { list-style: none; }
+  ul li::before {
+    content: "—";
+    color: #d97706;
+    margin-right: 2mm;
+    font-weight: 600;
+  }
+
+  /* ── Tabellen ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 3mm 0 4mm 0;
+    font-size: 8.5pt;
+  }
+
+  th {
+    background: #18181b;
+    color: #fbbf24;
+    font-weight: 600;
+    text-align: left;
+    padding: 2mm 3mm;
+    border: 1px solid #3f3f46;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  td {
+    padding: 2mm 3mm;
+    border: 1px solid #e4e4e7;
+    color: #3f3f46;
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) td { background: #f4f4f5; }
+  tr:nth-child(odd) td { background: #ffffff; }
+
+  /* ── Callout-Box ── */
+  .callout {
+    background: #fafafa;
+    border-left: 3px solid #d97706;
+    border-radius: 0 6px 6px 0;
+    padding: 3mm 4mm;
+    margin: 3mm 0 4mm 0;
+    font-size: 8.5pt;
+    color: #3f3f46;
+    page-break-inside: avoid;
+  }
+
+  .callout strong { color: #92400e; }
+
+  .callout-blue {
+    border-left-color: #3b82f6;
+    background: #eff6ff;
+  }
+  .callout-blue strong { color: #1d4ed8; }
+
+  .callout-violet {
+    border-left-color: #8b5cf6;
+    background: #f5f3ff;
+  }
+  .callout-violet strong { color: #6d28d9; }
+
+  /* ── Badge-Beispiele ── */
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2mm;
+    margin: 2mm 0 4mm 0;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.5mm;
+    border-radius: 999px;
+    padding: 1mm 3mm;
+    font-size: 7.5pt;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .badge-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge-blue   { border: 1px solid #bfdbfe; background: #eff6ff; color: #1d4ed8; }
+  .badge-blue .badge-dot   { background: #3b82f6; }
+
+  .badge-violet { border: 1px solid #ddd6fe; background: #f5f3ff; color: #6d28d9; }
+  .badge-violet .badge-dot { background: #8b5cf6; }
+
+  .badge-gray   { border: 1px solid #e4e4e7; background: #f4f4f5; color: #52525b; }
+  .badge-gray .badge-dot   { background: #71717a; }
+
+  /* ── Code ── */
+  code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8pt;
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    border-radius: 3px;
+    padding: 0.3mm 1.5mm;
+    color: #92400e;
+  }
+
+  pre {
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    border-radius: 6px;
+    padding: 3mm 4mm;
+    margin: 2mm 0 4mm 0;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 8pt;
+    color: #d4d4d8;
+    page-break-inside: avoid;
+  }
+
+  /* ── Trennlinie ── */
+  hr {
+    border: none;
+    border-top: 1px solid #e4e4e7;
+    margin: 6mm 0;
+  }
+
+  /* ── Seitenumbruch ── */
+  .page-break { page-break-before: always; }
+
+  /* ── Abschnittsnummer ── */
+  .section-num {
+    display: inline-block;
+    background: #d97706;
+    color: #ffffff;
+    font-size: 7pt;
+    font-weight: 700;
+    border-radius: 3px;
+    padding: 0.5mm 2mm;
+    margin-right: 2mm;
+    vertical-align: middle;
+    letter-spacing: 0.03em;
+  }
+
+  /* ── Schritt-Liste ── */
+  .steps {
+    list-style: none;
+    margin: 2mm 0 4mm 0;
+    counter-reset: step-counter;
+  }
+
+  .steps li {
+    counter-increment: step-counter;
+    display: flex;
+    gap: 3mm;
+    margin-bottom: 2.5mm;
+    page-break-inside: avoid;
+  }
+
+  .steps li::before {
+    content: counter(step-counter);
+    flex-shrink: 0;
+    width: 5mm;
+    height: 5mm;
+    background: #d97706;
+    color: #ffffff;
+    font-size: 7.5pt;
+    font-weight: 700;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.3mm;
+  }
+
+  .steps li p { margin: 0; }
+
+  /* ── Inhaltsverzeichnis ── */
+  .toc { margin: 6mm 0; }
+  .toc-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 1mm 0;
+    border-bottom: 1px dotted #d4d4d8;
+    font-size: 9pt;
+    color: #52525b;
+  }
+  .toc-entry-title { color: #18181b; }
+  .toc-entry-sub {
+    padding-left: 4mm;
+    font-size: 8.5pt;
+  }
+  .toc-entry-sub .toc-entry-title { color: #52525b; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════════════ DECKBLATT -->
+<div class="cover">
+  <div class="cover-eyebrow">Technische Hochschule OWL &nbsp;·&nbsp; Campusradio-Projekt</div>
+  <div class="cover-logo">
+    <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.4"
+         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="25" cy="25" r="17"/>
+      <line x1="37.5" y1="37.5" x2="52" y2="52" stroke-width="3.6"/>
+      <rect x="14" y="20" width="22" height="12" rx="2"/>
+      <circle cx="20" cy="26" r="3"/>
+      <line x1="27" y1="23.5" x2="32" y2="23.5"/>
+      <line x1="27" y1="26" x2="32" y2="26"/>
+      <line x1="27" y1="28.5" x2="32" y2="28.5"/>
+      <line x1="30" y1="20" x2="41" y2="7"/>
+      <circle cx="41" cy="7" r="1.7" fill="currentColor" stroke="none"/>
+    </svg>
+    <div class="cover-title">Radio Research Tool</div>
+  </div>
+  <div class="cover-subtitle">
+    KI-gestütztes Nachrichten-Bulletin<br>
+    für Lokal- und Campusradios
+  </div>
+  <div class="cover-rule"></div>
+  <div class="cover-meta">Handbuch &nbsp;·&nbsp; Stand September 2026</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ INHALTSVERZEICHNIS -->
+<h2>Inhalt</h2>
+<div class="toc">
+  <div class="toc-entry"><span class="toc-entry-title">Teil 1 &nbsp;— Installation &amp; Ersteinrichtung</span><span>3</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">1.1 &nbsp;Systemvoraussetzungen</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">1.2 &nbsp;App installieren</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">1.3 &nbsp;Ersteinrichtung</span></div>
+  <div class="toc-entry"><span class="toc-entry-title">Teil 2 &nbsp;— Lokale KI mit Ollama</span><span>4</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">2.1 &nbsp;Wann lokal sinnvoll ist</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">2.2 &nbsp;Systemvoraussetzungen</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">2.3 – 2.5 &nbsp;Ollama einrichten &amp; verbinden</span></div>
+  <div class="toc-entry"><span class="toc-entry-title">Teil 3 &nbsp;— Große Modelle über Cloud-APIs</span><span>5</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">3.1 &nbsp;Wann Cloud-Modelle sinnvoll sind</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">3.2 – 3.3 &nbsp;Anthropic und OpenAI einrichten</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">3.4 &nbsp;Kostenhinweis</span></div>
+  <div class="toc-entry"><span class="toc-entry-title">Teil 4 &nbsp;— Das Bulletin verstehen und nutzen</span><span>6</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.1 &nbsp;Was passiert nach dem Klick?</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.2 &nbsp;Was bedeuten die Badges?</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.3 &nbsp;Die Prüf-Buttons</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.4 &nbsp;Vom Bulletin in den Editor</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.5 &nbsp;Aufbau des Sprechtexts</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.6 &nbsp;Archiv und CSV-Export</span></div>
+  <div class="toc-entry"><span class="toc-entry-title">Anhang &nbsp;— Lokal vs. Cloud</span><span>8</span></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════ TEIL 1 -->
+<div class="page-break"></div>
+<h2><span class="section-num">1</span> Installation &amp; Ersteinrichtung</h2>
+
+<h3>1.1 Systemvoraussetzungen</h3>
+<p>Die App läuft ausschließlich auf Windows und stellt selbst kaum Anforderungen. Für lokale KI-Modelle (Teil 2) gelten deutlich höhere Anforderungen — siehe dort.</p>
+
+<table>
+  <tr><th></th><th>Minimum</th><th>Empfohlen</th></tr>
+  <tr><td>Betriebssystem</td><td>Windows 10 (64-Bit)</td><td>Windows 11</td></tr>
+  <tr><td>Arbeitsspeicher</td><td>4 GB frei</td><td>8 GB frei</td></tr>
+  <tr><td>Festplattenspeicher</td><td>~300 MB</td><td>500 MB</td></tr>
+  <tr><td>Internetverbindung</td><td colspan="2">Für RSS-Abruf und Cloud-KI erforderlich</td></tr>
+</table>
+
+<h3>1.2 App herunterladen und installieren</h3>
+<p>Die aktuelle Version steht auf GitHub zum Download bereit:</p>
+<div class="callout">
+  <strong>Download:</strong> <a href="https://github.com/franklechtenberg/radio-research-tool/releases/latest">github.com/franklechtenberg/radio-research-tool/releases/latest</a><br>
+  Zwei Varianten stehen zur Wahl — beide sind funktional identisch:
+</div>
+<table>
+  <tr><th>Datei</th><th>Wann verwenden</th></tr>
+  <tr><td><code>RadioResearchTool-Setup-x.x.x.exe</code></td><td>Installer: legt Verknüpfung im Startmenü an, lässt sich über Windows deinstallieren</td></tr>
+  <tr><td><code>RadioResearchTool-Portable-x.x.x.exe</code></td><td>Portable: keine Installation nötig, direkt starten — z. B. vom USB-Stick oder ohne Adminrechte</td></tr>
+</table>
+<ol class="steps">
+  <li><p>Gewünschte <code>.exe</code> herunterladen und starten.</p></li>
+  <li><p>Windows SmartScreen warnt beim ersten Start vor „unbekanntem Herausgeber" — das ist normal, weil die App kein kostenpflichtiges Signierzertifikat hat: <strong>„Weitere Informationen" → „Trotzdem ausführen"</strong>.</p></li>
+  <li><p>App startet und öffnet direkt das Radio Research Tool.</p></li>
+</ol>
+
+<h3>1.3 Ersteinrichtung</h3>
+<p>Menü (☰ oben rechts) → <strong>„Sendername &amp; Region"</strong>:</p>
+<ul>
+  <li><strong>Sendername</strong> — erscheint in der Kopfzeile (z. B. „Campusradio Musterstadt")</li>
+  <li><strong>Sendegebiet</strong> — möglichst eindeutig (Stadt + Bundesland), steuert auch die automatische Feed-Suche</li>
+</ul>
+<p>Danach RSS-Quellen einrichten (Menü → <strong>„RSS-Quellen editieren"</strong> bzw. <strong>„RSS-Quellen suchen"</strong>).</p>
+<p>Anschließend eine KI-Anbindung einrichten — lokal (Teil 2) oder Cloud (Teil 3). Beide Wege lassen sich parallel einrichten und im Betrieb umschalten.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════ TEIL 2 -->
+<div class="page-break"></div>
+<h2><span class="section-num">2</span> Lokale KI mit Ollama</h2>
+
+<h3>2.1 Wann lokal sinnvoll ist</h3>
+<table>
+  <tr><th>Vorteil</th><th>Nachteil</th></tr>
+  <tr><td>Keine laufenden Kosten</td><td>Braucht einen leistungsfähigen Rechner</td></tr>
+  <tr><td>Daten verlassen den Rechner nicht</td><td>Textqualität bei kleinen Modellen schwächer</td></tr>
+  <tr><td>Funktioniert offline (nur RSS braucht Internet)</td><td>Etwas mehr Einrichtungsaufwand</td></tr>
+</table>
+
+<h3>2.2 Systemvoraussetzungen für lokale Modelle</h3>
+<p>Faustregel: <strong>Arbeitsspeicher ≈ Modellgröße in Mrd. Parametern × 1,5–2 GB</strong> (bei 4-Bit-quantisierten Modellen, die Ollama standardmäßig lädt).</p>
+
+<table>
+  <tr><th>Modellgröße</th><th>RAM (Minimum)</th><th>Hinweis</th></tr>
+  <tr><td>~3–4 Mrd. (z. B. Llama 3.2 3B)</td><td>8 GB</td><td>Einfachere Textqualität, mehr Nachbearbeitung nötig</td></tr>
+  <tr><td>~7–8 Mrd. (z. B. Llama 3.1 8B, Mistral 7B)</td><td>8–16 GB</td><td>Guter Kompromiss; Grundlage unserer Tests</td></tr>
+  <tr><td>~13–14 Mrd. Parameter</td><td>16 GB+</td><td>Spürbar bessere Texttreue</td></tr>
+  <tr><td>~30 Mrd.+ Parameter</td><td>32 GB+, GPU empfohlen</td><td>Für den Alltag meist nicht nötig</td></tr>
+</table>
+
+<div class="callout">
+  <strong>Erfahrungswert aus der Praxis:</strong> Mit Llama 3.1 8B neigte die KI anfangs zum Fabulieren, wenn ihr zu wenig Quellentext gegeben wurde. Nach Anpassung des Prompts (mehr Quellentext, strikte „nichts erfinden"-Anweisung) wurde die Qualität deutlich verlässlicher. Den eingebauten <strong>„🔍 Gegen Quelle prüfen"</strong>-Button nutzen, um Abweichungen zu erkennen.
+</div>
+
+<h3>2.3 Ollama installieren</h3>
+<ol class="steps">
+  <li><p>Auf <a href="https://ollama.com">ollama.com</a> die Windows-Version herunterladen und installieren.</p></li>
+  <li><p>Ollama läuft danach automatisch im Hintergrund (<code>http://localhost:11434</code>).</p></li>
+</ol>
+
+<h3>2.4 Ein Modell herunterladen</h3>
+<p>Terminal / Eingabeaufforderung öffnen:</p>
+<pre>ollama pull llama3.1</pre>
+<p>Das lädt das Modell einmalig herunter (mehrere GB). Andere Modelle analog: <code>ollama pull mistral</code>.</p>
+
+<h3>2.5 In der App verbinden</h3>
+<p>Menü → <strong>KI-Zugänge</strong> → „Zugang hinzufügen":</p>
+<ul>
+  <li>Anbieter: <strong>OpenAI-kompatibel (Custom)</strong></li>
+  <li>Vorlage-Button <strong>„Ollama (lokal)"</strong> anklicken — trägt Endpoint und Modellname automatisch ein</li>
+  <li>Kein API-Key nötig (Feld leer lassen)</li>
+  <li>„+ Hinzufügen" → „Speichern" → mit <strong>„Testlauf"</strong> prüfen</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ TEIL 3 -->
+<div class="page-break"></div>
+<h2><span class="section-num">3</span> Große Modelle über Cloud-APIs</h2>
+
+<h3>3.1 Wann Cloud-Modelle sinnvoll sind</h3>
+<p>Wenn kein geeigneter Rechner für ein großes lokales Modell vorhanden ist, oder wenn maximale Textqualität wichtiger ist als laufende Kosten zu vermeiden. Unterstützt werden <strong>Anthropic (Claude)</strong> und <strong>OpenAI (GPT)</strong>.</p>
+
+<h3>3.2 Anthropic-Zugang einrichten</h3>
+<ol class="steps">
+  <li><p>Auf <a href="https://console.anthropic.com">console.anthropic.com</a> registrieren.</p></li>
+  <li><p>Unter „API Keys" einen neuen Key erzeugen, Zahlungsmethode hinterlegen.</p></li>
+  <li><p>In der App: Menü → KI-Zugänge → „Zugang hinzufügen" → Anbieter <strong>Anthropic (Claude)</strong> → Key einfügen → Speichern → Testlauf.</p></li>
+</ol>
+
+<h3>3.3 OpenAI-Zugang einrichten</h3>
+<p>Analog: <a href="https://platform.openai.com">platform.openai.com</a> → API-Key erzeugen → in der App als Anbieter <strong>OpenAI (GPT)</strong> eintragen.</p>
+
+<h3>3.4 ⚠ Kostenhinweis</h3>
+<p>Beide Anbieter berechnen nach Verbrauch — pro verarbeitetem Textumfang, nicht pauschal pro Bulletin. Die App selbst kostet nichts.</p>
+
+<div class="callout">
+  <strong>Ein einzelnes Bulletin</strong> (5 kurze Sprechtexte) verbraucht typischerweise wenige Cent. Kosten summieren sich bei häufiger Nutzung oder der Feed-Suche (nutzt Web-Suche, teurer als reine Texterzeugung). <strong>Aktuelle Preise immer direkt beim Anbieter prüfen.</strong>
+</div>
+
+<p><strong>Empfehlungen zur Kostenkontrolle:</strong></p>
+<ul>
+  <li>Bei beiden Anbietern <strong>Ausgabenlimits</strong> in den Kontoeinstellungen setzen</li>
+  <li>Regelmäßig das <strong>Nutzungs-Dashboard</strong> des Anbieters prüfen</li>
+  <li>Den <strong>„Testlauf"</strong>-Button nutzen, statt für Verbindungstests ein ganzes Bulletin zu erzeugen</li>
+  <li>Für enge Budgets: lokale KI als kostenfreie Alternative, nur für die Feed-Suche einen Cloud-Zugang parallel einrichten</li>
+</ul>
+
+<!-- ══════════════════════════════════════════════════════════════════════ TEIL 4 -->
+<div class="page-break"></div>
+<h2><span class="section-num">4</span> Das Bulletin verstehen und nutzen</h2>
+
+<h3>4.1 Was passiert nach dem Klick auf „RSS-Bulletin erstellen"?</h3>
+<p>Der Ablauf läuft in zwei Schritten ab, die unten links im Fortschrittsbalken sichtbar sind:</p>
+
+<ol class="steps">
+  <li><p><strong>RSS-Feeds laden</strong> — alle aktiven Quellen werden gleichzeitig abgerufen (5–10 Sekunden). Meldungen, die mehrere Outlets über dasselbe Ereignis veröffentlicht haben, werden dabei automatisch zusammengefasst.</p></li>
+  <li><p><strong>Sprechtexte schreiben</strong> — die KI formuliert für die fünf wichtigsten Meldungen einen fertigen Radiotext (8–20 Sekunden, je nach Modell und Anbieter).</p></li>
+</ol>
+
+<p>Meldungen ab Rang 6 haben zunächst keinen Text — den kannst du mit <strong>„✦ Sprechtext generieren"</strong> auf jeder Karte einzeln abrufen.</p>
+
+<h3>4.2 Was bedeuten die farbigen Badges?</h3>
+<p>Jede Meldungskarte zeigt oben links einen Badge, der auf einen Blick zeigt, wie viele Quellen hinter einer Meldung stecken und wie verlässlich sie einzuschätzen ist.</p>
+
+<div class="badge-row">
+  <span class="badge badge-blue"><span class="badge-dot"></span>RSS · offizielle Quelle</span>
+  <span class="badge badge-violet"><span class="badge-dot"></span>3 Quellen · RSS</span>
+  <span class="badge badge-gray"><span class="badge-dot"></span>RSS · Medienquelle</span>
+</div>
+
+<div class="callout callout-blue">
+  <strong>Blau — offizielle Quelle</strong><br>
+  Mindestens eine der Quellen ist eine offizielle Stelle: Behörde, Hochschule, Stadtverwaltung. Diese Meldungen erhalten im Ranking einen Bonuspunkt.
+</div>
+
+<div class="callout callout-violet">
+  <strong>Violett — mehrere Quellen, selbes Ereignis</strong><br>
+  Mehrere Outlets berichten über dasselbe Thema. Das Tool hat sie automatisch erkannt und zusammengefasst. „3 Quellen · RSS" bedeutet: drei verschiedene Nachrichtenquellen haben eine Meldung zu diesem Ereignis veröffentlicht. Je mehr Quellen, desto weiter oben steht die Meldung im Bulletin — viele Quellen über dasselbe Ereignis sind ein Relevanz-Signal.
+</div>
+
+<div class="callout">
+  <strong>Grau — eine Medienquelle</strong><br>
+  Nur ein Outlet berichtet (z. B. die Lokalzeitung). Noch keine offizielle Bestätigung, aber die Meldung ist frisch und ausreichend lang für einen Sprechtext.
+</div>
+
+<h3>4.3 Die Prüf-Buttons</h3>
+<p>Unter jedem fertigen Sprechtext erscheinen bis zu drei optionale Buttons. Sie sind kein Pflichtschritt — aber sie helfen bei der Qualitätssicherung.</p>
+
+<div class="callout">
+  <strong>🔍 Gegen Quelle prüfen</strong><br>
+  Die KI vergleicht ihren eigenen Sprechtext mit dem RSS-Kurztext, aus dem er entstanden ist. Sie sucht nach Aussagen, die sich nicht auf die Quelle zurückführen lassen — Zahlen, Namen, Orte oder Zusammenhänge, die möglicherweise erfunden oder falsch übernommen wurden.<br><br>
+  Ergebnis: grüner Haken (alles gedeckt) oder eine Liste mit konkreten Fundstellen.<br><br>
+  <em>Hinweis: Das ist eine KI, die ihre eigene Ausgabe prüft — kein menschlicher Faktencheck. Alle Texte müssen vor der Sendung redaktionell geprüft werden.</em>
+</div>
+
+<div class="callout callout-violet">
+  <strong>⇄ N Quellen vergleichen</strong><br>
+  Erscheint nur bei violettem Badge (mehrere Quellen). Die KI liest alle Kurztexte der verschiedenen Outlets und prüft, ob sie inhaltlich übereinstimmen — oder ob ein Outlet eine andere Zahl nennt, etwas weglässt oder anders einordnet.<br><br>
+  Das ist der journalistisch interessanteste Moment: Wenn drei Quellen über eine Ratssitzung berichten, aber eine davon eine andere Abstimmung zählt, sollte das bekannt sein, bevor man auf Sendung geht.<br><br>
+  Ergebnis: grüner Haken (alle Quellen sagen dasselbe) oder eine Liste der Abweichungen.
+</div>
+
+<div class="callout">
+  <strong>↻ Erneut generieren</strong><br>
+  Erzeugt einen neuen Sprechtext aus derselben Quelle. Sinnvoll, wenn die erste Version nicht passt oder wenn ein anderes KI-Modell ausprobiert werden soll.
+</div>
+
+<h3>4.4 Vom Bulletin in den Editor</h3>
+<p>Der Editor im unteren Bildschirmbereich ist der Arbeitsbereich für das fertige Skript.</p>
+<ul>
+  <li><strong>„✎ In Editor bearbeiten"</strong> — überträgt den Sprechtext. Mehrere Meldungen werden mit Abstand aneinandergehängt, die Reihenfolge lässt sich danach per Hand anpassen.</li>
+  <li>Im Editor können Texte gekürzt, umformuliert oder Moderationsübergänge eingefügt werden.</li>
+  <li><strong>„🖨 Drucken"</strong> — öffnet ein druckoptimiertes Fenster: 14 Punkt, doppelter Zeilenabstand, Serifenschrift. Für das Vorlesen am Mikrofon.</li>
+</ul>
+
+<h3>4.5 Wie der Sprechtext aufgebaut ist</h3>
+<p>Jeder Text folgt der journalistischen <strong>5W1H-Methode</strong>:</p>
+
+<table>
+  <tr><th>Satz</th><th>Frage</th><th>Inhalt</th></tr>
+  <tr><td>1</td><td><strong>Was?</strong></td><td>Kern des Ereignisses, konkret und direkt</td></tr>
+  <tr><td>2</td><td><strong>Wer? / Wo?</strong></td><td>Beteiligte Personen, Institutionen, Ort</td></tr>
+  <tr><td>3</td><td><strong>Wann? / Warum? / Wie?</strong></td><td>Hintergrund und Kontext</td></tr>
+  <tr><td>4</td><td><strong>Was bedeutet das?</strong></td><td>Einordnung oder Ausblick</td></tr>
+</table>
+
+<p>Ziel sind vier vollständige Sätze. Wenn die Quelle sehr knapp ist, können es drei sein — die KI darf nichts erfinden. Keine Abkürzungen, Zahlen werden ausgeschrieben, kein Quellenhinweis im Text (die Quelle ist als Badge sichtbar).</p>
+
+<h3>4.6 Archiv und CSV-Export</h3>
+<p>Jedes erzeugte Bulletin wird automatisch lokal gespeichert (kein Server, kein Cloud-Speicher — nur auf diesem Rechner). Das Archiv öffnest du über das Menü.</p>
+<p>Über <strong>„CSV-Export"</strong> im Archiv lassen sich alle Bulletins als Tabellendatei exportieren — mit Sprechtext, Quelle, KI-Modell, Zeitstempel und Ergebnis des Quellenabgleichs. Nützlich für Dokumentation oder Redaktionsstatistiken.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════════ ANHANG -->
+<div class="page-break"></div>
+<h2>Anhang — Lokal vs. Cloud im Überblick</h2>
+
+<table>
+  <tr><th></th><th>Lokal (Ollama)</th><th>Cloud (Anthropic / OpenAI)</th></tr>
+  <tr><td><strong>Laufende Kosten</strong></td><td>Keine</td><td>Verbrauchsabhängig</td></tr>
+  <tr><td><strong>Textqualität</strong></td><td>Gut bis sehr gut, je nach Modellgröße</td><td>Sehr gut bis exzellent</td></tr>
+  <tr><td><strong>Systemanforderungen</strong></td><td>Hoch (RAM / Speicher / ggf. GPU)</td><td>Gering (nur Internetverbindung)</td></tr>
+  <tr><td><strong>Datenschutz</strong></td><td>Daten bleiben auf dem Rechner</td><td>Übermittlung an US-Anbieter (siehe DATENSCHUTZ.md)</td></tr>
+  <tr><td><strong>Geschwindigkeit</strong></td><td>Abhängig von Rechnerleistung</td><td>Meist schnell und konstant</td></tr>
+  <tr><td><strong>RSS-Quellen-Suche</strong></td><td>Nicht möglich (braucht Anthropic)</td><td>Möglich mit Anthropic-Zugang</td></tr>
+</table>
+
+<p style="margin-top:4mm;">Beide Wege lassen sich <strong>parallel</strong> einrichten und in der App jederzeit umschalten — Dropdown „KI" auf der Startseite bzw. Menü → KI-Zugänge.</p>
+
+<hr>
+<p style="font-size:8pt; color:#71717a; margin-top:4mm;">
+  Radio Research Tool &nbsp;·&nbsp; Entwickelt im Rahmen eines Lehrprojekts an der TH OWL &nbsp;·&nbsp; Handbuch Stand September 2026<br>
+  Dieses Dokument gehört zum Quellcode-Repository und wird bei jedem Release automatisch mitgeliefert.
+</p>
+
+</body>
+</html>

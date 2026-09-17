@@ -1,14 +1,14 @@
 # Handbuch — Radio Research Tool
 
-*Erster Entwurf. Für den schnellen Einstieg siehe [RADIO-EINRICHTUNG.md](RADIO-EINRICHTUNG.md); dieses Handbuch geht tiefer, insbesondere zu KI-Anbindung und Kosten.*
+*Für den schnellen Einstieg siehe [RADIO-EINRICHTUNG.md](RADIO-EINRICHTUNG.md); dieses Handbuch geht tiefer.*
 
 ---
 
 ## Teil 1 — Installation
 
-### 1.1 Systemvoraussetzungen (Rechner)
+### 1.1 Systemvoraussetzungen
 
-Das Tool selbst ist eine schlanke Desktop-App (Electron + Next.js) und stellt kaum Anforderungen:
+Die App läuft ausschließlich auf Windows und stellt selbst kaum Anforderungen. Für lokale KI-Modelle (Teil 2) gelten deutlich höhere Anforderungen — siehe dort.
 
 | | Minimum | Empfohlen |
 |---|---|---|
@@ -17,12 +17,20 @@ Das Tool selbst ist eine schlanke Desktop-App (Electron + Next.js) und stellt ka
 | Festplattenspeicher | ~300 MB | 500 MB |
 | Internetverbindung | für RSS-Abruf und Cloud-KI nötig | — |
 
-> Diese Tabelle gilt für die App **ohne** ein lokales KI-Modell. Willst du KI lokal betreiben (Teil 2), gelten deutlich höhere Anforderungen — siehe dort.
+### 1.2 App herunterladen und installieren
 
-### 1.2 App installieren
+Die aktuelle Version steht auf GitHub bereit:
+**[github.com/franklechtenberg/radio-research-tool/releases/latest](https://github.com/franklechtenberg/radio-research-tool/releases/latest)**
 
-1. `.exe` herunterladen (Installer oder Portable-Version).
-2. Beim ersten Start warnt Windows SmartScreen vor „unbekanntem Herausgeber" — normal bei einer nicht kostenpflichtig signierten App:
+Zwei Varianten stehen zur Wahl — beide sind funktional identisch:
+
+| Datei | Wann verwenden |
+|---|---|
+| `RadioResearchTool-Setup-x.x.x.exe` | Installer: Startmenü-Verknüpfung, über Windows deinstallierbar |
+| `RadioResearchTool-Portable-x.x.x.exe` | Portable: keine Installation, direkt starten — z. B. ohne Adminrechte |
+
+1. Gewünschte `.exe` herunterladen und starten.
+2. Beim ersten Start warnt Windows SmartScreen vor „unbekanntem Herausgeber" — normal, weil die App kein kostenpflichtiges Signierzertifikat hat:
    → **„Weitere Informationen"** → **„Trotzdem ausführen"**.
 3. App startet und öffnet direkt das Radio Research Tool.
 
@@ -117,6 +125,93 @@ Analog: [platform.openai.com](https://platform.openai.com) → API-Key erzeugen 
   - Regelmäßig das **Nutzungs-Dashboard** des Anbieters prüfen.
   - Den **„Testlauf"**-Button in der App nutzen, statt für Verbindungstests ein ganzes Bulletin zu erzeugen.
   - Für Redaktionen mit engem Budget: lokale KI (Teil 2) als kostenfreie Alternative in Betracht ziehen, ggf. nur für die Feed-Suche (die zwingend Anthropic braucht) einen Cloud-Zugang parallel einrichten.
+
+---
+
+---
+
+## Teil 4 — Das Bulletin verstehen und nutzen
+
+### 4.1 Was passiert nach dem Klick auf „RSS-Bulletin erstellen"?
+
+Das Tool läuft in zwei Schritten ab, die du unten links im Fortschrittsbalken siehst:
+
+1. **RSS-Feeds laden** — alle aktiven Quellen werden gleichzeitig abgerufen. Das dauert typischerweise 5–10 Sekunden. Meldungen, die mehrere Outlets über dasselbe Ereignis veröffentlicht haben, werden dabei zusammengefasst (mehr dazu gleich).
+2. **Sprechtexte schreiben** — die KI formuliert für die fünf wichtigsten Meldungen einen fertigen Radiotext. Das dauert je nach KI-Anbieter und Modell weitere 8–20 Sekunden.
+
+Danach erscheint das Bulletin rechts. Meldungen ab Rang 6 haben noch keinen Text — den kannst du mit **„✦ Sprechtext generieren"** einzeln abrufen.
+
+---
+
+### 4.2 Was bedeuten die farbigen Badges?
+
+Jede Meldungskarte zeigt oben links einen Badge, der auf einen Blick zeigt, wie viele Quellen hinter einer Meldung stecken und wie verlässlich sie einzuschätzen ist.
+
+**Blau — offizielle Quelle (eine oder mehrere)**
+> Mindestens eine der Quellen ist eine offizielle Stelle: Behörde, Hochschule, Stadtverwaltung. Diese Meldungen haben im Ranking einen Bonuspunkt.
+
+**Violett — mehrere Quellen, selbes Ereignis**
+> Mehrere Nachrichtenquellen berichten über dasselbe Thema. Das Tool hat sie automatisch erkannt und zusammengefasst. „3 Quellen · RSS" bedeutet: drei verschiedene Outlets haben eine Meldung zu diesem Ereignis veröffentlicht. Je mehr Quellen, desto weiter oben steht die Meldung im Bulletin — viele Quellen über dasselbe Thema sind ein Relevanz-Signal.
+
+**Grau — eine Medienquelle**
+> Nur ein Outlet (z. B. die Lokalzeitung) berichtet. Noch keine offizielle Bestätigung, aber die Meldung ist frisch und ausreichend lang für einen Sprechtext.
+
+**Grün — web-verifiziert**
+> Wird nur angezeigt, wenn du die (optionale) Web-Verifikation genutzt hast. Aktuell nicht im Standard-Ablauf enthalten.
+
+---
+
+### 4.3 Was tun die Prüf-Buttons?
+
+Unter jedem fertigen Sprechtext findest du bis zu drei Buttons. Sie sind optional — du musst sie nicht nutzen, aber sie helfen bei Qualitätssicherung.
+
+**🔍 Gegen Quelle prüfen**
+Die KI vergleicht ihren eigenen Sprechtext mit dem RSS-Kurztext, aus dem er entstanden ist. Sie sucht nach Aussagen im Text, die sich nicht auf die Quelle zurückführen lassen — Zahlen, Namen, Orte oder Zusammenhänge, die sie möglicherweise erfunden oder falsch übernommen hat.
+
+Ergebnis: grüner Haken (alles gedeckt) oder eine Liste mit konkreten Fundstellen.
+
+> **Wichtig:** Das ist eine KI, die ihre eigene Ausgabe prüft — kein menschlicher Faktencheck. Trotzdem hilft der Button in der Praxis, weil Abweichungen oft auffindbar sind. Alle Texte müssen vor der Sendung redaktionell geprüft werden (Hinweis steht auch im Editor).
+
+**⇄ N Quellen vergleichen**
+Dieser Button erscheint nur, wenn mehrere Outlets über dasselbe Ereignis berichtet haben (violetter Badge). Die KI liest alle Kurztexte und schaut, ob sie inhaltlich übereinstimmen — oder ob ein Outlet eine andere Zahl nennt, etwas weglässt oder anders einordnet.
+
+Das ist der journalistisch interessanteste Moment: Wenn drei Quellen über eine Ratssitzung berichten, aber eine davon eine andere Abstimmung zählt, willst du das wissen, bevor du auf Sendung gehst.
+
+Ergebnis: grüner Haken (alle Quellen sagen dasselbe) oder eine Liste der Abweichungen in Lila.
+
+**↻ Erneut generieren**
+Erzeugt einen neuen Sprechtext aus derselben Quelle. Sinnvoll, wenn die erste Version nicht passt oder wenn du ein anderes KI-Modell ausprobieren willst.
+
+---
+
+### 4.4 Vom Bulletin in den Editor
+
+Der Editor im unteren Bildschirmbereich ist dein Arbeitsbereich für das fertige Skript.
+
+- **„✎ In Editor bearbeiten"** — überträgt den Sprechtext in den Editor. Mehrere Meldungen werden mit Abstand aneinandergehängt, du kannst die Reihenfolge danach per Hand anpassen.
+- Im Editor kannst du Texte kürzen, umformulieren oder Moderationsübergänge einfügen.
+- **„🖨 Drucken"** — öffnet ein druckoptimiertes Fenster: 14 Punkt, doppelter Zeilenabstand, Serifenschrift. Für das Vorlesen am Mikrofon.
+
+---
+
+### 4.5 Wie der Sprechtext aufgebaut ist
+
+Das Tool formuliert jeden Text nach der journalistischen 5W1H-Methode:
+
+- **Satz 1 — Was?** Kern des Ereignisses, konkret und direkt
+- **Satz 2 — Wer / Wo?** Beteiligte Personen, Institutionen, Ort
+- **Satz 3 — Wann / Warum / Wie?** Hintergrund und Kontext
+- **Satz 4 — Was bedeutet das?** Einordnung oder Ausblick
+
+Ziel sind vier vollständige Sätze. Wenn die Quelle wirklich sehr knapp ist, können es drei sein — die KI darf nichts erfinden. Der Text bleibt nah am Wortlaut der Quelle, keine Abkürzungen, Zahlen werden ausgeschrieben.
+
+---
+
+### 4.6 Archiv und CSV-Export
+
+Jedes erzeugte Bulletin wird automatisch lokal gespeichert (kein Server, kein Cloud-Speicher — nur auf diesem Rechner). Das Archiv öffnest du über das Menü.
+
+Über **„CSV-Export"** im Archiv lassen sich alle Bulletins als Tabellendatei exportieren — mit Sprechtext, Quelle, KI-Modell und Zeitstempel. Nützlich für Dokumentation oder Redaktionsstatistiken.
 
 ---
 
