@@ -91,7 +91,7 @@ Das lädt das Modell einmalig herunter (mehrere GB, je nach Internetverbindung d
 Menü → **KI-Zugänge** → „Zugang hinzufügen":
 - Anbieter: **OpenAI-kompatibel (Custom)**
 - Vorlage-Button **„Ollama (lokal)"** anklicken — trägt Endpoint (`http://localhost:11434/v1`) und Modellname automatisch ein
-- Modellname ggf. anpassen, falls du ein anderes Modell geladen hast (muss exakt dem Namen bei `ollama pull` entsprechen, z. B. `mistral` statt `llama3.1`)
+- Modellname ggf. anpassen, falls du ein anderes Modell geladen hast. Am einfachsten mit **„🔍 Modelle scannen“**: Der Button zeigt alle installierten Modelle zur Auswahl an. Das funktioniert genauso bei Cloud-Anbietern wie Infomaniak: Endpoint-URL und Key eintragen, scannen, Modell wählen.
 - Kein API-Key nötig (Feld leer lassen)
 - „+ Hinzufügen" → „Speichern" → mit **„Testlauf"** prüfen, ob die Verbindung funktioniert
 
@@ -163,7 +163,7 @@ Jede Meldungskarte zeigt oben links einen Badge, der auf einen Blick zeigt, wie 
 
 ### 4.3 Was tun die Prüf-Buttons?
 
-Unter jedem fertigen Sprechtext findest du bis zu drei Buttons. Sie sind optional — du musst sie nicht nutzen, aber sie helfen bei Qualitätssicherung.
+Unter jedem fertigen Sprechtext findest du bis zu vier Buttons. Sie sind optional — du musst sie nicht nutzen, aber sie helfen bei Qualitätssicherung.
 
 **🔍 Gegen Quelle prüfen**
 Die KI vergleicht ihren eigenen Sprechtext mit dem RSS-Kurztext, aus dem er entstanden ist. Sie sucht nach Aussagen im Text, die sich nicht auf die Quelle zurückführen lassen — Zahlen, Namen, Orte oder Zusammenhänge, die sie möglicherweise erfunden oder falsch übernommen hat.
@@ -178,6 +178,13 @@ Dieser Button erscheint nur, wenn mehrere Outlets über dasselbe Ereignis berich
 Das ist der journalistisch interessanteste Moment: Wenn drei Quellen über eine Ratssitzung berichten, aber eine davon eine andere Abstimmung zählt, willst du das wissen, bevor du auf Sendung gehst.
 
 Ergebnis: grüner Haken (alle Quellen sagen dasselbe) oder eine Liste der Abweichungen in Lila.
+
+**🌐 Gegenprüfen**
+Sucht im Netz nach weiteren, unabhängigen Berichten über dasselbe Ereignis. Das Tool fragt nacheinander DuckDuckGo, Bing News und Google News ab und nimmt den ersten Dienst, der antwortet. Treffer von der Website der Originalquelle zählen nicht. Die KI prüft danach, welche Treffer wirklich dasselbe Ereignis meinen und nicht nur dasselbe Thema.
+
+Ergebnis: Grün heißt, mindestens zwei unabhängige Quellen bestätigen die Meldung. Gelb heißt, es gibt eine weitere Quelle. Grau heißt, im Netz findet sich nichts weiter. Bei Lokalnachrichten ist das normal und kein Warnsignal. Die gefundenen Quellen lassen sich aufklappen und anklicken. Das Ergebnis landet außerdem im Herkunftsnachweis unter dem Sprechtext.
+
+Die Prüfung läuft nur auf Klick und dauert wenige Sekunden. Sie kostet einen kurzen KI-Aufruf, die Suche selbst ist kostenlos. Antwortet keiner der Suchdienste, erscheint „Gegenprüfung nicht verfügbar“, die Recherche läuft normal weiter.
 
 **↻ Erneut generieren**
 Erzeugt einen neuen Sprechtext aus derselben Quelle. Sinnvoll, wenn die erste Version nicht passt oder wenn du ein anderes KI-Modell ausprobieren willst.

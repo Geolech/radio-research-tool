@@ -469,6 +469,7 @@
 <ul>
   <li>Anbieter: <strong>OpenAI-kompatibel (Custom)</strong></li>
   <li>Vorlage-Button <strong>„Ollama (lokal)"</strong> anklicken — trägt Endpoint und Modellname automatisch ein</li>
+  <li>Anderes Modell? Mit <strong>„🔍 Modelle scannen"</strong> erscheinen alle installierten Modelle zur Auswahl. Das funktioniert genauso bei Cloud-Anbietern wie Infomaniak: Endpoint-URL und Key eintragen, scannen, Modell wählen.</li>
   <li>Kein API-Key nötig (Feld leer lassen)</li>
   <li>„+ Hinzufügen" → „Speichern" → mit <strong>„Testlauf"</strong> prüfen</li>
 </ul>
@@ -544,7 +545,7 @@
 </div>
 
 <h3>4.3 Die Prüf-Buttons</h3>
-<p>Unter jedem fertigen Sprechtext erscheinen bis zu drei optionale Buttons. Sie sind kein Pflichtschritt — aber sie helfen bei der Qualitätssicherung.</p>
+<p>Unter jedem fertigen Sprechtext erscheinen bis zu vier optionale Buttons. Sie sind kein Pflichtschritt — aber sie helfen bei der Qualitätssicherung.</p>
 
 <div class="callout">
   <strong>🔍 Gegen Quelle prüfen</strong><br>
@@ -558,6 +559,13 @@
   Erscheint nur bei violettem Badge (mehrere Quellen). Die KI liest alle Kurztexte der verschiedenen Outlets und prüft, ob sie inhaltlich übereinstimmen — oder ob ein Outlet eine andere Zahl nennt, etwas weglässt oder anders einordnet.<br><br>
   Das ist der journalistisch interessanteste Moment: Wenn drei Quellen über eine Ratssitzung berichten, aber eine davon eine andere Abstimmung zählt, sollte das bekannt sein, bevor man auf Sendung geht.<br><br>
   Ergebnis: grüner Haken (alle Quellen sagen dasselbe) oder eine Liste der Abweichungen.
+</div>
+
+<div class="callout callout-blue">
+  <strong>🌐 Gegenprüfen</strong><br>
+  Sucht im Netz nach weiteren, unabhängigen Berichten über dasselbe Ereignis. Das Tool fragt nacheinander DuckDuckGo, Bing News und Google News ab und nimmt den ersten Dienst, der antwortet. Treffer von der Website der Originalquelle zählen nicht. Die KI prüft danach, welche Treffer wirklich dasselbe Ereignis meinen und nicht nur dasselbe Thema.<br><br>
+  Ergebnis: Grün heißt, mindestens zwei unabhängige Quellen bestätigen die Meldung. Gelb heißt, es gibt eine weitere Quelle. Grau heißt, im Netz findet sich nichts weiter. Bei Lokalnachrichten ist das normal und kein Warnsignal. Die Quellen lassen sich aufklappen und anklicken, das Ergebnis steht außerdem im Herkunftsnachweis.<br><br>
+  Die Prüfung läuft nur auf Klick und dauert wenige Sekunden. Sie kostet einen kurzen KI-Aufruf, die Suche selbst ist kostenlos.
 </div>
 
 <div class="callout">

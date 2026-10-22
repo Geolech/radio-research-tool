@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { RadioResearchResult, NewsItem, Provenance } from "@/app/api/radio-research/route";
+import type { RadioResearchResult, NewsItem, Provenance, WebCheckResult } from "@/app/api/radio-research/route";
 import type { RSSItem, FeedResult } from "@/app/api/fetch-rss/route";
 import { rankRSSItems, rssToNewsItems } from "@/lib/rank-rss";
 import RadioHamburgerMenu from "@/components/RadioHamburgerMenu";
@@ -229,6 +229,38 @@ function ProgressStepper({
 }
 
 type DivState = { state: "running" } | { state: "ok"; points: string[] } | { state: "err"; msg: string };
+type WebState = { state: "running" } | { state: "ok"; result: WebCheckResult } | { state: "err"; msg: string };
+
+function WebCheckBox({ ws }: { ws: WebState }) {
+  if (ws.state === "running") return null;
+  if (ws.state === "err") return <p className="text-xs text-red-400">✕ Gegenprüfung fehlgeschlagen: {ws.msg}</p>;
+  const r = ws.result;
+  if (r.status === "unavailable") {
+    return <p className="text-xs text-zinc-500">Gegenprüfung nicht verfügbar{r.message ? `: ${r.message}` : ""}</p>;
+  }
+  const style =
+    r.status === "confirmed"
+      ? { box: "border-emerald-500/30 bg-emerald-500/5", head: "text-emerald-400", label: `✓ Von ${r.confirming.length} unabhängigen Quellen im Netz bestätigt` }
+      : r.status === "partial"
+      ? { box: "border-amber-500/30 bg-amber-500/5", head: "text-amber-400", label: "◐ Eine weitere Quelle im Netz gefunden" }
+      : { box: "border-zinc-700 bg-zinc-800/40", head: "text-zinc-400", label: "○ Keine weitere Quelle im Netz gefunden (bei Lokalnachrichten normal)" };
+  return (
+    <details className={`rounded-lg border px-3 py-2 ${style.box}`}>
+      <summary className={`text-xs font-semibold cursor-pointer ${style.head}`}>{style.label}</summary>
+      {r.confirming.length > 0 && (
+        <ul className="mt-1 text-xs text-zinc-300 space-y-0.5 list-disc list-inside">
+          {r.confirming.map((c) => (
+            <li key={c.url}>
+              <a href={/^https?:\/\//i.test(c.url) ? c.url : undefined} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-amber-400">{c.domain}</a>
+              {" – "}{c.title}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-1 text-[11px] text-zinc-600">{r.engine ?? "Websuche"}: „{r.query}“ · {formatDate(r.checkedAt)}</p>
+    </details>
+  );
+}
 
 function NewsCard({
   item,
@@ -241,6 +273,8 @@ function NewsCard({
   verifyResult,
   onDiverge,
   divergeResult,
+  onWebCheck,
+  webResult,
 }: {
   item: NewsItem;
   rank: number;
@@ -252,6 +286,8 @@ function NewsCard({
   verifyResult?: VerifyResult;
   onDiverge?: () => void;
   divergeResult?: DivState;
+  onWebCheck?: () => void;
+  webResult?: WebState;
 }) {
   const [copied, setCopied] = useState(false);
   function copy() {
@@ -321,6 +357,16 @@ function NewsCard({
                   {divergeResult?.state === "running" ? "⇄ Vergleiche …" : `⇄ ${item.clusterSources.length} Quellen vergleichen`}
                 </button>
               )}
+              {onWebCheck && (
+                <button
+                  onClick={onWebCheck}
+                  disabled={webResult?.state === "running"}
+                  className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1 disabled:opacity-40"
+                  title="Per Websuche (DuckDuckGo, Bing News, Google News) nach weiteren unabhängigen Quellen suchen"
+                >
+                  {webResult?.state === "running" ? "🌐 Suche …" : "🌐 Gegenprüfen"}
+                </button>
+              )}
               {onGenerate && (
                 <button onClick={onGenerate} className="text-xs text-zinc-500 hover:text-amber-400 transition-colors flex items-center gap-1" title="Neuen Sprechtext aus der Quelle erzeugen">
                   ↻ Erneut generieren
@@ -365,12 +411,16 @@ function NewsCard({
           {divergeResult && divergeResult.state === "err" && (
             <p className="text-xs text-red-400">✕ Quellenvergleich fehlgeschlagen: {divergeResult.msg}</p>
           )}
+          {webResult && <WebCheckBox ws={webResult} />}
           {item.provenance && (
             <p className="text-[11px] text-zinc-600 flex items-center gap-1.5" title={`Erzeugt am ${formatDate(item.provenance.generatedAt)}`}>
               <span>ℹ Erzeugt: {PROVIDER_LABELS[item.provenance.provider]} · {item.provenance.model}</span>
               {item.provenance.verifyStatus === "clean" && <span className="text-emerald-500">· Quelle geprüft ✓</span>}
               {item.provenance.verifyStatus === "issues" && <span className="text-amber-500">· Quelle geprüft ⚠</span>}
               {item.provenance.verifyStatus === "error" && <span className="text-red-500">· Prüfung fehlgeschlagen</span>}
+              {item.provenance.webCheck?.status === "confirmed" && <span className="text-emerald-500">· Web ✓ {item.provenance.webCheck.confirming.length}</span>}
+              {item.provenance.webCheck?.status === "partial" && <span className="text-amber-500">· Web ◐ 1</span>}
+              {item.provenance.webCheck?.status === "none" && <span className="text-zinc-500">· Web ○</span>}
             </p>
           )}
         </>
@@ -454,6 +504,8 @@ function CategorySection({
   verifyResults,
   onDiverge,
   divergeResults,
+  onWebCheck,
+  webResults,
 }: {
   title: string;
   items: NewsItem[];
@@ -466,6 +518,8 @@ function CategorySection({
   verifyResults?: Record<number, VerifyResult>;
   onDiverge?: (item: NewsItem) => void;
   divergeResults?: Record<number, DivState>;
+  onWebCheck?: (item: NewsItem) => void;
+  webResults?: Record<number, WebState>;
 }) {
   if (items.length === 0) return null;
   return (
@@ -493,6 +547,8 @@ function CategorySection({
             verifyResult={verifyResults?.[item.rank]}
             onDiverge={onDiverge ? () => onDiverge(item) : undefined}
             divergeResult={divergeResults?.[item.rank]}
+            onWebCheck={onWebCheck ? () => onWebCheck(item) : undefined}
+            webResult={webResults?.[item.rank]}
           />
         ))}
       </div>
@@ -714,6 +770,65 @@ function RegionModal({
   );
 }
 
+// ── Modell-Scan: fragt die verfügbaren Modelle eines Zugangs ab ───────────────
+function ModelScanButton({
+  profile,
+  onPick,
+}: {
+  profile: AiProfile;
+  onPick: (model: string) => void;
+}) {
+  type ScanState = { state: "idle" } | { state: "running" } | { state: "ok"; models: string[] } | { state: "err"; msg: string };
+  const [scan, setScan] = useState<ScanState>({ state: "idle" });
+  const ready = profile.provider === "custom" ? !!profile.baseUrl?.trim() : !!profile.key.trim();
+
+  async function run() {
+    setScan({ state: "running" });
+    try {
+      // Custom verlangt serverseitig einen Modellnamen → Platzhalter für den Scan
+      const p: AiProfile = { ...profile, model: profile.model.trim() || "scan" };
+      const r = await fetch("/api/radio-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headersForProfile(p) },
+        body: JSON.stringify({ step: "models" }),
+      });
+      const data = await r.json();
+      if (!r.ok || !Array.isArray(data.models)) throw new Error(data.error ?? "Keine Modellliste erhalten");
+      setScan({ state: "ok", models: data.models });
+      if (data.models.length === 1) onPick(data.models[0]);
+    } catch (e) {
+      setScan({ state: "err", msg: e instanceof Error ? e.message : "Fehler" });
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-2 min-w-0">
+      <button
+        type="button"
+        onClick={run}
+        disabled={!ready || scan.state === "running"}
+        title={ready ? "Verfügbare Modelle beim Anbieter abfragen" : profile.provider === "custom" ? "Zuerst Endpoint-URL eintragen" : "Zuerst API-Key eintragen"}
+        className="flex-shrink-0 rounded-full border border-zinc-700 bg-zinc-800/60 px-3 py-1 text-xs text-zinc-300 hover:text-amber-400 hover:bg-zinc-700/60 disabled:opacity-40 transition-colors"
+      >
+        {scan.state === "running" ? "Suche Modelle …" : "🔍 Modelle scannen"}
+      </button>
+      {scan.state === "ok" && (
+        <select
+          value={scan.models.includes(profile.model) ? profile.model : ""}
+          onChange={(e) => e.target.value && onPick(e.target.value)}
+          className="min-w-0 flex-1 rounded-lg border border-emerald-500/40 bg-zinc-800 px-2 py-1 text-xs text-zinc-200 focus:outline-none"
+        >
+          <option value="">{`${scan.models.length} Modelle gefunden – auswählen …`}</option>
+          {scan.models.map((m) => <option key={m} value={m}>{m}</option>)}
+        </select>
+      )}
+      {scan.state === "err" && (
+        <span className="min-w-0 truncate text-xs text-red-400" title={scan.msg}>✕ {scan.msg}</span>
+      )}
+    </div>
+  );
+}
+
 // ── KI-Zugänge verwalten (mehrere Anbieter) ───────────────────────────────────
 
 function AiAccessModal({
@@ -874,6 +989,7 @@ function AiAccessModal({
                 >
                   {t?.state === "running" ? "Teste …" : "Testlauf"}
                 </button>
+                <ModelScanButton profile={p} onPick={(m) => update(p.id, { model: m })} />
                 {t && t.state === "ok" && (
                   <span className="min-w-0 truncate text-xs text-emerald-400" title={t.sample}>
                     {`✓ antwortet — „${t.sample}"`}
@@ -959,9 +1075,15 @@ function AiAccessModal({
             + Hinzufügen
           </button>
         </div>
+        <div className="mt-2">
+          <ModelScanButton
+            profile={{ id: "new", label: newLabel, provider: newProvider, key: newKey, model: newModel, baseUrl: newBaseUrl || undefined }}
+            onPick={setNewModel}
+          />
+        </div>
         <p className="mt-2 text-xs text-zinc-500 leading-relaxed">
           {newProvider === "custom"
-            ? "Custom-Zugang: Endpoint-URL UND Modellname erforderlich (z. B. llama3.1 oder mixtral), API-Key optional."
+            ? "Custom-Zugang: Endpoint-URL UND Modellname erforderlich, API-Key optional. Tipp: Endpoint und Key eintragen, dann „Modelle scannen“."
             : newProvider === "openai"
             ? "OpenAI: API-Key erforderlich (Modell optional, Standard gpt-4o)."
             : "Anthropic: API-Key erforderlich (Modell optional, Standard claude-sonnet-4-6)."}
@@ -1337,6 +1459,38 @@ export default function RadioResearchPage() {
       setDivergeResults(prev => ({ ...prev, [item.rank]: { state: "ok", points } }));
     } catch (e) {
       setDivergeResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
+    }
+  }
+
+  // Gegenprüfung per Websuche (Rang → laufend/Ergebnis)
+  const [webResults, setWebResults] = useState<Record<number, WebState>>({});
+
+  // Neue Recherche → alte Prüfergebnisse (nach Rang) verwerfen
+  const searchedAt = result?.searched_at;
+  useEffect(() => { setWebResults({}); }, [searchedAt]);
+
+  async function webCheckItem(item: NewsItem) {
+    setWebResults(prev => ({ ...prev, [item.rank]: { state: "running" } }));
+    try {
+      const r = await fetch("/api/radio-research", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...aiHeaders() },
+        body: JSON.stringify({
+          step: "webcheck",
+          webHeadline: item.headline,
+          webSummary: item.description ?? "",
+          webSourceUrl: item.url ?? "",
+        }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.webCheck) throw new Error(data.error ?? "Fehler");
+      const wc: WebCheckResult = data.webCheck;
+      setWebResults(prev => ({ ...prev, [item.rank]: { state: "ok", result: wc } }));
+      if (wc.status !== "unavailable" && item.provenance) {
+        applyProvenance(item.rank, { ...item.provenance, webCheck: wc });
+      }
+    } catch (e) {
+      setWebResults(prev => ({ ...prev, [item.rank]: { state: "err", msg: e instanceof Error ? e.message : "Fehler" } }));
     }
   }
 
@@ -1958,6 +2112,8 @@ export default function RadioResearchPage() {
                     verifyResults={verifyResults}
                     onDiverge={checkDivergence}
                     divergeResults={divergeResults}
+                    onWebCheck={webCheckItem}
+                    webResults={webResults}
                   />
                   <CategorySection
                     title="National"
@@ -1971,6 +2127,8 @@ export default function RadioResearchPage() {
                     verifyResults={verifyResults}
                     onDiverge={checkDivergence}
                     divergeResults={divergeResults}
+                    onWebCheck={webCheckItem}
+                    webResults={webResults}
                   />
                   <CategorySection
                     title="Regional"
@@ -1984,6 +2142,8 @@ export default function RadioResearchPage() {
                     verifyResults={verifyResults}
                     onDiverge={checkDivergence}
                     divergeResults={divergeResults}
+                    onWebCheck={webCheckItem}
+                    webResults={webResults}
                   />
                 </div>
               </div>
