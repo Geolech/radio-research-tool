@@ -18,6 +18,11 @@ import {
   loadRegion,
   saveRegion,
   loadStation,
+  loadHouseStyle,
+  saveHouseStyle,
+  hasHouseStyle,
+  EMPTY_HOUSE_STYLE,
+  type HouseStyle,
   saveStation,
   loadFeeds,
   saveFeeds,
@@ -332,9 +337,9 @@ function NewsCard({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <button
               onClick={() => onSendToEditor?.(item.radio_text)}
-              className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors flex items-center gap-1"
+              className="rounded-lg border border-emerald-500/60 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 transition-colors flex items-center gap-1.5"
             >
-              ✎ In Editor bearbeiten
+              <span aria-hidden>✎</span> In Editor übernehmen
             </button>
             <div className="flex items-center gap-3 flex-wrap">
               {onVerify && item.description && (
@@ -427,9 +432,9 @@ function NewsCard({
       ) : onGenerate ? (
         <button
           onClick={onGenerate}
-          className="self-start ml-4 mt-1 rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-400 hover:border-amber-500/50 hover:text-amber-400 transition-colors flex items-center gap-1.5"
+          className="self-start ml-4 mt-1 rounded-lg border border-amber-500/60 bg-amber-500/15 px-4 py-2 text-sm font-semibold text-amber-300 shadow-sm hover:bg-amber-500/25 hover:border-amber-400 hover:text-amber-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-400 transition-colors flex items-center gap-2"
         >
-          <span>✦</span> Sprechtext generieren
+          <span aria-hidden>✦</span> Sprechtext generieren
         </button>
       ) : null}
     </div>
@@ -649,7 +654,7 @@ function EditorPanel({
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={"Wähle in einer Meldung „In Editor bearbeiten“ — der Sprechtext erscheint hier und kann bearbeitet werden."}
+        placeholder={"Wähle in einer Meldung „In Editor übernehmen“ — der Sprechtext erscheint hier und kann bearbeitet werden."}
         className="flex-1 resize-none px-5 py-4 text-sm leading-relaxed font-serif focus:outline-none"
         style={{ backgroundColor: "#ffffff", color: "#18181b", colorScheme: "light" }}
         spellCheck
@@ -765,6 +770,78 @@ function RegionModal({
       <p className="mt-2 text-xs text-zinc-600">
         Der Sendername erscheint in der Kopfzeile. Die Region möglichst eindeutig angeben
         (z. B. mit Bundesland), damit die Feed-Suche das Zentrum korrekt bestimmt.
+      </p>
+    </Modal>
+  );
+}
+
+// ── Stilregeln der Redaktion (Hausstil) ──────────────────────────────────────
+function HouseStyleModal({
+  style,
+  onSave,
+  onClose,
+}: {
+  style: HouseStyle;
+  onSave: (s: HouseStyle) => void;
+  onClose: () => void;
+}) {
+  const [rules, setRules] = useState(style.rules);
+  const [positive, setPositive] = useState(style.positive);
+  const [negative, setNegative] = useState(style.negative);
+  const field = "block text-xs font-medium uppercase tracking-widest text-zinc-500 mb-2";
+  return (
+    <Modal
+      title="Stilregeln der Redaktion"
+      subtitle="Ergänzt die Grundregeln beim Erzeugen der Sprechtexte. Leere Felder werden ignoriert."
+      onClose={onClose}
+      footer={
+        <div className="flex items-center justify-between gap-2">
+          <button
+            onClick={() => { setRules(""); setPositive(""); setNegative(""); }}
+            className="rounded-lg px-3 py-1.5 text-sm text-zinc-500 hover:text-zinc-300 transition-colors"
+          >
+            Felder leeren
+          </button>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
+            <button
+              onClick={() => onSave({ rules, positive, negative })}
+              className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      }
+    >
+      <label className={field}>Stilregeln</label>
+      <textarea
+        value={rules}
+        autoFocus
+        rows={6}
+        onChange={(e) => setRules(e.target.value)}
+        placeholder={"Eine Regel pro Zeile, z. B.\n- Sender immer „Radio Lippe“, nie „wir“\n- Uhrzeiten als „halb acht“, nicht „7:30 Uhr“"}
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none mb-4"
+      />
+      <label className={field}>Positivbeispiele</label>
+      <textarea
+        value={positive}
+        rows={5}
+        onChange={(e) => setPositive(e.target.value)}
+        placeholder="Gelungene Meldungen aus der Redaktion, die den gewünschten Ton treffen."
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none mb-4"
+      />
+      <label className={field}>Negativbeispiele</label>
+      <textarea
+        value={negative}
+        rows={5}
+        onChange={(e) => setNegative(e.target.value)}
+        placeholder="Formulierungen, die nicht ins Programm passen (gern mit kurzer Begründung)."
+        className="w-full rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:border-amber-500/50 focus:outline-none"
+      />
+      <p className="mt-2 text-xs text-zinc-600">
+        Die Beispiele prägen nur den Stil. Inhalte daraus übernimmt das Modell nicht.
+        Gespeichert wird lokal in diesem Browser bzw. dieser App.
       </p>
     </Modal>
   );
@@ -1368,7 +1445,8 @@ export default function RadioResearchPage() {
   const [feeds, setFeeds] = useState<RadioFeed[]>([]);
 
   // Einstellungs-Modals
-  const [modal, setModal] = useState<null | "region" | "feeds" | "discover" | "apikey">(null);
+  const [modal, setModal] = useState<null | "region" | "feeds" | "discover" | "apikey" | "style">(null);
+  const [houseStyle, setHouseStyle] = useState<HouseStyle>(EMPTY_HOUSE_STYLE);
 
   // KI-Zugänge (Profile) + aktiver Zugang
   const [profiles, setProfiles] = useState<AiProfile[]>([]);
@@ -1511,6 +1589,7 @@ export default function RadioResearchPage() {
     } catch { /* ignore */ }
     setRegion(loadRegion());
     setStation(loadStation());
+    setHouseStyle(loadHouseStyle());
     setFeeds(loadFeeds());
     // Keys ggf. entschlüsseln (Electron), dann Profile laden.
     (async () => {
@@ -1673,7 +1752,7 @@ export default function RadioResearchPage() {
         const r = await fetch("/api/radio-research", {
           method: "POST",
           headers: { "Content-Type": "application/json", ...aiHeaders() },
-          body: JSON.stringify({ mode: "rss", step: "texts", itemsForText }),
+          body: JSON.stringify({ mode: "rss", step: "texts", itemsForText, houseStyle }),
         });
         const data = await r.json();
         if (!r.ok) throw new Error(data.error ?? "Fehler");
@@ -1752,6 +1831,7 @@ export default function RadioResearchPage() {
           mode: "rss",
           step: "texts",
           itemsForText: [{ category, rank: item.rank, headline: item.headline, sources: item.sources, summary: item.description }],
+          houseStyle,
         }),
       });
       const data = await r.json();
@@ -1840,14 +1920,14 @@ export default function RadioResearchPage() {
       {/* Scrollbar-Styling */}
       <style>{`
         .panel-scroll::-webkit-scrollbar { width: 8px; }
-        .panel-scroll::-webkit-scrollbar-track { background: #18181b; }
+        .panel-scroll::-webkit-scrollbar-track { background: var(--surface); }
         .panel-scroll::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 4px; }
         .panel-scroll::-webkit-scrollbar-thumb:hover { background: #52525b; }
-        .panel-scroll { scrollbar-width: thin; scrollbar-color: #3f3f46 #18181b; }
+        .panel-scroll { scrollbar-width: thin; scrollbar-color: var(--rule) var(--surface); }
       `}</style>
 
       {/* Header (HiFi-Stil: hellere Karte, Eyebrow = Sendername, Untertitel mit Region, Logo-Badge) */}
-      <header className="flex-shrink-0" style={{ background: "#1c1c1f" }}>
+      <header className="flex-shrink-0 border-b border-rule" style={{ background: "var(--surface)" }}>
         <div className="flex items-center justify-between gap-4 pl-6 pr-20 py-5">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold uppercase tracking-[0.15em] text-amber-500 saturate-[0.65] leading-none mb-1.5 truncate">
@@ -2171,6 +2251,8 @@ export default function RadioResearchPage() {
         onEditFeeds={() => setModal("feeds")}
         onDiscoverFeeds={() => setModal("discover")}
         onApiKey={() => setModal("apikey")}
+        onHouseStyle={() => setModal("style")}
+        houseStyleActive={hasHouseStyle(houseStyle)}
       />
 
       {/* Einstellungs-Modals */}
@@ -2179,6 +2261,13 @@ export default function RadioResearchPage() {
           region={region}
           station={station}
           onSave={(s, r) => { handleSaveStation(s); handleSaveRegion(r); setModal(null); }}
+          onClose={() => setModal(null)}
+        />
+      )}
+      {modal === "style" && (
+        <HouseStyleModal
+          style={houseStyle}
+          onSave={(s) => { saveHouseStyle(s); setHouseStyle(s); setModal(null); }}
           onClose={() => setModal(null)}
         />
       )}

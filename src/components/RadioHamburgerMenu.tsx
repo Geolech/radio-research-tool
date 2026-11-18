@@ -11,6 +11,8 @@ type Props = {
   onEditFeeds: () => void;
   onDiscoverFeeds: () => void;
   onApiKey: () => void;
+  onHouseStyle: () => void;
+  houseStyleActive: boolean;
 };
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -28,7 +30,7 @@ function Divider() {
   return <div className="py-1"><div className="border-t border-zinc-800/70" /></div>;
 }
 
-export default function RadioHamburgerMenu({ station, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey }: Props) {
+export default function RadioHamburgerMenu({ station, feeds, activeProfileLabel, onChangeRegion, onEditFeeds, onDiscoverFeeds, onApiKey, onHouseStyle, houseStyleActive }: Props) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   const run = (fn: () => void) => { close(); fn(); };
@@ -108,6 +110,15 @@ export default function RadioHamburgerMenu({ station, feeds, activeProfileLabel,
               <span className="w-5 flex-shrink-0 text-center text-zinc-600">⌖</span>
               <span className="flex-1 text-left">Sendername &amp; Region</span>
               <span className="text-xs text-zinc-600 truncate max-w-[45%]">{station}</span>
+            </button>
+            <button
+              onClick={() => run(onHouseStyle)}
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-2.5 text-sm
+                         text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
+            >
+              <span className="w-5 flex-shrink-0 text-center text-zinc-600">¶</span>
+              <span className="flex-1 text-left">Stilregeln der Redaktion</span>
+              <span className={`text-xs ${houseStyleActive ? "text-amber-500" : "text-zinc-600"}`}>{houseStyleActive ? "aktiv" : "leer"}</span>
             </button>
             <button
               onClick={() => run(onEditFeeds)}
@@ -201,13 +212,15 @@ export default function RadioHamburgerMenu({ station, feeds, activeProfileLabel,
           <Section title="Sprechtext-Regeln">
             <div className="px-4 py-2">
               <ul className="space-y-1.5 text-xs text-zinc-500">
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Gesprochene Sprache, keine Abkürzungen</li>
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Zahlen ausschreiben</li>
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Maximal 3 Saetze pro Meldung</li>
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Satz 1: Was passierte</li>
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Satz 2: Kontext / Hintergrund</li>
-                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Satz 3: Weiteres Detail</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Nur Fakten aus der Quelle, nichts erfinden</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Struktur: Was, Wer/Wo, Wann/Warum/Wie, Einordnung</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Gesprochene Sprache, keine Abkürzungen, Zahlen ausschreiben</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Aktiv statt Passiv, Verben statt Substantive</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Keine PR-Floskeln, Adjektive nur mit Informationswert</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Eine neue Information pro Satz</li>
+                <li className="flex gap-2"><span className="text-amber-600 flex-shrink-0">·</span> Meldung in Präsens oder Perfekt, Präteritum nur für Hintergrund</li>
               </ul>
+              <p className="mt-2 text-[10px] text-zinc-700">Grundlage: La Roche, Einführung in den praktischen Journalismus</p>
             </div>
           </Section>
 

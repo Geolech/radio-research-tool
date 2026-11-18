@@ -87,20 +87,47 @@ export type RadioResearchResult = {
 };
 
 // ── Sprechtext-Regeln ─────────────────────────────────────────────────────────
+// Stilregeln (v0.3.0): eigene Formulierungen, Grundlage La Roche,
+// „Einführung in den praktischen Journalismus“. Redaktionsspezifische Regeln
+// und Beispiele kommen zusätzlich über `houseStyle` aus dem Client.
+// Optional später: dritter Prüfschritt „Stilprüfer“.
 const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
+- NAMEN WÖRTLICH: Namen von Personen, Hochschulen, Institutionen und Orten buchstabengetreu aus der Quelle übernehmen, nie abwandeln oder ergänzen. Grammatisch angepasst werden sie trotzdem: Beugung nach Fall ist Pflicht („an der Technischen Hochschule Ostwestfalen-Lippe“, nicht „an der Technische Hochschule …“).
 - QUELLENTREUE (WICHTIGSTE REGEL): Nutze AUSSCHLIESSLICH die gegebenen Informationen (Überschrift + Kurztext/e). Erfinde KEINE Fakten, Zahlen, Namen, Orte, Zitate oder Details, die dort nicht stehen. Wenn Informationen fehlen, formuliere allgemeiner oder lass den Punkt weg — niemals dazudichten.
-- STRUKTUR — GENAU 4 SÄTZE (Pflicht, solange der Kurztext ausreichend lang ist):
-    Satz 1: WAS ist passiert (Kern-Ereignis, konkret und präzise)?
+- STRUKTUR — MINDESTENS DREI, IN DER REGEL VIER SÄTZE (nie weniger als drei):
+    Satz 1: WAS ist passiert — eine einzige Thema-Rhema-Konstruktion: ein Thema (wer/was) und eine Kernaussage dazu, höchstens etwa zwölf Wörter. Konkret, mit handelndem Subjekt, keine abstrakte Einleitung. Keine Details im ersten Satz: genaue Fachbezeichnungen, Titel, vollständige Institutionsnamen, Zahlen und Quellenangaben gehören in die folgenden Sätze. Beispiel: „Ein Forscher aus Lemgo zählt zur weltweiten Spitzengruppe seines Fachgebiets.“ statt „Die Forschung aus Lemgo erfährt eine hohe internationale Resonanz.“
     Satz 2: WER ist beteiligt / WO passiert es (Personen, Institutionen, Ort)?
     Satz 3: WANN / WARUM / WIE (Hintergrund, Kontext, Umstände)?
-    Satz 4: Was bedeutet das / wie geht es weiter (Einordnung, Ausblick)?
-  Schöpfe den Kurztext vollständig aus — wenn er lang ist, gibt es immer genug für 4 Sätze.
-  Nur wenn der Kurztext wirklich zu knapp ist (unter 3 kurzen Zeilen): dann 3 Sätze, aber niemals erfinden.
-- Gesprochene Sprache, keine Abkürzungen
+    Satz 4: Wie geht es weiter / neue Einordnung — NUR mit einer neuen Information aus der Quelle. Verboten sind Schlusssätze, die das Gesagte zusammenfassen oder bewerten („Damit zählt er zu den führenden …“, „Das zeigt …“). Lieber drei gute Sätze als ein vierter Füllsatz.
+  Schöpfe den Kurztext vollständig aus: Wer eine Information pro Satz bringt, braucht für eine normale Meldung vier Sätze. Verteile die Fakten der Quelle auf die Sätze, statt sie in einen langen Satz zu packen. Nur wenn die Quelle für Satz 4 wirklich nichts Neues hergibt, endet die Meldung nach drei Sätzen. Kein Satz darf nur wiederholen, was schon gesagt ist.
+  Ausnahme: Besteht die Quelle nur aus einer Überschrift ohne Kurztext, sind zwei Sätze erlaubt.
+- Gesprochene Sprache, keine Abkürzungen (Titel immer ausschreiben: „Professor Doktor“, nie „Prof.“ oder „Dr.“) (auch Hochschul- und Institutionsnamen ausschreiben: „Technische Hochschule Ostwestfalen-Lippe“, nicht „TH OWL“)
 - Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
-- Präsens oder Perfekt, nie Futur für Vergangenes
+- ZEITFORM: Die aktuelle Meldung steht im Präsens, wo es natürlich klingt („zählt zu den besten zwei Prozent“), sonst im Perfekt. Präteritum nur für zurückliegenden Hintergrund. Nie Futur für Vergangenes.
 - Neutral und sachlich, nah am Wortlaut der Quelle
-- KEIN Quellenhinweis im Text (die Quelle wird separat angezeigt)`;
+- KEIN Quellenhinweis im Text (die Quelle wird separat angezeigt)
+STILREGELN:
+- AKTIV STATT PASSIV: Jeder Satz hat ein handelndes Subjekt, das etwas tut („Die Stadt richtet … aus“ statt „Ausgerichtet wird …“). Das gilt auch für versteckte Passivformen: „erfährt Resonanz“, „erhält Zustimmung“, „findet statt“, „kommt zum Einsatz“, „wird zuteil“. Stattdessen sagen, wer was tut („Ein Forscher aus Lemgo zählt zu …“, „Forscher weltweit zitieren seine Arbeiten“).
+- Verben statt Substantive, kein Nominalstil
+- Keine Werbe- und PR-Formeln aus der Quelle übernehmen (Selbstbeschreibungen, Zielsätze von Veranstaltern); im Zweifel streichen statt zitieren
+- Wertende Adjektive und Füllwörter streichen; Adjektive nur mit Informationswert
+- Höchstens eine neue Information pro Satz, kurze Sätze fürs Ohr`;
+
+// ── Hausstil der Redaktion (optional, aus dem Client) ────────────────────────
+type HouseStyle = { rules?: string; positive?: string; negative?: string };
+const HOUSE_STYLE_MAX = 4000; // Zeichen je Feld, schützt den Prompt vor Überlänge
+
+function buildHouseStyleBlock(hs?: HouseStyle): string {
+  if (!hs) return "";
+  const clip = (v?: string) => (typeof v === "string" ? v.trim().slice(0, HOUSE_STYLE_MAX) : "");
+  const rules = clip(hs.rules), pos = clip(hs.positive), neg = clip(hs.negative);
+  if (!rules && !pos && !neg) return "";
+  let block = "\nHAUSSTIL DER REDAKTION (ergänzt die Regeln oben; QUELLENTREUE hat immer Vorrang):";
+  if (rules) block += `\nStilregeln der Redaktion:\n${rules}`;
+  if (pos) block += `\nSo soll es klingen (Positivbeispiele, nur Stil übernehmen, keine Inhalte):\n${pos}`;
+  if (neg) block += `\nSo bitte nicht (Negativbeispiele, diese Muster vermeiden):\n${neg}`;
+  return block;
+}
 
 // ── Modellaufruf je Anbieter → liefert reinen Text ────────────────────────────
 async function callModel(cfg: AiProviderConfig, system: string, prompt: string): Promise<string> {
@@ -149,11 +176,12 @@ async function generateTexts(
     sources: string[];
     summary?: string;
     clusterSources?: Array<{ feedName: string; description: string }>;
-  }>
+  }>,
+  houseStyle?: HouseStyle
 ): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
 
   const system = `Du bist Radiosprecher-Texter. Du formulierst gegebene Meldungen in Radiosprache um — du recherchierst NICHT und fügst NICHTS hinzu.
-${SPEECH_RULES}
+${SPEECH_RULES}${buildHouseStyleBlock(houseStyle)}
 Antworte NUR mit validem JSON-Array.`;
 
   const itemList = items.map((it, i) => {
@@ -210,7 +238,7 @@ async function verifyAgainstSource(
   summary: string,
   radioText: string
 ): Promise<string[]> {
-  const system = `Du bist Faktenprüfer für Radio-Nachrichten. Du vergleichst einen Sprechtext mit seiner Quelle und suchst NUR nach Aussagen im Sprechtext, die NICHT durch die Quelle gedeckt sind (erfundene Fakten, Zahlen, Namen, Orte, Zitate, Datumsangaben, Kausalitäten). Umformulierungen, Zusammenfassungen und Auslassungen sind KEIN Problem — nur inhaltliche Erfindungen/Abweichungen zählen.
+  const system = `Du bist Faktenprüfer für Radio-Nachrichten. Du vergleichst einen Sprechtext mit seiner Quelle und suchst NUR nach Aussagen im Sprechtext, die NICHT durch die Quelle gedeckt sind (erfundene Fakten, Zahlen, Namen, Orte, Zitate, Datumsangaben, Kausalitäten). Vergleiche besonders jeden Eigennamen (Personen, Hochschulen, Institutionen, Orte) Buchstabe für Buchstabe mit der Quelle; jede Abweichung ist ein Fehler. Umformulierungen, Zusammenfassungen und Auslassungen sind KEIN Problem — nur inhaltliche Erfindungen/Abweichungen zählen.
 Antworte NUR mit validem JSON: {"issues": ["…", "…"]} — leeres Array, wenn alles durch die Quelle gedeckt ist.`;
 
   const prompt = `QUELLE:
@@ -222,17 +250,76 @@ ${radioText}
 
 Liste alle Aussagen im Sprechtext, die nicht durch die Quelle gedeckt sind.`;
 
+  const nameIssues = findAlteredNames(`${headline} ${summary}`, radioText);
   const text = await callModel(cfg, system, prompt);
-  if (!text) return [];
+  if (!text) return nameIssues;
   const stripped = text.replace(/^```(?:json)?\s*/im, "").replace(/\s*```\s*$/im, "").trim();
   const objMatch = stripped.match(/\{[\s\S]*\}/) ?? text.match(/\{[\s\S]*\}/);
   if (!objMatch) return [];
   try {
     const parsed = JSON.parse(objMatch[0]);
-    return Array.isArray(parsed.issues) ? parsed.issues.filter((x: unknown): x is string => typeof x === "string") : [];
+    const llm: string[] = Array.isArray(parsed.issues) ? parsed.issues.filter((x: unknown): x is string => typeof x === "string") : [];
+    return [...nameIssues, ...llm];
   } catch {
-    return [];
+    return nameIssues;
   }
+}
+
+// ── Mindestlänge absichern ───────────────────────────────────────────────────
+// Kleinere Modelle (z. B. Gemma 4 26B) ignorieren die Satzvorgabe im Prompt.
+// Texte mit weniger als drei Sätzen bei ausreichend langem Kurztext werden
+// deshalb einmal gezielt nachgeschärft. Scheitert das, bleibt der Originaltext.
+function countSentences(t: string): number {
+  return t.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0).length;
+}
+
+async function expandShortTexts(
+  cfg: AiProviderConfig,
+  texts: Array<{ category: string; rank: number; radio_text: string }>,
+  items: Array<{ category: string; rank: number; headline: string; summary?: string }>,
+  houseStyle?: HouseStyle
+): Promise<Array<{ category: string; rank: number; radio_text: string }>> {
+  return Promise.all(texts.map(async (t) => {
+    const item = items.find((i) => i.rank === t.rank && i.category === t.category);
+    const summary = item?.summary?.trim() ?? "";
+    if (!item || summary.length < 120 || countSentences(t.radio_text) >= 3) return t;
+    const system = `Du bist Radiosprecher-Texter.
+${SPEECH_RULES}${buildHouseStyleBlock(houseStyle)}
+Antworte NUR mit dem fertigen Sprechtext, ohne Einleitung.`;
+    const prompt = `Dieser Sprechtext ist zu kurz (${countSentences(t.radio_text)} Sätze). Schreibe ihn in drei Sätzen neu; einen vierten Satz nur, wenn die Quelle dafür eine weitere, neue Information hergibt. Verteile die Fakten aus der Quelle auf die Sätze, eine Information pro Satz. Kein zusammenfassender oder wertender Schlusssatz. Nichts erfinden, nur Fakten aus der Quelle.
+
+QUELLE:
+Überschrift: "${item.headline}"
+Kurztext: ${summary}
+
+ZU KURZER SPRECHTEXT:
+${t.radio_text}`;
+    try {
+      const out = (await callModel(cfg, system, prompt)).trim().replace(/^["„]|["“]$/g, "");
+      return out && countSentences(out) > countSentences(t.radio_text) ? { ...t, radio_text: out } : t;
+    } catch {
+      return t;
+    }
+  }));
+}
+
+// Regelbasierte Namensprüfung (unabhängig vom Modell): findet großgeschriebene
+// Wörter im Sprechtext, die nicht in der Quelle stehen, aber einem Quellwort
+// stark ähneln (gleicher Anfang). Fängt verfälschte Namen wie
+// „Ostwestfalen-Lippburg“ statt „Ostwestfalen-Lippe“.
+function findAlteredNames(source: string, radioText: string): string[] {
+  const words = (t: string) => t.match(/[A-ZÄÖÜ][\wäöüß]+/g) ?? [];
+  const parts = (t: string) => t.split(/[-\s]+/).flatMap(words);
+  const src = new Set([...words(source.replace(/-/g, " ")), ...parts(source)]);
+  const srcList = [...src];
+  const found = new Set<string>();
+  for (const w of parts(radioText)) {
+    if (w.length < 5 || src.has(w)) continue;
+    const near = srcList.find((s) => s.length >= 5 && s !== w && s.slice(0, 4) === w.slice(0, 4)
+      && !w.startsWith(s) && !s.startsWith(w));
+    if (near) found.add(`Möglicherweise verfälschter Name: „${w}“ (Quelle: „${near}“)`);
+  }
+  return [...found];
 }
 
 // ── Source Divergence: vergleicht mehrere Quellen desselben Events ────────────
@@ -387,6 +474,7 @@ export async function POST(req: NextRequest) {
       webHeadline = "",
       webSummary = "",
       webSourceUrl = "",
+      houseStyle,
     }: {
       step?: string;
       itemsForText?: Array<{ category: string; rank: number; headline: string; sources: string[]; summary?: string }>;
@@ -398,6 +486,7 @@ export async function POST(req: NextRequest) {
       webHeadline?: string;
       webSummary?: string;
       webSourceUrl?: string;
+      houseStyle?: HouseStyle;
     } = await req.json();
 
     const cfg = getAiProviderFromRequest(req);
@@ -420,12 +509,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, sample: sample.trim().slice(0, 160) });
       }
       if (step === "texts") {
-        let texts = await generateTexts(cfg, itemsForText);
+        let texts = await generateTexts(cfg, itemsForText, houseStyle);
         // Kleine Modelle (Llama 3.1 etc.) liefern nicht immer sauberes JSON im
         // ersten Anlauf → bis zu 2 Nachversuche, dann aufgeben.
         for (let retry = 0; retry < 2 && texts.length === 0 && itemsForText.length > 0; retry++) {
-          texts = await generateTexts(cfg, itemsForText);
+          texts = await generateTexts(cfg, itemsForText, houseStyle);
         }
+        texts = await expandShortTexts(cfg, texts, itemsForText, houseStyle);
         return NextResponse.json({ texts, step: "texts" });
       }
       if (step === "verify") {

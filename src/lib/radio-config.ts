@@ -20,6 +20,7 @@ const REGION_KEY  = "radio-region-v1";
 const FEEDS_KEY   = "radio-feeds-v1";
 const API_KEY_KEY = "radio-anthropic-key-v1";
 const STATION_KEY = "radio-station-v1";
+const STYLE_KEY   = "radio-house-style-v1";
 
 export const DEFAULT_REGION = "OWL, Kreis Lippe, Detmold";
 // Standortneutraler Default — jede Redaktion trägt ihren eigenen Sendernamen ein.
@@ -328,4 +329,39 @@ export function makeFeed(
     category,
     enabled: true,
   };
+}
+
+// ── Hausstil der Redaktion (Stilregeln + Positiv-/Negativbeispiele) ──────────
+// Wird beim Erzeugen der Sprechtexte zusätzlich zu den Grundregeln an das
+// Modell übergeben. Leere Felder werden ignoriert.
+export type HouseStyle = {
+  rules: string;
+  positive: string;
+  negative: string;
+};
+
+export const EMPTY_HOUSE_STYLE: HouseStyle = { rules: "", positive: "", negative: "" };
+
+export function loadHouseStyle(): HouseStyle {
+  if (typeof window === "undefined") return EMPTY_HOUSE_STYLE;
+  try {
+    const raw = localStorage.getItem(STYLE_KEY);
+    if (!raw) return EMPTY_HOUSE_STYLE;
+    const p = JSON.parse(raw);
+    return {
+      rules:    typeof p?.rules === "string" ? p.rules : "",
+      positive: typeof p?.positive === "string" ? p.positive : "",
+      negative: typeof p?.negative === "string" ? p.negative : "",
+    };
+  } catch {
+    return EMPTY_HOUSE_STYLE;
+  }
+}
+
+export function saveHouseStyle(style: HouseStyle): void {
+  try { localStorage.setItem(STYLE_KEY, JSON.stringify(style)); } catch { /* ignore */ }
+}
+
+export function hasHouseStyle(style: HouseStyle): boolean {
+  return !!(style.rules.trim() || style.positive.trim() || style.negative.trim());
 }
