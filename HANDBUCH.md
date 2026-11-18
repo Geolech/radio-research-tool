@@ -195,7 +195,7 @@ Erzeugt einen neuen Sprechtext aus derselben Quelle. Sinnvoll, wenn die erste Ve
 
 Der Editor im unteren Bildschirmbereich ist dein Arbeitsbereich für das fertige Skript.
 
-- **„✎ In Editor bearbeiten"** — überträgt den Sprechtext in den Editor. Mehrere Meldungen werden mit Abstand aneinandergehängt, du kannst die Reihenfolge danach per Hand anpassen.
+- **„In Editor übernehmen"** (grüner Button) — überträgt den Sprechtext in den Editor. Mehrere Meldungen werden mit Abstand aneinandergehängt, du kannst die Reihenfolge danach per Hand anpassen.
 - Im Editor kannst du Texte kürzen, umformulieren oder Moderationsübergänge einfügen.
 - **„🖨 Drucken"** — öffnet ein druckoptimiertes Fenster: 14 Punkt, doppelter Zeilenabstand, Serifenschrift. Für das Vorlesen am Mikrofon.
 
@@ -205,16 +205,40 @@ Der Editor im unteren Bildschirmbereich ist dein Arbeitsbereich für das fertige
 
 Das Tool formuliert jeden Text nach der journalistischen 5W1H-Methode:
 
-- **Satz 1 — Was?** Kern des Ereignisses, konkret und direkt
+- **Satz 1 — Was?** Eine Kernaussage mit handelndem Subjekt, kurz und ohne Details
 - **Satz 2 — Wer / Wo?** Beteiligte Personen, Institutionen, Ort
 - **Satz 3 — Wann / Warum / Wie?** Hintergrund und Kontext
-- **Satz 4 — Was bedeutet das?** Einordnung oder Ausblick
+- **Satz 4 — Wie geht es weiter?** Nur wenn die Quelle eine weitere neue Information hergibt
 
-Ziel sind vier vollständige Sätze. Wenn die Quelle wirklich sehr knapp ist, können es drei sein — die KI darf nichts erfinden. Der Text bleibt nah am Wortlaut der Quelle, keine Abkürzungen, Zahlen werden ausgeschrieben.
+Jede Meldung hat mindestens drei, in der Regel vier Sätze. Einen zusammenfassenden Schlusssatz ohne neue Information gibt es nicht. Liefert ein Modell weniger als drei Sätze, lässt das Tool den Text automatisch einmal nachschärfen.
+
+Feste Stilregeln (Grundlage: La Roche, *Einführung in den praktischen Journalismus*):
+
+- Aktiv statt Passiv, auch keine versteckten Passivformen wie „erfährt Resonanz“ oder „findet statt“
+- Verben statt Substantive, keine Werbe- und PR-Formeln aus der Quelle
+- Eine neue Information pro Satz, kurze Sätze fürs Ohr
+- Die Meldung steht im Präsens oder Perfekt, Präteritum nur für zurückliegenden Hintergrund
+- Keine Abkürzungen, auch Titel und Institutionen ausgeschrieben, Zahlen ausgeschrieben
+- Namen buchstabengetreu aus der Quelle, aber grammatisch gebeugt
+- Kein Quellenhinweis im Text
+
+Der Faktenprüfer gleicht außerdem Eigennamen mit der Quelle ab und meldet verfälschte Namen.
 
 ---
 
-### 4.6 Archiv und CSV-Export
+### 4.6 Stilregeln der Redaktion
+
+Jede Redaktion kann ihren eigenen Hausstil hinterlegen: Menü → Einstellungen → **„Stilregeln der Redaktion“**.
+
+- **Stilregeln**, eine Regel pro Zeile
+- **Positivbeispiele**: gelungene Meldungen, die den gewünschten Ton treffen
+- **Negativbeispiele**: Formulierungen, die nicht ins Programm passen
+
+Die Angaben ergänzen die Grundregeln. Quellentreue hat immer Vorrang, aus den Beispielen übernimmt die KI nur den Stil. „aktiv“ oder „leer“ im Menü zeigt, ob ein Hausstil hinterlegt ist. Gespeichert wird nur auf diesem Rechner.
+
+---
+
+### 4.7 Archiv und CSV-Export
 
 Jedes erzeugte Bulletin wird automatisch lokal gespeichert (kein Server, kein Cloud-Speicher — nur auf diesem Rechner). Das Archiv öffnest du über das Menü.
 

@@ -381,7 +381,8 @@
   <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.3 &nbsp;Die Prüf-Buttons</span></div>
   <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.4 &nbsp;Vom Bulletin in den Editor</span></div>
   <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.5 &nbsp;Aufbau des Sprechtexts</span></div>
-  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.6 &nbsp;Archiv und CSV-Export</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.6 &nbsp;Stilregeln der Redaktion</span></div>
+  <div class="toc-entry toc-entry-sub"><span class="toc-entry-title">4.7 &nbsp;Archiv und CSV-Export</span></div>
   <div class="toc-entry"><span class="toc-entry-title">Anhang &nbsp;— Lokal vs. Cloud</span><span>8</span></div>
 </div>
 
@@ -576,7 +577,7 @@
 <h3>4.4 Vom Bulletin in den Editor</h3>
 <p>Der Editor im unteren Bildschirmbereich ist der Arbeitsbereich für das fertige Skript.</p>
 <ul>
-  <li><strong>„✎ In Editor bearbeiten"</strong> — überträgt den Sprechtext. Mehrere Meldungen werden mit Abstand aneinandergehängt, die Reihenfolge lässt sich danach per Hand anpassen.</li>
+  <li><strong>„In Editor übernehmen"</strong> (grüner Button) — überträgt den Sprechtext. Mehrere Meldungen werden mit Abstand aneinandergehängt, die Reihenfolge lässt sich danach per Hand anpassen.</li>
   <li>Im Editor können Texte gekürzt, umformuliert oder Moderationsübergänge eingefügt werden.</li>
   <li><strong>„🖨 Drucken"</strong> — öffnet ein druckoptimiertes Fenster: 14 Punkt, doppelter Zeilenabstand, Serifenschrift. Für das Vorlesen am Mikrofon.</li>
 </ul>
@@ -586,15 +587,35 @@
 
 <table>
   <tr><th>Satz</th><th>Frage</th><th>Inhalt</th></tr>
-  <tr><td>1</td><td><strong>Was?</strong></td><td>Kern des Ereignisses, konkret und direkt</td></tr>
+  <tr><td>1</td><td><strong>Was?</strong></td><td>Eine Kernaussage mit handelndem Subjekt, kurz und ohne Details</td></tr>
   <tr><td>2</td><td><strong>Wer? / Wo?</strong></td><td>Beteiligte Personen, Institutionen, Ort</td></tr>
   <tr><td>3</td><td><strong>Wann? / Warum? / Wie?</strong></td><td>Hintergrund und Kontext</td></tr>
-  <tr><td>4</td><td><strong>Was bedeutet das?</strong></td><td>Einordnung oder Ausblick</td></tr>
+  <tr><td>4</td><td><strong>Wie geht es weiter?</strong></td><td>Nur wenn die Quelle eine weitere neue Information hergibt</td></tr>
 </table>
 
-<p>Ziel sind vier vollständige Sätze. Wenn die Quelle sehr knapp ist, können es drei sein — die KI darf nichts erfinden. Keine Abkürzungen, Zahlen werden ausgeschrieben, kein Quellenhinweis im Text (die Quelle ist als Badge sichtbar).</p>
+<p>Jede Meldung hat mindestens drei, in der Regel vier Sätze. Einen zusammenfassenden Schlusssatz ohne neue Information gibt es nicht. Liefert ein Modell weniger als drei Sätze, lässt das Tool den Text automatisch einmal nachschärfen.</p>
+<p>Dazu kommen feste Stilregeln (Grundlage: La Roche, <em>Einführung in den praktischen Journalismus</em>):</p>
+<ul>
+  <li>Aktiv statt Passiv, auch keine versteckten Passivformen wie „erfährt Resonanz“ oder „findet statt“</li>
+  <li>Verben statt Substantive, keine Werbe- und PR-Formeln aus der Quelle</li>
+  <li>Eine neue Information pro Satz, kurze Sätze fürs Ohr</li>
+  <li>Die Meldung steht im Präsens oder Perfekt, Präteritum nur für zurückliegenden Hintergrund</li>
+  <li>Keine Abkürzungen, auch Titel und Institutionen ausgeschrieben („Professor Doktor“, „Technische Hochschule Ostwestfalen-Lippe“), Zahlen ausgeschrieben</li>
+  <li>Namen buchstabengetreu aus der Quelle, aber grammatisch gebeugt</li>
+  <li>Kein Quellenhinweis im Text (die Quelle ist als Badge sichtbar)</li>
+</ul>
+<p>Der Faktenprüfer gleicht außerdem Eigennamen mit der Quelle ab und meldet verfälschte Namen.</p>
 
-<h3>4.6 Archiv und CSV-Export</h3>
+<h3>4.6 Stilregeln der Redaktion</h3>
+<p>Jede Redaktion kann ihren eigenen Hausstil hinterlegen: Menü → Einstellungen → <strong>„Stilregeln der Redaktion“</strong>. Drei Felder stehen zur Verfügung:</p>
+<ul>
+  <li><strong>Stilregeln</strong>, eine Regel pro Zeile, z. B. wie der Sender genannt wird oder wie Uhrzeiten klingen sollen</li>
+  <li><strong>Positivbeispiele</strong>: gelungene Meldungen, die den gewünschten Ton treffen</li>
+  <li><strong>Negativbeispiele</strong>: Formulierungen, die nicht ins Programm passen</li>
+</ul>
+<p>Die Angaben ergänzen die Grundregeln. Quellentreue hat immer Vorrang, aus den Beispielen übernimmt die KI nur den Stil, keine Inhalte. Im Menü zeigt „aktiv“ oder „leer“, ob ein Hausstil hinterlegt ist. Gespeichert wird nur auf diesem Rechner.</p>
+
+<h3>4.7 Archiv und CSV-Export</h3>
 <p>Jedes erzeugte Bulletin wird automatisch lokal gespeichert (kein Server, kein Cloud-Speicher — nur auf diesem Rechner). Das Archiv öffnest du über das Menü.</p>
 <p>Über <strong>„CSV-Export"</strong> im Archiv lassen sich alle Bulletins als Tabellendatei exportieren — mit Sprechtext, Quelle, KI-Modell, Zeitstempel und Ergebnis des Quellenabgleichs. Nützlich für Dokumentation oder Redaktionsstatistiken.</p>
 
