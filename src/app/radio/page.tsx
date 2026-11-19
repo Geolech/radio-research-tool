@@ -979,6 +979,13 @@ function AiAccessModal({
 
   const hasAnthropic = list.some((p) => p.provider === "anthropic" && p.key.trim());
 
+  // Speichern erst aktiv, wenn sich etwas geändert hat (z. B. nach „+ Hinzufügen“)
+  // und keine Eingabe im Neu-Formular mehr wartet — sonst ginge sie verloren.
+  const [initialSnapshot] = useState(() => JSON.stringify({ list: profiles, active: activeId || (profiles[0]?.id ?? "") }));
+  const pendingNew = !!(newLabel.trim() || newKey.trim() || newModel.trim() || newBaseUrl.trim());
+  const dirty = JSON.stringify({ list, active }) !== initialSnapshot;
+  const canSave = dirty && !pendingNew;
+
   return (
     <Modal
       title="KI-Zugänge"
@@ -989,8 +996,10 @@ function AiAccessModal({
         <div className="flex justify-end gap-2">
           <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-200 transition-colors">Abbrechen</button>
           <button
-            onClick={() => onSave(list, active || (list[0]?.id ?? ""))}
-            className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 transition-colors"
+            onClick={() => canSave && onSave(list, active || (list[0]?.id ?? ""))}
+            disabled={!canSave}
+            title={pendingNew ? "Zuerst „+ Hinzufügen“ klicken" : canSave ? "Zugänge speichern" : "Keine Änderungen"}
+            className="rounded-lg bg-amber-500 px-4 py-1.5 text-sm font-semibold text-zinc-950 hover:bg-amber-400 disabled:bg-zinc-600 disabled:text-zinc-300 disabled:cursor-not-allowed transition-colors"
           >
             Speichern
           </button>
