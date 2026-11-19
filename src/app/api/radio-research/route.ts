@@ -103,6 +103,7 @@ const SPEECH_RULES = `RADIO-SPRECHTEXT-REGELN:
   Ausnahme: Besteht die Quelle nur aus einer Überschrift ohne Kurztext, sind zwei Sätze erlaubt.
 - Gesprochene Sprache, keine Abkürzungen (Titel immer ausschreiben: „Professor Doktor“, nie „Prof.“ oder „Dr.“) (auch Hochschul- und Institutionsnamen ausschreiben: „Technische Hochschule Ostwestfalen-Lippe“, nicht „TH OWL“)
 - Zahlen vollständig ausschreiben (drei Milliarden, nicht 3 Mrd.)
+- DATUM UND ORDNUNGSZAHLEN: Ordnungszahlen als gesprochenes Wort mit korrekter Endung, nie als Grundzahl mit Punkt. „6. November“ → „am sechsten November“ / „der sechste November“, NIE „sechs. November“. Ebenso „3. Platz“ → „dritter Platz“, „21. Jahrhundert“ → „einundzwanzigstes Jahrhundert“. Uhrzeiten gesprochen: „vierzehn Uhr dreißig“.
 - ZEITFORM: Die aktuelle Meldung steht im Präsens, wo es natürlich klingt („zählt zu den besten zwei Prozent“), sonst im Perfekt. Präteritum nur für zurückliegenden Hintergrund. Nie Futur für Vergangenes.
 - Neutral und sachlich, nah am Wortlaut der Quelle
 - KEIN Quellenhinweis im Text (die Quelle wird separat angezeigt)
@@ -271,6 +272,38 @@ Liste alle Aussagen im Sprechtext, die nicht durch die Quelle gedeckt sind.`;
 // deshalb einmal gezielt nachgeschärft. Scheitert das, bleibt der Originaltext.
 function countSentences(t: string): number {
   return t.split(/(?<=[.!?])\s+/).filter((x) => x.trim().length > 0).length;
+}
+
+// ── Absicherung: Ordnungszahlen ───────────────────────────────────────────────
+// Kleine/lokale Modelle schreiben „6. November“ gern als „sechs. November“ oder
+// lassen die Ziffer stehen. Hier deterministisch in gesprochene Ordnungszahlen
+// umwandeln: nach der/die/das → „-e“ (der sechste), sonst „-en“ (am sechsten).
+const ORDINAL_STEMS = ["", "erst", "zweit", "dritt", "viert", "fünft", "sechst", "siebt", "acht", "neunt", "zehnt",
+  "elft", "zwölft", "dreizehnt", "vierzehnt", "fünfzehnt", "sechzehnt", "siebzehnt", "achtzehnt", "neunzehnt", "zwanzigst",
+  "einundzwanzigst", "zweiundzwanzigst", "dreiundzwanzigst", "vierundzwanzigst", "fünfundzwanzigst", "sechsundzwanzigst",
+  "siebenundzwanzigst", "achtundzwanzigst", "neunundzwanzigst", "dreißigst", "einunddreißigst"];
+const CARDINALS = ["", "eins|ein|einen|einem", "zwei", "drei", "vier", "fünf", "sechs", "sieben", "acht", "neun", "zehn",
+  "elf", "zwölf", "dreizehn", "vierzehn", "fünfzehn", "sechzehn", "siebzehn", "achtzehn", "neunzehn", "zwanzig",
+  "einundzwanzig", "zweiundzwanzig", "dreiundzwanzig", "vierundzwanzig", "fünfundzwanzig", "sechsundzwanzig",
+  "siebenundzwanzig", "achtundzwanzig", "neunundzwanzig", "dreißig", "einunddreißig"];
+const MONTHS = "Januar|Februar|März|April|Mai|Juni|Juli|August|September|Oktober|November|Dezember";
+
+function fixSpokenOrdinals(text: string): string {
+  if (!text) return text;
+  const toOrdinal = (n: number, article: string | undefined) =>
+    ORDINAL_STEMS[n] + (article && /^(der|die|das)$/i.test(article) ? "e" : "en");
+  // Ziffern: „6. November“ / „am 6. November“
+  let out = text.replace(new RegExp(`(?:\\b(der|die|das|am|vom|zum|bis zum|ab dem|dem|den)\\s+)?\\b([1-9]|[12][0-9]|3[01])\\.\\s+(${MONTHS})`, "gi"),
+    (_m, art: string | undefined, num: string, month: string) => {
+      const n = Number(num);
+      return `${art ? art + " " : ""}${toOrdinal(n, art)} ${month}`;
+    });
+  // Ausgeschriebene Grundzahl mit Punkt: „sechs. November“
+  for (let n = 31; n >= 1; n--) {
+    out = out.replace(new RegExp(`(?:\\b(der|die|das|am|vom|zum|dem|den)\\s+)?\\b(${CARDINALS[n]})\\.\\s+(${MONTHS})`, "gi"),
+      (_m, art: string | undefined, _c: string, month: string) => `${art ? art + " " : ""}${toOrdinal(n, art)} ${month}`);
+  }
+  return out;
 }
 
 async function expandShortTexts(
@@ -516,6 +549,7 @@ export async function POST(req: NextRequest) {
           texts = await generateTexts(cfg, itemsForText, houseStyle);
         }
         texts = await expandShortTexts(cfg, texts, itemsForText, houseStyle);
+        texts = texts.map((t) => ({ ...t, radio_text: fixSpokenOrdinals(t.radio_text) }));
         return NextResponse.json({ texts, step: "texts" });
       }
       if (step === "verify") {

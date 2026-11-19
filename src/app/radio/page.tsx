@@ -1156,7 +1156,7 @@ function AiAccessModal({
             onClick={add}
             disabled={!canAdd}
             title={canAdd ? "Zugang hinzufügen" : (newProvider === "custom" ? "Endpoint-URL und Modellname erforderlich" : "API-Key erforderlich")}
-            className="rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-emerald-500/50 hover:text-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="rounded-lg border-2 border-emerald-500 bg-emerald-500/20 px-4 py-2 text-sm font-semibold text-emerald-300 shadow-sm hover:bg-emerald-500/30 hover:text-emerald-200 disabled:border-zinc-600 disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed transition-colors"
           >
             + Hinzufügen
           </button>
@@ -1713,11 +1713,6 @@ export default function RadioResearchPage() {
     }, 1000);
 
     const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
-    const fail = (e: unknown) => {
-      setErrorMsg(e instanceof Error ? e.message : "Fehler");
-      setPhase("error");
-      stopTimer();
-    };
 
     // ── Schritt 1: RSS-Feeds laden ─────────────────────────────────────────
     let fetchedItems: RSSItem[] = [];
@@ -1740,7 +1735,6 @@ export default function RadioResearchPage() {
     {
       const ranked    = rankRSSItems(fetchedItems);
       const newsItems = rssToNewsItems(ranked);
-      const top5      = newsItems.slice(0, 5);
 
       const initialResult: RadioResearchResult = {
         welt:        [],
@@ -1752,71 +1746,11 @@ export default function RadioResearchPage() {
       };
       setResult(initialResult);
 
-      setPhase("texts");
-      try {
-        const itemsForText = top5.map(i => ({
-          category: "Regional", rank: i.rank, headline: i.headline, sources: i.sources, summary: i.description,
-          clusterSources: i.clusterSources?.map(s => ({ feedName: s.feedName, description: s.description })),
-        }));
-        const r = await fetch("/api/radio-research", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...aiHeaders() },
-          body: JSON.stringify({ mode: "rss", step: "texts", itemsForText, houseStyle }),
-        });
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error ?? "Fehler");
-
-        const texts: Array<{ category: string; rank: number; radio_text: string }> = data.texts ?? [];
-        // Texte je Rang sammeln (Batch + ggf. Einzel-Fallback), Endstand lokal bauen —
-        // saveToDb NICHT in einem setState-Updater aufrufen (unpur → doppelte
-        // Archiv-Einträge im Dev-StrictMode).
-        // Herkunftsnachweis: alle Batch-Texte teilen sich einen Zeitstempel (ein
-        // gemeinsamer API-Aufruf), Einzel-Fallbacks bekommen ihren eigenen.
-        const batchProvenance = makeProvenance();
-        const batchTexts = new Map<number, string>();
-        const provenanceByRank = new Map<number, Provenance | undefined>();
-        for (const t of texts) if (t.radio_text?.trim()) {
-          batchTexts.set(t.rank, t.radio_text);
-          provenanceByRank.set(t.rank, batchProvenance);
-        }
-
-        setResult(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            regional: prev.regional.map(item =>
-              batchTexts.has(item.rank) ? { ...item, radio_text: batchTexts.get(item.rank)!, provenance: batchProvenance } : item
-            ),
-          };
-        });
-
-        // Fallback: was der Batch nicht (sauber) geliefert hat, einzeln nachgenerieren.
-        // Robust bei kleinen Modellen mit unsauberem JSON; kostet nur bei Bedarf extra.
-        // (Eigene Map-Kopie — batchTexts ist von der setResult-Closure eingefroren.)
-        const allTexts = new Map(batchTexts);
-        const missing = top5.filter(i => !allTexts.has(i.rank));
-        for (const item of missing) {
-          const single = await generateSingleText(item, "Regional");
-          if (single) {
-            allTexts.set(item.rank, single.text);
-            provenanceByRank.set(item.rank, single.provenance);
-          }
-        }
-
-        // Endstand aus lokalen Daten bauen und einmal speichern
-        const finalResult: RadioResearchResult = {
-          ...initialResult,
-          regional: newsItems.map(item =>
-            allTexts.has(item.rank)
-              ? { ...item, radio_text: allTexts.get(item.rank)!, provenance: provenanceByRank.get(item.rank) }
-              : item
-          ),
-        };
-        setResult(finalResult);
-        saveToDb(finalResult);
-        setPhase("done");
-        stopTimer();
-      } catch (e) { return fail(e); }
+      // Keine automatische Text-Erzeugung: Sprechtexte entstehen nur auf Klick
+      // („Sprechtext generieren“) je Meldung (Festlegung Frank, 19.11.2026).
+      saveToDb(initialResult);
+      setPhase("done");
+      stopTimer();
       return;
     }
 

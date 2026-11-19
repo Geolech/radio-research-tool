@@ -134,12 +134,9 @@ Analog: [platform.openai.com](https://platform.openai.com) → API-Key erzeugen 
 
 ### 4.1 Was passiert nach dem Klick auf „RSS-Bulletin erstellen"?
 
-Das Tool läuft in zwei Schritten ab, die du unten links im Fortschrittsbalken siehst:
+Das Tool lädt alle aktiven Quellen gleichzeitig. Das dauert typischerweise 5–10 Sekunden. Meldungen, die mehrere Outlets über dasselbe Ereignis veröffentlicht haben, werden dabei zusammengefasst (mehr dazu gleich).
 
-1. **RSS-Feeds laden** — alle aktiven Quellen werden gleichzeitig abgerufen. Das dauert typischerweise 5–10 Sekunden. Meldungen, die mehrere Outlets über dasselbe Ereignis veröffentlicht haben, werden dabei zusammengefasst (mehr dazu gleich).
-2. **Sprechtexte schreiben** — die KI formuliert für die fünf wichtigsten Meldungen einen fertigen Radiotext. Das dauert je nach KI-Anbieter und Modell weitere 8–20 Sekunden.
-
-Danach erscheint das Bulletin rechts. Meldungen ab Rang 6 haben noch keinen Text — den kannst du mit **„✦ Sprechtext generieren"** einzeln abrufen.
+Danach erscheint das Bulletin rechts, zunächst ohne Sprechtexte. Du entscheidest selbst, welche Meldung einen Text bekommt: Klick auf **„✦ Sprechtext generieren"** auf der jeweiligen Karte. Das dauert je nach KI-Anbieter und Modell etwa 8–20 Sekunden pro Meldung.
 
 ---
 
