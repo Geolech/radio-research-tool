@@ -195,6 +195,9 @@ Der Editor im unteren Bildschirmbereich ist dein Arbeitsbereich für das fertige
 - **„In Editor übernehmen"** (grüner Button) — überträgt den Sprechtext in den Editor. Mehrere Meldungen werden mit Abstand aneinandergehängt, du kannst die Reihenfolge danach per Hand anpassen.
 - Im Editor kannst du Texte kürzen, umformulieren oder Moderationsübergänge einfügen.
 - **„🖨 Drucken"** — öffnet ein druckoptimiertes Fenster: 14 Punkt, doppelter Zeilenabstand, Serifenschrift. Für das Vorlesen am Mikrofon.
+- **„Redigieren" / „Präsentation"** — Umschalter oben rechts im Editor. Beide Modi nutzen die gut lesbare Schrift Atkinson Hyperlegible mit doppeltem Zeilenabstand.
+  - **Redigieren:** normale Schriftgröße zum Bearbeiten, mit Hinweis zur redaktionellen Prüfung.
+  - **Präsentation:** Der Text wird so groß, dass er den ganzen Editor ausfüllt; unten bleibt eine Zeile frei. Die Größe passt sich an Textlänge und Fenstergröße an. Gedacht zum Vorlesen vom Bildschirm oder für die Präsentation vor Publikum. Der Text bleibt bearbeitbar.
 
 ---
 
