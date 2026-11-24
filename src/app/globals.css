@@ -14,6 +14,10 @@
   --rule-soft: #e2ddd2;
   --accent:    #274472;
   --accent-2:  #31578f;
+  --tone-ok:   #2f6b4f;
+  --tone-warn: #8a5a14;
+  --tone-info: #5b4b8a;
+  --tone-err:  #a33a2f;
 
   --font-display-stack: "Avenir Next", "Avenir", var(--font-mulish), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-sans-stack: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -32,6 +36,10 @@
     --rule-soft: #26221a;
     --accent:    #8fabd8;
     --accent-2:  #a9c0e6;
+    --tone-ok:   #93c4a8;
+    --tone-warn: #d6b679;
+    --tone-info: #b9abdd;
+    --tone-err:  #e09a8f;
   }
 }
 :root[data-theme="dark"] {
@@ -45,6 +53,10 @@
   --rule-soft: #26221a;
   --accent:    #8fabd8;
   --accent-2:  #a9c0e6;
+  --tone-ok:   #93c4a8;
+  --tone-warn: #d6b679;
+  --tone-info: #b9abdd;
+  --tone-err:  #e09a8f;
 }
 
 @theme inline {
@@ -82,6 +94,22 @@
   --color-amber-500: var(--accent);
   --color-amber-400: var(--accent-2);
   --color-amber-300: var(--accent-2);
+
+  /* Signalfarben gedaempft (Rueckmeldung Studierende 24.11.2026): Tailwind-
+     Neontoene zeigen auf ruhige, in Hell und Dunkel lesbare Toene. */
+  --color-amber-200:   var(--tone-warn);
+  --color-amber-100:   var(--tone-warn);
+  --color-emerald-500: var(--tone-ok);
+  --color-emerald-400: var(--tone-ok);
+  --color-emerald-300: var(--tone-ok);
+  --color-emerald-200: var(--tone-ok);
+  --color-violet-500:  var(--tone-info);
+  --color-violet-400:  var(--tone-info);
+  --color-violet-300:  var(--tone-info);
+  --color-violet-200:  var(--tone-info);
+  --color-red-500:     var(--tone-err);
+  --color-red-400:     var(--tone-err);
+  --color-blue-400:    var(--accent-2);
 }
 
 body {

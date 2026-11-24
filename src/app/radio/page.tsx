@@ -238,22 +238,22 @@ type WebState = { state: "running" } | { state: "ok"; result: WebCheckResult } |
 
 function WebCheckBox({ ws }: { ws: WebState }) {
   if (ws.state === "running") return null;
-  if (ws.state === "err") return <p className="text-xs text-red-400">✕ Gegenprüfung fehlgeschlagen: {ws.msg}</p>;
+  if (ws.state === "err") return <p className="text-sm text-red-400">✕ Gegenprüfung fehlgeschlagen: {ws.msg}</p>;
   const r = ws.result;
   if (r.status === "unavailable") {
     return <p className="text-xs text-zinc-500">Gegenprüfung nicht verfügbar{r.message ? `: ${r.message}` : ""}</p>;
   }
   const style =
     r.status === "confirmed"
-      ? { box: "border-emerald-500/30 bg-emerald-500/5", head: "text-emerald-400", label: `✓ Von ${r.confirming.length} unabhängigen Quellen im Netz bestätigt` }
+      ? { box: "border-zinc-700 border-l-4 border-l-emerald-500 bg-zinc-900", head: "text-emerald-400", label: `✓ Von ${r.confirming.length} unabhängigen Quellen im Netz bestätigt` }
       : r.status === "partial"
-      ? { box: "border-amber-500/30 bg-amber-500/5", head: "text-amber-400", label: "◐ Eine weitere Quelle im Netz gefunden" }
+      ? { box: "border-zinc-700 border-l-4 border-l-amber-200 bg-zinc-900", head: "text-amber-200", label: "◐ Eine weitere Quelle im Netz gefunden" }
       : { box: "border-zinc-700 bg-zinc-800/40", head: "text-zinc-400", label: "○ Keine weitere Quelle im Netz gefunden (bei Lokalnachrichten normal)" };
   return (
     <details className={`rounded-lg border px-3 py-2 ${style.box}`}>
-      <summary className={`text-xs font-semibold cursor-pointer ${style.head}`}>{style.label}</summary>
+      <summary className={`text-sm font-semibold cursor-pointer ${style.head}`}>{style.label}</summary>
       {r.confirming.length > 0 && (
-        <ul className="mt-1 text-xs text-zinc-300 space-y-0.5 list-disc list-inside">
+        <ul className="mt-1 text-sm text-zinc-300 leading-relaxed space-y-1 list-disc pl-5">
           {r.confirming.map((c) => (
             <li key={c.url}>
               <a href={/^https?:\/\//i.test(c.url) ? c.url : undefined} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-amber-400">{c.domain}</a>
@@ -337,7 +337,8 @@ function NewsCard({
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <button
               onClick={() => onSendToEditor?.(item.radio_text)}
-              className="rounded-lg border border-emerald-500/60 bg-emerald-500/15 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 transition-colors flex items-center gap-1.5"
+              style={{ backgroundColor: "#2f6b4f", color: "#ffffff" }}
+              className="rounded-lg border border-transparent px-3 py-1.5 text-xs font-semibold hover:brightness-110 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-400 transition-colors flex items-center gap-1.5"
             >
               <span aria-hidden>✎</span> In Editor übernehmen
             </button>
@@ -384,37 +385,37 @@ function NewsCard({
           </div>
           {verifyResult && verifyResult.state === "ok" && (
             verifyResult.issues.length === 0 ? (
-              <p className="text-xs text-emerald-400 flex items-center gap-1.5">
+              <p className="text-sm text-emerald-400 flex items-center gap-1.5">
                 ✓ Keine Abweichungen von der Quelle gefunden
               </p>
             ) : (
-              <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2">
-                <p className="text-xs font-semibold text-amber-400 mb-1">⚠ Mögliche Abweichungen von der Quelle:</p>
-                <ul className="text-xs text-amber-200/90 space-y-0.5 list-disc list-inside">
+              <div className="rounded-lg border border-zinc-700 border-l-4 bg-zinc-900 px-3 py-2.5" style={{ borderLeftColor: "var(--tone-warn)" }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: "var(--tone-warn)" }}>⚠ Mögliche Abweichungen von der Quelle:</p>
+                <ul className="text-sm text-zinc-300 leading-relaxed space-y-1 list-disc pl-5">
                   {verifyResult.issues.map((issue, i) => <li key={i}>{issue}</li>)}
                 </ul>
               </div>
             )
           )}
           {verifyResult && verifyResult.state === "err" && (
-            <p className="text-xs text-red-400">✕ Prüfung fehlgeschlagen: {verifyResult.msg}</p>
+            <p className="text-sm text-red-400">✕ Prüfung fehlgeschlagen: {verifyResult.msg}</p>
           )}
           {divergeResult && divergeResult.state === "ok" && (
             divergeResult.points.length === 0 ? (
-              <p className="text-xs text-violet-400 flex items-center gap-1.5">
+              <p className="text-sm text-violet-400 flex items-center gap-1.5">
                 ✓ Alle Quellen stimmen inhaltlich überein
               </p>
             ) : (
-              <div className="rounded-lg border border-violet-500/30 bg-violet-500/5 px-3 py-2">
-                <p className="text-xs font-semibold text-violet-300 mb-1">⇄ Unterschiede zwischen den Quellen:</p>
-                <ul className="text-xs text-violet-200/90 space-y-0.5 list-disc list-inside">
+              <div className="rounded-lg border border-zinc-700 border-l-4 bg-zinc-900 px-3 py-2.5" style={{ borderLeftColor: "var(--tone-info)" }}>
+                <p className="text-sm font-semibold mb-1" style={{ color: "var(--tone-info)" }}>⇄ Unterschiede zwischen den Quellen:</p>
+                <ul className="text-sm text-zinc-300 leading-relaxed space-y-1 list-disc pl-5">
                   {divergeResult.points.map((p, i) => <li key={i}>{p}</li>)}
                 </ul>
               </div>
             )
           )}
           {divergeResult && divergeResult.state === "err" && (
-            <p className="text-xs text-red-400">✕ Quellenvergleich fehlgeschlagen: {divergeResult.msg}</p>
+            <p className="text-sm text-red-400">✕ Quellenvergleich fehlgeschlagen: {divergeResult.msg}</p>
           )}
           {webResult && <WebCheckBox ws={webResult} />}
           {item.provenance && (
@@ -617,6 +618,49 @@ function EditorPanel({
     onChange("");
   }
 
+  // Präsentationsmodus: serifenlose Schrift, Größe passt sich so an, dass der
+  // Text den Editor füllt und unten genau eine Zeile Luft bleibt.
+  const [present, setPresent] = useState(false);
+  const [fontPx, setFontPx] = useState(32);
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  const LH = 2;
+
+  useEffect(() => {
+    if (!present) return;
+    const ta = taRef.current;
+    if (!ta) return;
+    // Messung über ein unsichtbares Spiegel-Div: die Textarea selbst meldet
+    // als scrollHeight nie weniger als ihre eigene Höhe.
+    const fit = () => {
+      const avail = ta.clientHeight;
+      if (!avail) return;
+      if (!ta.value.trim()) { setFontPx(32); return; }
+      const cs = getComputedStyle(ta);
+      const m = document.createElement("div");
+      Object.assign(m.style, {
+        position: "absolute", visibility: "hidden", left: "-9999px", top: "0",
+        boxSizing: "border-box", width: `${ta.clientWidth}px`,
+        padding: cs.padding, fontFamily: cs.fontFamily, letterSpacing: cs.letterSpacing,
+        lineHeight: String(LH), whiteSpace: "pre-wrap", overflowWrap: "break-word",
+      });
+      m.textContent = ta.value + "\u200b";
+      document.body.appendChild(m);
+      let lo = 16, hi = 200;
+      for (let i = 0; i < 14; i++) {
+        const mid = (lo + hi) / 2;
+        m.style.fontSize = `${mid}px`;
+        // Inhalt + eine freie Zeile müssen in die sichtbare Höhe passen
+        if (m.scrollHeight + mid * LH <= avail) lo = mid; else hi = mid;
+      }
+      document.body.removeChild(m);
+      setFontPx(Math.floor(lo));
+    };
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(ta);
+    return () => ro.disconnect();
+  }, [present, value]);
+
   return (
     <div className="flex flex-col h-full rounded-xl border border-zinc-300 overflow-hidden" style={{ colorScheme: "light", backgroundColor: "#ffffff" }}>
       {/* Toolbar */}
@@ -625,6 +669,22 @@ function EditorPanel({
           Editor
         </span>
         <div className="flex items-center gap-3">
+          <div className="flex rounded-lg border overflow-hidden text-xs" style={{ borderColor: "#d4d4d8" }} role="group" aria-label="Editor-Modus">
+            {([["edit", "Redigieren"], ["present", "Präsentation"]] as const).map(([k, label]) => {
+              const on = (k === "present") === present;
+              return (
+                <button
+                  key={k}
+                  onClick={() => setPresent(k === "present")}
+                  aria-pressed={on}
+                  className="px-3 py-1.5 font-medium transition-colors"
+                  style={on ? { backgroundColor: "#3f3f46", color: "#ffffff" } : { backgroundColor: "#ffffff", color: "#52525b" }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
           {value && (
             <button
               onClick={handleClear}
@@ -645,18 +705,31 @@ function EditorPanel({
         </div>
       </div>
 
-      {/* Sorgfaltspflicht-Hinweis */}
-      <p className="flex-shrink-0 px-4 py-1.5 text-[11px] border-b" style={{ color: "#92400e", backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
+      {/* Sorgfaltspflicht-Hinweis (im Präsentationsmodus ausgeblendet) */}
+      {!present && <p className="flex-shrink-0 px-4 py-1.5 text-[11px] border-b" style={{ color: "#92400e", backgroundColor: "#fffbeb", borderColor: "#fde68a" }}>
         ⚠ KI-generierte Sprechtexte sind Entwürfe — vor der Sendung redaktionell prüfen.
-      </p>
+      </p>}
 
       {/* Textbereich — Inline-Styles wegen Dark-Mode-Override */}
       <textarea
+        ref={taRef}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={"Wähle in einer Meldung „In Editor übernehmen“ — der Sprechtext erscheint hier und kann bearbeitet werden."}
-        className="flex-1 resize-none px-5 py-4 text-sm leading-relaxed font-serif focus:outline-none"
-        style={{ backgroundColor: "#ffffff", color: "#18181b", colorScheme: "light" }}
+        className={present
+          ? "flex-1 resize-none px-8 py-6 focus:outline-none overflow-hidden"
+          : "flex-1 resize-none px-5 py-4 focus:outline-none"}
+        style={present
+          ? {
+              backgroundColor: "#ffffff", color: "#111111", colorScheme: "light",
+              fontFamily: 'var(--font-present), "Segoe UI", Arial, sans-serif',
+              fontSize: `${fontPx}px`, lineHeight: LH, letterSpacing: "0.01em",
+            }
+          : {
+              backgroundColor: "#ffffff", color: "#18181b", colorScheme: "light",
+              fontFamily: 'var(--font-present), "Segoe UI", Arial, sans-serif',
+              fontSize: "16px", lineHeight: LH,
+            }}
         spellCheck
         lang="de"
       />

@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Mulish } from "next/font/google";
+import { Mulish, Atkinson_Hyperlegible } from "next/font/google";
 import "./globals.css";
 import HamburgerMenu from "@/components/HamburgerMenu";
 import AdminProvider from "@/components/AdminProvider";
@@ -24,6 +24,14 @@ const mulish = Mulish({
   display: "swap",
 });
 
+// Präsentationsmodus Radio-Editor: auf Lesbarkeit optimierte Groteske (Braille Institute).
+const atkinson = Atkinson_Hyperlegible({
+  variable: "--font-present",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "HiFi-Bibliothek",
   description: "Persönliche HiFi-Gerätesammlung",
@@ -40,7 +48,7 @@ export default async function RootLayout({
     <html
       lang="de"
       suppressHydrationWarning
-      className={`${mulish.variable} h-full antialiased`}
+      className={`${mulish.variable} ${atkinson.variable} h-full antialiased`}
     >
       {/* suppressHydrationWarning: toleriert DOM-Injektionen von Browser-
           Erweiterungen (z. B. Synology Photos), die sonst im Dev-Modus die
